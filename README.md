@@ -4,6 +4,12 @@
 
 ## Development
 
+### Google API Credentials
+
+Setup Google Sheets credentials and fill out the .env file
+
+- https://medium.com/@a.marenkov/how-to-get-credentials-for-google-sheets-456b7e88c430
+
 From your terminal:
 
 ```sh
@@ -13,8 +19,6 @@ npm run dev
 This starts your app in development mode, rebuilding assets on file changes.
 
 ## Deployment
-
-First, build your app for production:
 
 ```sh
 npm run build
@@ -28,11 +32,6 @@ npm start
 
 Now you'll need to pick a host to deploy it to.
 
-### DIY
+## CI/CD
 
-If you're familiar with deploying node applications, the built-in Remix app server is production-ready.
-
-Make sure to deploy the output of `remix build`
-
-- `build/`
-- `public/build/`
+Commits to main deploy on fly
