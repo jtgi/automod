@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+    font-family: DrukWide;
+    src: url("/drukwide.ttf") format('truetype');
+}
+
+@layer base {
+    /* modified from https://codepen.io/josetxu/pen/VwWVKJd */
+    html {
+        --units: 4.5vmax;
+        --brick1: #45248d;
+        --brick2: #45248d;
+        --lines: #000000;
+        --gp-ln: 50%/calc(var(--units) * 10) calc(var(--units) * 5);
+        --gp-cn: 50%/calc(var(--units) * 5) calc(var(--units) * 5);
+        height: 100vh;
+        background: 
+            repeating-conic-gradient(from 90deg at 99.5% 50.5%, var(--lines) 0% 25%, #fff0 0% 100%) var(--gp-cn), 
+            repeating-linear-gradient(180deg, var(--lines) 0 0.5%, #fff0 0 50%, var(--lines) 0 50.5%, var(--brick2) 0 100% ) var(--gp-ln), 
+            repeating-linear-gradient(90deg, var(--brick1) 0 49.75%, var(--lines) 0 50%, var(--brick1) 0 99.75%, var(--lines) 0 100% ) var(--gp-ln);
+        
+            background-position: -90px -0px;
+    }
+
+}

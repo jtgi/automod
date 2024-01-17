@@ -14,6 +14,27 @@ import {
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
   { rel: "stylesheet", href: rootStyles },
+  {
+    rel: "apple-touch-icon",
+    sizes: "180x180",
+    href: "/apple-touch-icon.png",
+  },
+  {
+    rel: "icon",
+    type: "image/png",
+    sizes: "32x32",
+    href: "/favicon-32x32.png",
+  },
+  {
+    rel: "icon",
+    type: "image/png",
+    sizes: "16x16",
+    href: "/favicon-16x16.png",
+  },
+  {
+    rel: "manifest",
+    href: "/site.webmanifest",
+  },
 ];
 
 export default function App() {
@@ -25,7 +46,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className=" bg-[#45248d] min-h-screen">
+      <body className="min-h-screen">
         <Outlet />
         <ScrollRestoration />
         <Scripts />

@@ -38,8 +38,8 @@ export default function Index() {
   const { links } = useLoaderData<typeof loader>();
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen space-y-20 px-5">
-      <FarcasterIcon className="w-32 h-32" />
+    <main className="flex flex-col items-center justify-center min-h-screen space-y-[60px] px-5 pb-[60px] pt-5">
+      <FarcasterIcon className="w-[120px] h-[120px]" />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-4xl mx-auto w-full">
         {links.map((link) => (
           <a
@@ -63,7 +63,7 @@ export default function Index() {
           </a>
         ))}
       </div>
-      <h1 className="font-bold uppercase text-4xl tracking-wide text-white text-center">
+      <h1 className="font-display font-bold uppercase text-4xl tracking-wide text-white text-center">
         Farcaster Landscape
       </h1>
     </main>
