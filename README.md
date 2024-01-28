@@ -1,7 +1,51 @@
-# Farcaster Landscape
+# Framer
 
-https://fc-landscape.fly.dev/
-A project by esdotge.eth: https://zora.co/collect/zora:0x0d299f28f6c3d01332bbd73b51bcee3dcd71eb26/2
+- Signup / Login
+- Subscribe
+
+Screen 1:
+
+- Create New
+
+  - Text
+  - Image
+  - Mint
+
+- Required
+  -[] Must like
+  -[] Must cast
+  -[] Must retweet
+  -[] Must follow
+  -[] Only follower
+
+- Options
+
+  - Max entries
+  -
+
+- Gate options
+
+  - Must like to view
+  - Must follow to view
+  - Must recast to view
+  - Must hold token to view
+  - Must hold balance to view
+
+- Input types
+  - Text
+  - Image
+  - Mint
+
+Promo Ideas
+
+- follow me to reveal invite code get 50% off
+
+# FRAME IT
+
+frameit.com/https://download.com/pdf
+frameit.com/
+
+- Convert any deck to frame
 
 ## Development
 
