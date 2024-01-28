@@ -81,4 +81,8 @@
   h2 {
     @apply text-primary text-xl font-bold;
   }
+
+  h3 {
+    @apply text-primary text-lg font-semibold;
+  }
 }

@@ -168,7 +168,6 @@ export default function Index() {
           onChange={handleChange}
         >
           <div className="space-y-4">
-            <h2>Content</h2>
             <FieldLabel label="Slug" className="flex-col items-start">
               <Input
                 name="slug"
@@ -256,8 +255,8 @@ export default function Index() {
 
           <hr />
 
-          <div>
-            <h2>Requirements</h2>
+          <div className="space-y-4">
+            <p className="font-semibold">Requirements</p>
             <div className="space-y-1">
               <FieldLabel label="Must Like" position="right">
                 <Checkbox name="requireLike" />
@@ -275,7 +274,11 @@ export default function Index() {
                 <Checkbox name="requireSomeoneIFollow" />
               </FieldLabel>
 
-              <FieldLabel label="Must Hold NFT" position="right">
+              <FieldLabel label="Must Hold ERC-721" position="right">
+                <Checkbox name="requireHoldNFT" />
+              </FieldLabel>
+
+              <FieldLabel label="Must Hold ERC-1155" position="right">
                 <Checkbox name="requireHoldNFT" />
               </FieldLabel>
 
@@ -292,64 +295,66 @@ export default function Index() {
           <hr />
 
           <div className="space-y-4">
-            <h2>Customize</h2>
+            <p className="font-semibold">Customize</p>
 
-            <FieldLabel
-              label="Background Color"
-              className="flex-col items-start justify-between"
-            >
-              <Input
-                id="backgroundColor"
-                type="hidden"
-                name="backgroundColor"
-                value={backgroundColor}
-              />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    style={{ backgroundColor }}
-                    className="rounded-full p-0 h-10 w-10 border-2"
-                  />
-                </PopoverTrigger>
-                <PopoverContent>
-                  <HexColorPicker
-                    color={backgroundColor}
-                    onChange={(color) => {
-                      setBackgroundColor(color);
-                      handleChange({
-                        currentTarget: document.querySelector("form"),
-                      } as ChangeEvent<HTMLFormElement>);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </FieldLabel>
+            <div className="flex items-center gap-8">
+              <FieldLabel
+                label="Background Color"
+                className="flex-col items-start justify-between"
+              >
+                <Input
+                  id="backgroundColor"
+                  type="hidden"
+                  name="backgroundColor"
+                  value={backgroundColor}
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      style={{ backgroundColor }}
+                      className="rounded-full p-0 h-10 w-10 border-2"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <HexColorPicker
+                      color={backgroundColor}
+                      onChange={(color) => {
+                        setBackgroundColor(color);
+                        handleChange({
+                          currentTarget: document.querySelector("form"),
+                        } as ChangeEvent<HTMLFormElement>);
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FieldLabel>
 
-            <FieldLabel
-              label="Text Color"
-              className="flex-col items-start justify-between"
-            >
-              <Input type="hidden" name="textColor" value={textColor} />
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    style={{ backgroundColor: textColor }}
-                    className="rounded-full p-0 h-10 w-10 border-2"
-                  />
-                </PopoverTrigger>
-                <PopoverContent>
-                  <HexColorPicker
-                    color={textColor}
-                    onChange={(color) => {
-                      setTextColor(color);
-                      handleChange({
-                        currentTarget: document.querySelector("form"),
-                      } as ChangeEvent<HTMLFormElement>);
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </FieldLabel>
+              <FieldLabel
+                label="Text Color"
+                className="flex-col items-start justify-between"
+              >
+                <Input type="hidden" name="textColor" value={textColor} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      style={{ backgroundColor: textColor }}
+                      className="rounded-full p-0 h-10 w-10 border-2"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <HexColorPicker
+                      color={textColor}
+                      onChange={(color) => {
+                        setTextColor(color);
+                        handleChange({
+                          currentTarget: document.querySelector("form"),
+                        } as ChangeEvent<HTMLFormElement>);
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FieldLabel>
+            </div>
           </div>
 
           <Button className="w-full" size={"lg"}>
@@ -361,9 +366,12 @@ export default function Index() {
             <h2>Preview</h2>
             <div className="space-y-8">
               <div>
-                <h3>Before Reveal</h3>
+                <h3>Welcome Screen</h3>
                 {prerevealSvg && (
-                  <div dangerouslySetInnerHTML={{ __html: prerevealSvg }}></div>
+                  <div
+                    className="rounded-lg"
+                    dangerouslySetInnerHTML={{ __html: prerevealSvg }}
+                  ></div>
                 )}
               </div>
 
