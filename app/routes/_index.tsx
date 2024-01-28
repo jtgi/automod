@@ -101,7 +101,6 @@ export default function Index() {
   }, []);
 
   const handleChange: ChangeEventHandler<HTMLFormElement> = async (e) => {
-    // get value from form
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
     const response = await fetch(`${env.HOST_URL}/Inter-Regular.ttf`);
@@ -160,12 +159,12 @@ export default function Index() {
   };
 
   return (
-    <main className="max-w-3xl px-8 mx-auto min-h-screen flex flex-col justify-center pb-[200px]">
+    <main className="max-w-4xl px-8 mx-auto min-h-screen flex flex-col justify-center pb-[200px]">
       <h1 className="py-12">Framer</h1>
       <div className="flex flex-col sm:flex-row gap-8 relative">
         <Form
           method="post"
-          className="space-y-8 sm:w-1/2"
+          className="space-y-8 sm:w-[400px]"
           onChange={handleChange}
         >
           <div className="space-y-4">
@@ -179,29 +178,30 @@ export default function Index() {
               />
             </FieldLabel>
 
-            <FieldLabel
-              label="Pre Reveal Text"
-              className="flex-col items-start"
-            >
+            <FieldLabel label="Welcome Text" className="flex-col items-start">
               <Textarea name="preRevealText" placeholder="e.g. full send" />
             </FieldLabel>
 
             <div>
-              <p>What will be revealed?</p>
-              <Select onValueChange={setContentType} defaultValue="text">
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a Content Type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">Text</SelectItem>
-                  <SelectItem value="image">Image</SelectItem>
-                  <SelectItem value="nft">NFT</SelectItem>
-                </SelectContent>
-              </Select>
+              <FieldLabel
+                label="What will be revealed?"
+                className="flex-col items-start"
+              >
+                <Select onValueChange={setContentType} defaultValue="text">
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a Content Type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="image">Image</SelectItem>
+                    <SelectItem value="nft">NFT</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldLabel>
             </div>
 
             {contentType === "text" && (
-              <FieldLabel label="Text" className="flex-col items-start">
+              <FieldLabel label="" className="flex-col items-start">
                 <Textarea
                   hidden={contentType !== "text"}
                   name="text"
@@ -223,7 +223,21 @@ export default function Index() {
             )}
 
             {contentType === "nft" && (
-              <fieldset className="space-y-8">
+              <fieldset className="space-y-4">
+                <FieldLabel label="Network" className="flex-col items-start">
+                  <Select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a Network..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="base">Base</SelectItem>
+                      <SelectItem value="ethereum">Ethereum Mainnet</SelectItem>
+                      <SelectItem value="optimism">Optimism</SelectItem>
+                      <SelectItem value="zora">Zora</SelectItem>
+                      <SelectItem value="arbitrum">Arbitrum</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldLabel>
                 <Field
                   name="contractAddress"
                   label="Contract Address"
@@ -244,33 +258,35 @@ export default function Index() {
 
           <div>
             <h2>Requirements</h2>
-            <FieldLabel label="Must Like" position="right">
-              <Checkbox name="requireLike" />
-            </FieldLabel>
+            <div className="space-y-1">
+              <FieldLabel label="Must Like" position="right">
+                <Checkbox name="requireLike" />
+              </FieldLabel>
 
-            <FieldLabel label="Must Recast" position="right">
-              <Checkbox name="requireRecast" />
-            </FieldLabel>
+              <FieldLabel label="Must Recast" position="right">
+                <Checkbox name="requireRecast" />
+              </FieldLabel>
 
-            <FieldLabel label="Must Follow Me" position="right">
-              <Checkbox name="requireFollow" />
-            </FieldLabel>
+              <FieldLabel label="Must Follow Me" position="right">
+                <Checkbox name="requireFollow" />
+              </FieldLabel>
 
-            <FieldLabel label="Must Be Someone I Follow" position="right">
-              <Checkbox name="requireSomeoneIFollow" />
-            </FieldLabel>
+              <FieldLabel label="Must Be Someone I Follow" position="right">
+                <Checkbox name="requireSomeoneIFollow" />
+              </FieldLabel>
 
-            <FieldLabel label="Must Hold NFT" position="right">
-              <Checkbox name="requireHoldNFT" />
-            </FieldLabel>
+              <FieldLabel label="Must Hold NFT" position="right">
+                <Checkbox name="requireHoldNFT" />
+              </FieldLabel>
 
-            <FieldLabel label="Must Hold ERC-20" position="right">
-              <Checkbox name="requireHaveToken" />
-            </FieldLabel>
+              <FieldLabel label="Must Hold ERC-20" position="right">
+                <Checkbox name="requireHaveToken" />
+              </FieldLabel>
 
-            <FieldLabel label="Must Not like Hot Chocolate" position="right">
-              <Checkbox name="requireNotLikeHotChocolate" />
-            </FieldLabel>
+              <FieldLabel label="Must Not like Hot Chocolate" position="right">
+                <Checkbox name="requireNotLikeHotChocolate" />
+              </FieldLabel>
+            </div>
           </div>
 
           <hr />
@@ -373,17 +389,30 @@ function FieldLabel(
   } & React.HTMLAttributes<HTMLDivElement>
 ) {
   const _position = props.position || "left";
+  const _labelClassName = props.labelProps?.className || "";
+  delete props.labelProps?.className;
+
   return (
     <div className={cn(`flex items-center gap-1`, props.className)}>
       {_position === "left" ? (
         <>
-          <label {...props.labelProps}>{props.label}</label>
+          <label
+            className={cn("text-sm font-medium text-gray-700", _labelClassName)}
+            {...props.labelProps}
+          >
+            {props.label}
+          </label>
           {props.children}
         </>
       ) : (
         <>
           {props.children}
-          <label {...props.labelProps}>{props.label}</label>
+          <label
+            className={cn("text-sm font-medium text-gray-700", _labelClassName)}
+            {...props.labelProps}
+          >
+            {props.label}
+          </label>
         </>
       )}
     </div>
