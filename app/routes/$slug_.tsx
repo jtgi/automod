@@ -33,7 +33,7 @@ const frameResponse = (params: FrameResponseArgs) => {
   const version = params.version || "vNext";
   const html = `
   <!DOCTYPE html>
-  <html
+  <html>
     <head>
       ${params.title ? `<title>${params.title}</title>` : ""}
       ${params.title ? `<meta name="og:title" content="${params.title}">` : ""}
@@ -63,6 +63,7 @@ const frameResponse = (params: FrameResponseArgs) => {
           : ""
       }
     </head>
+    <body></body>
   </html>
   `;
 
