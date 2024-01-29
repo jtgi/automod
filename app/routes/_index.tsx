@@ -72,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
-  return redirect(`/frame/${frame.slug}`);
+  return redirect(`/${frame.slug}`);
 }
 
 export default function Index() {
@@ -171,7 +171,7 @@ export default function Index() {
             <FieldLabel label="Slug" className="flex-col items-start">
               <Input
                 name="slug"
-                placeholder="e.g. my-frame"
+                placeholder="e.g. full-send"
                 pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
                 required
               />

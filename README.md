@@ -26,10 +26,34 @@ Screen 1:
 - Gate options
 
   - Must like to view
+
+  ```
+  https://docs.neynar.com/reference/cast
+  ```
+
   - Must follow to view
+
+  ```
+  https://docs.neynar.com/reference/relevant-followers
+  ```
+
   - Must recast to view
+
+  ```
+  https://docs.neynar.com/reference/cast
+  ```
+
   - Must hold token to view
+
+  ```
+  alchemy viem stuff
+  ```
+
   - Must hold balance to view
+
+  ```
+  alchemy viem
+  ```
 
 - Input types
   - Text
