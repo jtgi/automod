@@ -314,24 +314,6 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const html = `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>gm</title>
-      <meta name="description" content="gm">
-      <meta name="og:title" content="gm">
-      <meta name="og:image" content="${process.env.HOST_URL}/elmo.gif">
-      <meta name="og:url" content="${process.env.HOST_URL}/elmo.gif">
-      <meta name="fc:frame" content="vNext">
-      <meta name="fc:frame:image" content="${process.env.HOST_URL}/elmo.gif">
-    </head>
-    <body>
-    gm
-    </body>
-  </html>
-  `;
-
   if (frame.type === "text") {
     return frameResponse({
       image: await generateFrame(frame, frame.secretText!),
@@ -463,28 +445,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
     },
   ];
 
-  const html = `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <title>Frame | ${frame.slug}</title>
-      ${meta
-        .map((m) => `<meta name="${m.property}" content="${m.content}" />`)
-        .join("\n")}
-    </head>
-    <body>
-    <pre>
-    <img src="${imgSrc}" />
-    ${JSON.stringify(frame, null, 2)}
-    </pre>
-    </body>
-  </html>
-  `;
-
-  return new Response(html, {
-    headers: {
-      "content-type": "text/html;charset=UTF-8",
-    },
-    status: 200,
+  return frameResponse({
+    title: `Frame | ${frame.slug}`,
+    description: frame.preRevealText,
+    image: imgSrc,
+    buttons: [{ text: "Reveal" }],
   });
 }
