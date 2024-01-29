@@ -36,18 +36,22 @@ const frameResponse = (params: FrameResponseArgs) => {
   <html>
     <head>
       ${params.title ? `<title>${params.title}</title>` : ""}
-      ${params.title ? `<meta name="og:title" content="${params.title}">` : ""}
       ${
-        params.description
-          ? `<meta name="description" content="${params.description}">
-             <meta name="og:description" content="${params.description}">`
+        params.title
+          ? `<meta property="og:title" content="${params.title}">`
           : ""
       }
-      <meta name="fc:frame" content="${version}">
-      <meta name="fc:frame:image" content="${params.image}">
+      ${
+        params.description
+          ? `<meta property="description" content="${params.description}">
+      <meta property="og:description" content="${params.description}">`
+          : ""
+      }
+      <meta property="fc:frame" content="${version}">
+      <meta property="fc:frame:image" content="${params.image}">
       ${
         params.postUrl
-          ? `<meta name="fc:frame:post_url" content="${params.postUrl}">`
+          ? `<meta property="fc:frame:post_url" content="${params.postUrl}">`
           : ""
       }
       ${
@@ -55,7 +59,7 @@ const frameResponse = (params: FrameResponseArgs) => {
           ? params.buttons
               .map(
                 (b, index) =>
-                  `<meta name="fc:frame:button:${index + 1}" content="${
+                  `<meta property="fc:frame:button:${index + 1}" content="${
                     b.text
                   }">`
               )
@@ -63,7 +67,16 @@ const frameResponse = (params: FrameResponseArgs) => {
           : ""
       }
     </head>
-    <body></body>
+    <body>
+      <h1>${params.title}</h1>
+      <p>${params.description}</p>
+      <div>
+      <img src="${params.image}" />
+      </div>
+      ${params.buttons
+        ?.map((b, index) => `<button name="button-${index}">${b.text}</button>`)
+        .join("\n")}
+    </body>
   </html>
   `;
 
@@ -330,6 +343,21 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 }
 
+export async function loader({ params }: LoaderFunctionArgs) {
+  invariant(params.slug, "Frame slug is required");
+
+  const frame = await db.frame.findFirstOrThrow({
+    where: { slug: params.slug },
+  });
+
+  return frameResponse({
+    title: `Frame | ${frame.slug}`,
+    description: frame.preRevealText,
+    image: await generateFrame(frame, frame.preRevealText),
+    buttons: [{ text: "Reveal" }],
+  });
+}
+
 async function generateFrame(frame: Frame, message: string) {
   const response = await fetch(`${process.env.HOST_URL}/Inter-Regular.ttf`);
   const fontBuffer = await response.arrayBuffer();
@@ -371,87 +399,4 @@ async function generateFrame(frame: Frame, message: string) {
   }
 
   return imgSrc;
-}
-
-export async function loader({ params }: LoaderFunctionArgs) {
-  invariant(params.slug, "Frame slug is required");
-
-  const frame = await db.frame.findFirstOrThrow({
-    where: { slug: params.slug },
-  });
-
-  //   todo change to fs
-  //  todo abstract this probably
-  const response = await fetch(`${process.env.HOST_URL}/Inter-Regular.ttf`);
-  const fontBuffer = await response.arrayBuffer();
-  const styles: CSSProperties = {
-    display: "flex",
-    color: frame.textColor || "white",
-    fontFamily: "Inter Regular",
-    backgroundColor: frame.backgroundColor || "black",
-    height: "100%",
-    width: "100%",
-    padding: 72,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 32,
-    fontWeight: 600,
-  };
-
-  const preReveal = await satori(
-    <div style={styles}>
-      <h1>{frame.preRevealText}</h1>
-    </div>,
-    {
-      width: 800,
-      height: 418,
-      fonts: [
-        {
-          name: "Inter Regular",
-          data: fontBuffer,
-          style: "normal",
-        },
-      ],
-    }
-  );
-
-  const imgSrc = await convertSvgToPngBase64(preReveal);
-  if (!imgSrc) {
-    throw new Error("Error converting SVG to PNG");
-  }
-
-  const meta = [
-    {
-      property: "description",
-      content: frame.preRevealText,
-    },
-    {
-      property: "og:title",
-      content: `Frame | ${frame.slug}`,
-    },
-    {
-      property: "og:description",
-      content: frame.preRevealText,
-    },
-    {
-      property: "fc:frame",
-      content: "vNext",
-    },
-    {
-      property: "fc:frame:image",
-      content: imgSrc,
-    },
-    {
-      property: "fc:frame:button:1",
-      content: "Reveal",
-    },
-  ];
-
-  return frameResponse({
-    title: `Frame | ${frame.slug}`,
-    description: frame.preRevealText,
-    image: imgSrc,
-    buttons: [{ text: "Reveal" }],
-  });
 }
