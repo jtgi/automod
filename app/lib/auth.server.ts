@@ -17,7 +17,7 @@ export const sessionStorage = createCookieSessionStorage({
 
 export const { getSession, commitSession, destroySession } = sessionStorage;
 
-export let authenticator = new Authenticator<User>(sessionStorage, {
+export const authenticator = new Authenticator<User>(sessionStorage, {
   throwOnError: true,
 });
 
@@ -38,6 +38,8 @@ authenticator.use(
         },
       });
     }
+
+    return user;
   })
 );
 export type FarcasterUser = {

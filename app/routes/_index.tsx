@@ -1,4 +1,8 @@
-import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/node";
 import satori from "satori";
 import { Form, json, redirect, useLoaderData } from "@remix-run/react";
 import {
@@ -30,6 +34,9 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
+import { requireUser } from "~/lib/utils.server";
+import { authenticator } from "~/lib/auth.server";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 export const meta: MetaFunction = () => {
   return [
@@ -41,15 +48,21 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export async function loader() {
-  return {
+export async function loader({ request }: LoaderFunctionArgs) {
+  await authenticator.authenticate("farcaster", request, {
+    failureRedirect: "/login",
+  });
+
+  return typedjson({
     env: {
       HOST_URL: process.env.HOST_URL,
     },
-  };
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  await requireUser({ request });
+
   const formData = await request.formData();
   const data = Object.fromEntries(formData.entries()) as any;
 
@@ -93,7 +106,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Index() {
-  const { env } = useLoaderData<typeof loader>();
+  const { env } = useTypedLoaderData<typeof loader>();
   const [contentType, setContentType] = useState<string>("text");
   const [prerevealSvg, setPreRevealSvg] = useState<string>();
   const [revealedSvg, setRevealedSvg] = useState<string>();
