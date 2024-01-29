@@ -49,9 +49,11 @@ export const meta: MetaFunction = () => {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await authenticator.authenticate("farcaster", request, {
-    failureRedirect: "/login",
-  });
+  const user = await authenticator.isAuthenticated(request);
+
+  if (!user) {
+    throw redirect("/login");
+  }
 
   return typedjson({
     env: {

@@ -6,6 +6,7 @@ import farcasterStylesUrl from "@farcaster/auth-kit/styles.css";
 import { AuthKitProvider } from "@farcaster/auth-kit";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import {
+  Form,
   Links,
   LiveReload,
   Meta,
@@ -13,7 +14,11 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useLocation,
 } from "@remix-run/react";
+import { Button } from "./components/ui/button";
+import { authenticator } from "./lib/auth.server";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -43,16 +48,20 @@ export const links: LinksFunction = () => [
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return {
+  const user = await authenticator.isAuthenticated(request);
+
+  return typedjson({
+    user,
     env: {
       HOST_URL: process.env.HOST_URL!,
       INFURA_PROJECT_ID: process.env.INFURA_PROJECT_ID!,
     },
-  };
+  });
 }
 
 export default function App() {
-  const { env } = useLoaderData<typeof loader>();
+  const { env, user } = useTypedLoaderData<typeof loader>();
+  const location = useLocation();
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.INFURA_PROJECT_ID}`,
@@ -70,6 +79,14 @@ export default function App() {
       </head>
       <body className="min-h-screen">
         <AuthKitProvider config={farcasterConfig}>
+          {location.pathname !== "/login" && (
+            <nav className="flex justify-between p-4">
+              <h1>Framer</h1>
+              <Form method="post" action="/logout">
+                <Button variant={"ghost"}>Logout</Button>
+              </Form>
+            </nav>
+          )}
           <Outlet />
         </AuthKitProvider>
         <ScrollRestoration />

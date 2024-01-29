@@ -20,6 +20,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleSuccess = useCallback((res: StatusAPIResponse) => {
+    console.log({ res });
     invariant(res.message, "message is required");
     invariant(res.signature, "signature is required");
     invariant(res.nonce, "nonce is required");
