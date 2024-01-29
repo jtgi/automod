@@ -28,8 +28,9 @@ model Frame {
   active Boolean @default(true)
 
   type                  String  @default("text")
-  text                  String?
+  secretText            String?
   imageUrl              String?
+  revealType            String  @default("text")
   preRevealText         String
   requireLike           Boolean @default(false)
   requireRecast         Boolean @default(false)

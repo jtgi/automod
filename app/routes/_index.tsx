@@ -59,8 +59,9 @@ export async function action({ request }: ActionFunctionArgs) {
       data: {
         slug: data.slug,
         type: data.type,
-        text: data.text,
+        secretText: data.secretText,
         preRevealText: data.preRevealText,
+        revealType: data.revealType,
         requireLike: data.requireLike === "on",
         requireRecast: data.requireRecast === "on",
         requireFollow: data.requireFollow === "on",
@@ -209,7 +210,11 @@ export default function Index() {
                 label="What will be revealed?"
                 className="flex-col items-start"
               >
-                <Select onValueChange={setContentType} defaultValue="text">
+                <Select
+                  name="revealType"
+                  onValueChange={setContentType}
+                  defaultValue="text"
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choose a Content Type..." />
                   </SelectTrigger>
@@ -226,7 +231,7 @@ export default function Index() {
               <FieldLabel label="" className="flex-col items-start">
                 <Textarea
                   hidden={contentType !== "text"}
-                  name="text"
+                  name="secretText"
                   placeholder="e.g. telegram.io/invite/gg"
                 />
               </FieldLabel>

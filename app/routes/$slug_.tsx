@@ -161,10 +161,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
       if (!isValid) {
         return frameResponse({
-          image: await generateErrorMessage(
-            frame,
-            `Restricted to followers only`
-          ),
+          image: await generateFrame(frame, `Restricted to followers only`),
         });
       }
     }
@@ -185,7 +182,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
       if (!isValid) {
         return frameResponse({
-          image: await generateErrorMessage(frame, "Must follow to reveal"),
+          image: await generateFrame(frame, "Must follow to reveal"),
         });
       }
     }
@@ -195,7 +192,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     const user = await getUser({ fid: String(validatedMessage.data.fid) });
     if (!user.verifications.length) {
       return frameResponse({
-        image: await generateErrorMessage(
+        image: await generateFrame(
           frame,
           "Must link an address to your Farcaster account"
         ),
@@ -226,7 +223,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     if (!isValid) {
       const info = await contract.read.symbol();
       return frameResponse({
-        image: await generateErrorMessage(
+        image: await generateFrame(
           frame,
           frame.requireERC20MinBalance == "0"
             ? "Must hold a balance to reveal"
@@ -240,7 +237,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     const user = await getUser({ fid: String(validatedMessage.data.fid) });
     if (!user.verifications.length) {
       return frameResponse({
-        image: await generateErrorMessage(
+        image: await generateFrame(
           frame,
           "Must link an address to your Farcaster account"
         ),
@@ -267,7 +264,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
       if (!isValid) {
         return frameResponse({
-          image: await generateErrorMessage(frame, "Must hold NFT to reveal"),
+          image: await generateFrame(frame, "Must hold NFT to reveal"),
         });
       }
     } else {
@@ -280,7 +277,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
       if (!isValid) {
         return frameResponse({
-          image: await generateErrorMessage(frame, "Must hold NFT to reveal"),
+          image: await generateFrame(frame, "Must hold NFT to reveal"),
         });
       }
     }
@@ -298,7 +295,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       if (!isValid) {
         if (!isValid) {
           return frameResponse({
-            image: await generateErrorMessage(frame, "Must recast to reveal"),
+            image: await generateFrame(frame, "Must recast to reveal"),
           });
         }
       }
@@ -311,7 +308,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
       if (!isValid) {
         return frameResponse({
-          image: await generateErrorMessage(frame, "Must like to reveal"),
+          image: await generateFrame(frame, "Must like to reveal"),
         });
       }
     }
@@ -335,14 +332,20 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   </html>
   `;
 
-  return new Response(html, {
-    headers: {
-      "Content-Type": "text/html",
-    },
-  });
+  if (frame.type === "text") {
+    return frameResponse({
+      image: await generateFrame(frame, frame.secretText!),
+    });
+  } else if (frame.type === "image") {
+    return frameResponse({
+      image: frame.imageUrl!,
+    });
+  } else {
+    throw new Error("Invalid frame type");
+  }
 }
 
-async function generateErrorMessage(frame: Frame, message: string) {
+async function generateFrame(frame: Frame, message: string) {
   const response = await fetch(`${process.env.HOST_URL}/Inter-Regular.ttf`);
   const fontBuffer = await response.arrayBuffer();
   const styles: CSSProperties = {
@@ -436,7 +439,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const meta = [
     {
       property: "description",
-      content: frame.text,
+      content: frame.preRevealText,
     },
     {
       property: "og:title",
@@ -444,7 +447,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     },
     {
       property: "og:description",
-      content: frame.text,
+      content: frame.preRevealText,
     },
     {
       property: "fc:frame",
