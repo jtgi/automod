@@ -1,6 +1,7 @@
 import { Frame } from "@prisma/client";
-import { LoaderFunctionArgs, MetaFunction, json } from "@remix-run/node";
-import { typedjson } from "remix-typedjson";
+import { erc20Abi, erc721Abi, getAddress, getContract } from "viem";
+
+import { LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import satori from "satori";
@@ -8,17 +9,11 @@ import type { CSSProperties } from "react";
 import { Message, getSSLHubRpcClient } from "@farcaster/hub-nodejs";
 import { convertSvgToPngBase64 } from "~/lib/utils.server";
 import {
-  FarcasterEpochTimestamp,
-  HubRestAPIClient,
-} from "@standard-crypto/farcaster-js-hub-rest";
-import axios from "axios";
-import {
-  neynar,
+  getUser,
   pageFollowersDeep,
   pageReactionsDeep,
 } from "~/lib/neynar.server";
-
-const hubClient = new HubRestAPIClient();
+import { clientsByChainId } from "~/lib/viem.server";
 
 const skipTrusted = false;
 
@@ -34,6 +29,7 @@ type FrameResponseArgs = {
 };
 
 const frameResponse = (params: FrameResponseArgs) => {
+  console.log("generating frame response", params);
   const version = params.version || "vNext";
   const html = `
   <!DOCTYPE html>
@@ -150,44 +146,148 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
   // do some neynar shit
   if (frame.requireSomeoneIFollow) {
-    const followers = await pageFollowersDeep({
-      fid: validatedMessage.data.frameActionBody.castId.fid,
-    });
+    if (
+      validatedMessage.data?.frameActionBody.castId.fid !==
+      validatedMessage.data.fid
+    ) {
+      const followers = await pageFollowersDeep({
+        fid: validatedMessage.data.frameActionBody.castId.fid,
+      });
 
-    const isValid = followers.some((f) => f.fid == validatedMessage?.data?.fid);
+      const isValid = followers.some(
+        (f) => f.fid == validatedMessage?.data?.fid
+      );
 
-    if (!isValid) {
+      if (!isValid) {
+        return frameResponse({
+          image: await generateErrorMessage(
+            frame,
+            `Restricted to followers only`
+          ),
+        });
+      }
+    }
+  }
+
+  if (frame.requireFollow) {
+    if (
+      validatedMessage.data?.frameActionBody.castId.fid !==
+      validatedMessage.data.fid
+    ) {
+      const followers = await pageFollowersDeep({
+        fid: validatedMessage.data.fid,
+      });
+
+      const isValid = followers.some(
+        (f) => f.fid == validatedMessage?.data?.frameActionBody?.castId?.fid
+      );
+
+      if (!isValid) {
+        return frameResponse({
+          image: await generateErrorMessage(frame, "Must follow to reveal"),
+        });
+      }
+    }
+  }
+
+  if (frame.requireHoldERC20) {
+    const user = await getUser({ fid: String(validatedMessage.data.fid) });
+    console.log({ user });
+    if (!user.verifications.length) {
       return frameResponse({
         image: await generateErrorMessage(
           frame,
-          `Restricted to followers only`
+          "Must link an address to your Farcaster account"
+        ),
+      });
+    }
+
+    invariant(frame.requireERC20NetworkId, "Missing network id");
+    invariant(frame.requireERC20ContractAddress, "Missing network id");
+    invariant(frame.requireERC20MinBalance, "Missing balance");
+
+    const client = clientsByChainId[frame.requireERC20NetworkId];
+    const contract = getContract({
+      address: getAddress(frame.requireERC20ContractAddress),
+      abi: erc20Abi,
+      client,
+    });
+
+    const balances = await Promise.all(
+      user.verifications.map((add) =>
+        contract.read.balanceOf([getAddress(add)])
+      )
+    );
+    const decimals = await contract.read.decimals();
+    const minBalanceBigInt =
+      BigInt(frame.requireERC20MinBalance) * BigInt(10) ** BigInt(decimals);
+    const sum = balances.reduce((a, b) => a + b, BigInt(0));
+    const isValid = sum >= minBalanceBigInt;
+
+    // TODO: resolve token name
+    // handle precision sigggg
+    if (!isValid) {
+      const info = await contract.read.symbol();
+      return frameResponse({
+        image: await generateErrorMessage(
+          frame,
+          frame.requireERC20MinBalance == "0"
+            ? "Must hold a balance to reveal"
+            : `Must hold at least ${frame.requireERC20MinBalance} $${info} to reveal`
         ),
       });
     }
   }
 
-  if (frame.requireFollow) {
-    const followers = await pageFollowersDeep({
-      fid: validatedMessage.data.fid,
-    });
-
-    const isValid = followers.some(
-      (f) => f.fid == validatedMessage?.data?.frameActionBody?.castId?.fid
-    );
-
-    if (!isValid) {
+  if (frame.requireHoldERC721) {
+    const user = await getUser({ fid: String(validatedMessage.data.fid) });
+    console.log({ user });
+    if (!user.verifications.length) {
       return frameResponse({
-        image: await generateErrorMessage(frame, "Must follow to reveal"),
+        image: await generateErrorMessage(
+          frame,
+          "Must link an address to your Farcaster account"
+        ),
       });
     }
-  }
 
-  if (frame.requireHaveToken) {
-    throw new Error("not implemented");
-  }
+    invariant(frame.requireERC721NetworkId, "Missing network id");
+    invariant(frame.requireERC721ContractAddress, "Missing contract address");
 
-  if (frame.requireHoldNFT) {
-    throw new Error("not implemented");
+    const client = clientsByChainId[frame.requireERC721NetworkId];
+    const contract = getContract({
+      address: getAddress(frame.requireERC721ContractAddress),
+      abi: erc721Abi,
+      client,
+    });
+
+    if (frame.requireERC721TokenId !== null) {
+      const owner = await contract.read.ownerOf([
+        BigInt(frame.requireERC721TokenId),
+      ]);
+      const isValid = user.verifications.some(
+        (address) => address.toLowerCase() === owner.toLowerCase()
+      );
+
+      if (!isValid) {
+        return frameResponse({
+          image: await generateErrorMessage(frame, "Must hold NFT to reveal"),
+        });
+      }
+    } else {
+      const balances = await Promise.all(
+        user.verifications.map((address) =>
+          contract.read.balanceOf([getAddress(address)])
+        )
+      );
+      const isValid = balances.some((balance) => balance > BigInt(0));
+
+      if (!isValid) {
+        return frameResponse({
+          image: await generateErrorMessage(frame, "Must hold NFT to reveal"),
+        });
+      }
+    }
   }
 
   if (frame.requireLike || frame.requireRecast) {

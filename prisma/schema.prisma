@@ -35,15 +35,18 @@ model Frame {
   requireRecast         Boolean @default(false)
   requireFollow         Boolean @default(false)
   requireSomeoneIFollow Boolean @default(false)
-  requireHoldNFT        Boolean @default(false)
-  requireHaveToken      Boolean @default(false)
+  requireHoldERC721     Boolean @default(false)
+  requireHoldERC20      Boolean @default(false)
   backgroundColor       String
   textColor             String
 
-  nftContractAddress   String?
-  nftTokenId           String?
-  erc20ContractAddress String?
-  erc20MinBalance      String?
+  requireERC721ContractAddress String?
+  requireERC721TokenId         String?
+  requireERC721NetworkId       String?
+
+  requireERC20ContractAddress String?
+  requireERC20NetworkId       String?
+  requireERC20MinBalance      String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

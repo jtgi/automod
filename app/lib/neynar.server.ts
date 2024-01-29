@@ -4,8 +4,26 @@ import {
   FollowResponseUser,
   Reaction,
 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
+import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
 
+export async function getUser(props: { fid: string }) {
+  const cacheKey = `user:${props.fid}`;
+  const cached = cache.get<User>(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const response = await neynar.fetchBulkUsers([+props.fid], {});
+  cache.set(
+    cacheKey,
+    response.users[0],
+    process.env.NODE_ENV === "development" ? 0 : 60 * 60
+  );
+
+  return response.users[0];
+}
 export async function pageReactionsDeep(props: { hash: string }) {
   const cacheKey = `reactions:${props.hash}`;
   const cached = cache.get<Array<Reaction>>(cacheKey);
