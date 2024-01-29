@@ -1,4 +1,5 @@
 import { Frame } from "@prisma/client";
+import { parseUnits } from "viem";
 import { erc20Abi, erc721Abi, getAddress, getContract } from "viem";
 
 import { LoaderFunctionArgs, json } from "@remix-run/node";
@@ -219,9 +220,14 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       )
     );
     const decimals = await contract.read.decimals();
-    const minBalanceBigInt =
-      BigInt(frame.requireERC20MinBalance) * BigInt(10) ** BigInt(decimals);
+    const minBalanceBigInt = parseUnits(frame.requireERC20MinBalance, decimals);
     const sum = balances.reduce((a, b) => a + b, BigInt(0));
+    console.log(
+      sum.toString(),
+      minBalanceBigInt.toString(),
+      decimals.toString(),
+      balances
+    );
     const isValid = sum >= minBalanceBigInt;
 
     // TODO: resolve token name
