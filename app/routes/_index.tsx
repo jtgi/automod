@@ -161,7 +161,7 @@ export default function Index() {
 
     const postReveal = await satori(
       <div style={styles}>
-        <h1>{data.text}</h1>
+        <h1>{data.secretText}</h1>
       </div>,
       {
         width: 800 * scale,
@@ -220,8 +220,12 @@ export default function Index() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="image">Image</SelectItem>
-                    <SelectItem value="nft">NFT</SelectItem>
+                    <SelectItem disabled value="image">
+                      Image (coming soon)
+                    </SelectItem>
+                    <SelectItem disabled value="nft">
+                      NFT (coming soon)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </FieldLabel>
