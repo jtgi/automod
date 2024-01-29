@@ -16,15 +16,17 @@ ENV DATABASE_URL=file:/data/sqlite.db
 
 # Install pnpm
 ARG PNPM_VERSION=8.10.2
-RUN npm install -g pnpm@$PNPM_VERSION
-
+ARG PNPM_VERSION=8.10.2
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y openssl && \
+    npm install -g pnpm@$PNPM_VERSION
 
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
 # Install packages needed to build node modules
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential sqlite3 node-gyp pkg-config python-is-python3 openssl
+    apt-get install --no-install-recommends -y build-essential sqlite3 node-gyp pkg-config python-is-python3
 
 # Install node modules
 COPY --link package.json pnpm-lock.yaml ./
@@ -42,6 +44,9 @@ RUN pnpm run build
 
 # Final stage for app image
 FROM base
+
+# Istall openssl n shit
+
 
 # Copy built application
 COPY --from=build /app /app
