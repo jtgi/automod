@@ -30,7 +30,6 @@ type FrameResponseArgs = {
 };
 
 const frameResponse = (params: FrameResponseArgs) => {
-  console.log("generating frame response", params);
   const version = params.version || "vNext";
   const html = `
   <!DOCTYPE html>
@@ -40,7 +39,8 @@ const frameResponse = (params: FrameResponseArgs) => {
       ${params.title ? `<meta name="og:title" content="${params.title}">` : ""}
       ${
         params.description
-          ? `<meta name="description" content="${params.description}">`
+          ? `<meta name="description" content="${params.description}">
+             <meta name="og:description" content="${params.description}">`
           : ""
       }
       <meta name="fc:frame" content="${version}">
@@ -55,7 +55,9 @@ const frameResponse = (params: FrameResponseArgs) => {
           ? params.buttons
               .map(
                 (b, index) =>
-                  `<meta name="fc:frame:button:${index}" content="${b.text}">`
+                  `<meta name="fc:frame:button:${index + 1}" content="${
+                    b.text
+                  }">`
               )
               .join("\n")
           : ""
