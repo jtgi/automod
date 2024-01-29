@@ -193,7 +193,6 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
   if (frame.requireHoldERC20) {
     const user = await getUser({ fid: String(validatedMessage.data.fid) });
-    console.log({ user });
     if (!user.verifications.length) {
       return frameResponse({
         image: await generateErrorMessage(
@@ -224,8 +223,6 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     const sum = balances.reduce((a, b) => a + b, BigInt(0));
     const isValid = sum >= minBalanceBigInt;
 
-    // TODO: resolve token name
-    // handle precision sigggg
     if (!isValid) {
       const info = await contract.read.symbol();
       return frameResponse({

@@ -13,6 +13,6 @@ echo 10 > /proc/sys/vm/swappiness
 swapon /swapfile
 echo 1 > /proc/sys/vm/overcommit_memory
 
-# pnpm exec prisma migrate deploy
-# pnpm run start
-cat
+pnpm exec prisma migrate deploy
+pnpm exec prisma generate
+pnpm run start
