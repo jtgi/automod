@@ -14,4 +14,5 @@ swapon /swapfile
 echo 1 > /proc/sys/vm/overcommit_memory
 
 # pnpm exec prisma migrate deploy
-pnpm run start
+# pnpm run start
+cat

@@ -222,12 +222,6 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     const decimals = await contract.read.decimals();
     const minBalanceBigInt = parseUnits(frame.requireERC20MinBalance, decimals);
     const sum = balances.reduce((a, b) => a + b, BigInt(0));
-    console.log(
-      sum.toString(),
-      minBalanceBigInt.toString(),
-      decimals.toString(),
-      balances
-    );
     const isValid = sum >= minBalanceBigInt;
 
     // TODO: resolve token name
@@ -247,7 +241,6 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
   if (frame.requireHoldERC721) {
     const user = await getUser({ fid: String(validatedMessage.data.fid) });
-    console.log({ user });
     if (!user.verifications.length) {
       return frameResponse({
         image: await generateErrorMessage(
