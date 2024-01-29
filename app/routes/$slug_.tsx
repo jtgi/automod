@@ -12,7 +12,11 @@ import {
   HubRestAPIClient,
 } from "@standard-crypto/farcaster-js-hub-rest";
 import axios from "axios";
-import { neynar, pageReactionsDeep } from "~/lib/neynar.server";
+import {
+  neynar,
+  pageFollowersDeep,
+  pageReactionsDeep,
+} from "~/lib/neynar.server";
 
 const hubClient = new HubRestAPIClient();
 
@@ -146,9 +150,36 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
   // do some neynar shit
   if (frame.requireSomeoneIFollow) {
+    const followers = await pageFollowersDeep({
+      fid: validatedMessage.data.frameActionBody.castId.fid,
+    });
+
+    const isValid = followers.some((f) => f.fid == validatedMessage?.data?.fid);
+
+    if (!isValid) {
+      return frameResponse({
+        image: await generateErrorMessage(
+          frame,
+          `Restricted to followers only`
+        ),
+      });
+    }
   }
 
   if (frame.requireFollow) {
+    const followers = await pageFollowersDeep({
+      fid: validatedMessage.data.fid,
+    });
+
+    const isValid = followers.some(
+      (f) => f.fid == validatedMessage?.data?.frameActionBody?.castId?.fid
+    );
+
+    if (!isValid) {
+      return frameResponse({
+        image: await generateErrorMessage(frame, "Must follow to reveal"),
+      });
+    }
   }
 
   if (frame.requireHaveToken) {
