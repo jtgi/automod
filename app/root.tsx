@@ -45,6 +45,12 @@ export const links: LinksFunction = () => [
     href: "/site.webmanifest",
   },
   { rel: "stylesheet", href: farcasterStylesUrl },
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  { rel: "preconnect", href: "https://fonts.gstatic.com" },
+  {
+    href: "https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,900&display=swap",
+    rel: "stylesheet",
+  },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -81,7 +87,7 @@ export default function App() {
         <AuthKitProvider config={farcasterConfig}>
           {location.pathname !== "/login" && (
             <nav className="flex justify-between p-4">
-              <h1>Framer</h1>
+              <h1>Glass</h1>
               <Form method="post" action="/logout">
                 <Button variant={"ghost"}>Logout</Button>
               </Form>

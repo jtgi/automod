@@ -1,19 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
 } from "@remix-run/node";
-import satori from "satori";
-import { Form, json, redirect, useLoaderData } from "@remix-run/react";
-import {
-  CSSProperties,
-  ChangeEvent,
-  ChangeEventHandler,
-  FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { Form, json, redirect } from "@remix-run/react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { Input } from "~/components/ui/input";
 import {
   Select,
@@ -24,7 +16,7 @@ import {
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import { Checkbox } from "~/components/ui/checkbox";
-import { cn } from "~/lib/utils";
+import { cn, generateFrameSvg } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { db } from "~/lib/db.server";
 import { HexColorPicker } from "react-colorful";
@@ -33,7 +25,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { Badge } from "~/components/ui/badge";
 import { requireUser } from "~/lib/utils.server";
 import { authenticator } from "~/lib/auth.server";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -52,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const user = await authenticator.isAuthenticated(request);
 
   if (!user) {
-    throw redirect("/login");
+    // throw redirect("/login");
   }
 
   return typedjson({
@@ -68,15 +59,32 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const data = Object.fromEntries(formData.entries()) as any;
 
+  const existingFrame = await db.frame.findUnique({
+    where: {
+      slug: data.slug,
+    },
+  });
+
+  if (existingFrame) {
+    return json(
+      {
+        errors: {
+          slug: "Slug already exists",
+        },
+      },
+      { status: 400 }
+    );
+  }
+
   // TODO: validation
   const frame = await db.frame
     .create({
       data: {
         slug: data.slug,
-        type: data.type,
         secretText: data.secretText,
         preRevealText: data.preRevealText,
         revealType: data.revealType,
+        frameUrl: data.frameUrl ? new URL(data.frameUrl).toString() : null,
         requireLike: data.requireLike === "on",
         requireRecast: data.requireRecast === "on",
         requireFollow: data.requireFollow === "on",
@@ -98,7 +106,10 @@ export async function action({ request }: ActionFunctionArgs) {
           data.requireERC721TokenId === "" ? null : data.requireERC721TokenId,
       },
     })
-    .catch((e) => e.message);
+    .catch((e) => {
+      console.error(e);
+      return e.message;
+    });
 
   if (typeof frame === "string") {
     return json({ error: frame }, { status: 400 });
@@ -136,58 +147,26 @@ export default function Index() {
   const handleChange = async (e: FormEvent<HTMLFormElement>) => {
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
+    console.log("handleChange", data);
 
     // lol reimplementing formik
     setFormValues(data);
 
-    const response = await fetch(`${env.HOST_URL}/Inter-Regular.ttf`);
-    const fontBuffer = await response.arrayBuffer();
-    const styles: CSSProperties = {
-      display: "flex",
-      color: data.textColor || "white",
-      fontFamily: "Inter Regular",
-      backgroundColor: data.backgroundColor || "black",
-      height: "100%",
-      width: "100%",
-      padding: 72 * scale,
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: 32 * scale,
-      fontWeight: 600,
-    };
-
-    const preReveal = await satori(
-      <div style={styles}>
-        <h1>{data.preRevealText}</h1>
-      </div>,
+    const preReveal = await generateFrameSvg(
+      data,
+      data.preRevealText,
+      env.HOST_URL!,
       {
-        width: 800 * scale,
-        height: 418 * scale,
-        fonts: [
-          {
-            name: "Inter Regular",
-            data: fontBuffer,
-            style: "normal",
-          },
-        ],
+        scale,
       }
     );
 
-    const postReveal = await satori(
-      <div style={styles}>
-        <h1>{data.secretText}</h1>
-      </div>,
+    const postReveal = await generateFrameSvg(
+      data,
+      data.secretText,
+      env.HOST_URL!,
       {
-        width: 800 * scale,
-        height: 418 * scale,
-        fonts: [
-          {
-            name: "Inter Regular",
-            data: fontBuffer,
-            style: "normal",
-          },
-        ],
+        scale,
       }
     );
 
@@ -197,9 +176,10 @@ export default function Index() {
 
   return (
     <main className="max-w-4xl px-8 mx-auto min-h-screen flex flex-col justify-center pb-[200px]">
-      <h1 className="py-12">Framer</h1>
+      <h1 className="py-12">Glass</h1>
       <div className="flex flex-col sm:flex-row gap-8 relative">
         <Form
+          id="create-frame"
           method="post"
           className="space-y-8 sm:w-[400px]"
           onChange={(e) => {
@@ -235,6 +215,7 @@ export default function Index() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="frame">Frame</SelectItem>
                     <SelectItem disabled value="image">
                       Image (coming soon)
                     </SelectItem>
@@ -249,9 +230,20 @@ export default function Index() {
             {contentType === "text" && (
               <FieldLabel label="" className="flex-col items-start">
                 <Textarea
-                  hidden={contentType !== "text"}
                   name="secretText"
+                  required
                   placeholder="e.g. telegram.io/invite/gg"
+                />
+              </FieldLabel>
+            )}
+
+            {contentType === "frame" && (
+              <FieldLabel label="Frame Url" className="flex-col items-start">
+                <Input
+                  name="frameUrl"
+                  required
+                  pattern="https://.*"
+                  placeholder="e.g. https://www.degens.lol/spin"
                 />
               </FieldLabel>
             )}
@@ -456,7 +448,8 @@ export default function Index() {
                       onChange={(color) => {
                         setBackgroundColor(color);
                         handleChange({
-                          currentTarget: document.querySelector("form"),
+                          currentTarget:
+                            document.getElementById("create-frame"),
                         } as ChangeEvent<HTMLFormElement>);
                       }}
                     />
@@ -482,7 +475,8 @@ export default function Index() {
                       onChange={(color) => {
                         setTextColor(color);
                         handleChange({
-                          currentTarget: document.querySelector("form"),
+                          currentTarget:
+                            document.getElementById("create-frame"),
                         } as ChangeEvent<HTMLFormElement>);
                       }}
                     />

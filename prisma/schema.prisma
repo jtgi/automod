@@ -27,8 +27,8 @@ model Frame {
   slug   String  @unique
   active Boolean @default(true)
 
-  type                  String  @default("text")
   secretText            String?
+  frameUrl              String?
   imageUrl              String?
   revealType            String  @default("text")
   preRevealText         String

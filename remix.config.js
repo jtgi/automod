@@ -2,7 +2,7 @@
 export default {
   browserNodeBuiltinsPolyfill: {
     modules: {
-      buffer: true
+      buffer: true,
     }
   },
   ignoredRouteFiles: ["**/.*"],

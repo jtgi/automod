@@ -1,20 +1,17 @@
-import { Frame } from "@prisma/client";
-import { parseUnits } from "viem";
-import { erc20Abi, erc721Abi, getAddress, getContract } from "viem";
+import { parseUnits, erc20Abi, erc721Abi, getAddress, getContract } from "viem";
 
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
-import satori from "satori";
-import type { CSSProperties } from "react";
 import { Message, getSSLHubRpcClient } from "@farcaster/hub-nodejs";
-import { convertSvgToPngBase64 } from "~/lib/utils.server";
+import { generateFrame } from "~/lib/utils.server";
 import {
   getUser,
   pageFollowersDeep,
   pageReactionsDeep,
 } from "~/lib/neynar.server";
 import { clientsByChainId } from "~/lib/viem.server";
+import axios from "axios";
 
 const skipTrusted = false;
 
@@ -178,6 +175,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       if (!isValid) {
         return frameResponse({
           image: await generateFrame(frame, `Restricted to followers only`),
+          buttons: [{ text: "Try Again" }],
         });
       }
     }
@@ -199,6 +197,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       if (!isValid) {
         return frameResponse({
           image: await generateFrame(frame, "Must follow to reveal"),
+          buttons: [{ text: "Try Again" }],
         });
       }
     }
@@ -212,6 +211,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
           frame,
           "Must link an address to your Farcaster account"
         ),
+        buttons: [{ text: "Try Again" }],
       });
     }
 
@@ -245,6 +245,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
             ? "Must hold a balance to reveal"
             : `Must hold at least ${frame.requireERC20MinBalance} $${info} to reveal`
         ),
+        buttons: [{ text: "Try Again" }],
       });
     }
   }
@@ -257,6 +258,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
           frame,
           "Must link an address to your Farcaster account"
         ),
+        buttons: [{ text: "Try Again" }],
       });
     }
 
@@ -281,6 +283,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       if (!isValid) {
         return frameResponse({
           image: await generateFrame(frame, "Must hold NFT to reveal"),
+          buttons: [{ text: "Try Again" }],
         });
       }
     } else {
@@ -294,6 +297,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       if (!isValid) {
         return frameResponse({
           image: await generateFrame(frame, "Must hold NFT to reveal"),
+          buttons: [{ text: "Try Again" }],
         });
       }
     }
@@ -312,6 +316,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
         if (!isValid) {
           return frameResponse({
             image: await generateFrame(frame, "Must recast to reveal"),
+            buttons: [{ text: "Try Again" }],
           });
         }
       }
@@ -325,18 +330,27 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       if (!isValid) {
         return frameResponse({
           image: await generateFrame(frame, "Must like to reveal"),
+          buttons: [{ text: "Try Again" }],
         });
       }
     }
   }
 
-  if (frame.type === "text") {
+  if (frame.revealType === "text") {
     return frameResponse({
       image: await generateFrame(frame, frame.secretText!),
     });
-  } else if (frame.type === "image") {
+  } else if (frame.revealType === "image") {
     return frameResponse({
       image: frame.imageUrl!,
+    });
+  } else if (frame.revealType === "frame") {
+    const { data } = await axios.get(frame.frameUrl!);
+    console.log({ data });
+    return new Response(data, {
+      headers: {
+        "Content-Type": "text/html",
+      },
     });
   } else {
     throw new Error("Invalid frame type");
@@ -356,47 +370,4 @@ export async function loader({ params }: LoaderFunctionArgs) {
     image: await generateFrame(frame, frame.preRevealText),
     buttons: [{ text: "Reveal" }],
   });
-}
-
-async function generateFrame(frame: Frame, message: string) {
-  const response = await fetch(`${process.env.HOST_URL}/Inter-Regular.ttf`);
-  const fontBuffer = await response.arrayBuffer();
-  const styles: CSSProperties = {
-    display: "flex",
-    color: frame.textColor || "white",
-    fontFamily: "Inter Regular",
-    backgroundColor: frame.backgroundColor || "black",
-    height: "100%",
-    width: "100%",
-    padding: 72,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 32,
-    fontWeight: 600,
-  };
-
-  const preReveal = await satori(
-    <div style={styles}>
-      <h1>{message}</h1>
-    </div>,
-    {
-      width: 800,
-      height: 418,
-      fonts: [
-        {
-          name: "Inter Regular",
-          data: fontBuffer,
-          style: "normal",
-        },
-      ],
-    }
-  );
-
-  const imgSrc = await convertSvgToPngBase64(preReveal);
-  if (!imgSrc) {
-    throw new Error("Error converting SVG to PNG");
-  }
-
-  return imgSrc;
 }
