@@ -22,6 +22,15 @@ model User {
   deletedAt DateTime?
 }
 
+model Preorder {
+  id         Int    @id @default(autoincrement())
+  providerId String @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
 model Frame {
   id     Int     @id @default(autoincrement())
   slug   String  @unique

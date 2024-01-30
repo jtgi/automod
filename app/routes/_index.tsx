@@ -176,7 +176,6 @@ export default function Index() {
 
   return (
     <main className="max-w-4xl px-8 mx-auto min-h-screen flex flex-col justify-center pb-[200px]">
-      <h1 className="py-12">Glass</h1>
       <div className="flex flex-col sm:flex-row gap-8 relative">
         <Form
           id="create-frame"

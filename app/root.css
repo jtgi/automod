@@ -91,4 +91,8 @@
   h3 {
     @apply text-primary text-lg font-semibold;
   }
+
+  a {
+    @apply text-primary underline;
+  }
 }

@@ -23,7 +23,7 @@ export const authenticator = new Authenticator<User>(sessionStorage, {
 
 authenticator.use(
   new FarcasterStrategy(async (args: FarcasterUser & { request: Request }) => {
-    let user = await db.user.findFirst({
+    const user = await db.user.findFirst({
       where: {
         providerId: args.fid,
       },

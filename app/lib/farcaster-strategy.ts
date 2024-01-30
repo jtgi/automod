@@ -3,6 +3,7 @@ import { FarcasterUser } from "./auth.server";
 import { AuthenticateOptions, Strategy } from "remix-auth";
 import { SessionStorage } from "@remix-run/node";
 import { createAppClient, viemConnector } from "@farcaster/auth-kit";
+import { db } from "./db.server";
 
 export class FarcasterStrategy extends Strategy<
   User,
@@ -42,6 +43,22 @@ export class FarcasterStrategy extends Strategy<
     if (!success) {
       return await this.failure(
         "Invalid signature",
+        request,
+        sessionStorage,
+        options,
+        error
+      );
+    }
+
+    const isPreorder = await db.preorder.findUnique({
+      where: {
+        providerId: fid.toString(),
+      },
+    });
+
+    if (!isPreorder) {
+      return await this.failure(
+        "Access denied",
         request,
         sessionStorage,
         options,
