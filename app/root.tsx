@@ -22,6 +22,7 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { Toaster } from "./components/ui/sonner";
+import Login from "./routes/login";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -104,15 +105,24 @@ export default function App() {
       </head>
       <body className="min-h-screen">
         <AuthKitProvider config={farcasterConfig}>
-          {location.pathname !== "/login" && location.pathname !== "/beta" && (
-            <nav className="flex justify-between max-w-4xl mx-auto p-8">
-              <h1 className="logo text-3xl">glass</h1>
-              <Form method="post" action="/logout">
-                <Button variant={"ghost"}>Logout</Button>
-              </Form>
-            </nav>
+          {!user &&
+          location.pathname !== "/login" &&
+          location.pathname !== "/beta" ? (
+            <Login />
+          ) : (
+            <>
+              {location.pathname !== "/login" &&
+                location.pathname !== "/beta" && (
+                  <nav className="flex justify-between max-w-4xl mx-auto p-8">
+                    <h1 className="logo text-3xl">glass</h1>
+                    <Form method="post" action="/logout">
+                      <Button variant={"ghost"}>Logout</Button>
+                    </Form>
+                  </nav>
+                )}
+              <Outlet />
+            </>
           )}
-          <Outlet />
         </AuthKitProvider>
         <ScrollRestoration />
         <Scripts />

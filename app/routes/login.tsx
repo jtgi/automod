@@ -1,10 +1,7 @@
-import { SignInButton, StatusAPIResponse } from "@farcaster/auth-kit";
 import { ArrowTopRightIcon } from "@radix-ui/react-icons";
 import { LoaderFunctionArgs, json } from "@remix-run/node";
-import { Link, useNavigate } from "@remix-run/react";
-import { useCallback } from "react";
-import { redirect, typedjson } from "remix-typedjson";
-import invariant from "tiny-invariant";
+import { Link } from "@remix-run/react";
+import { redirect } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { authenticator } from "~/lib/auth.server";
 
@@ -19,25 +16,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Login() {
-  const navigate = useNavigate();
-
-  const handleSuccess = useCallback((res: StatusAPIResponse) => {
-    invariant(res.message, "message is required");
-    invariant(res.signature, "signature is required");
-    invariant(res.nonce, "nonce is required");
-
-    const params = new URLSearchParams();
-    params.append("message", res.message);
-    params.append("signature", res.signature);
-    params.append("nonce", res.nonce);
-    res.username && params.append("username", res.username);
-    res.pfpUrl && params.append("pfpUrl", res.pfpUrl);
-
-    navigate(`/auth/farcaster?${params}`, {
-      replace: true,
-    });
-  }, []);
-
   return (
     <div className="px-8 h-full w-full flex flex-col items-center justify-center min-h-screen">
       <div className="max-w-xl">
