@@ -47,7 +47,7 @@ export default function Login() {
             <Button asChild className="w-full sm:w-auto">
               <Link
                 className="no-underline"
-                to="https://google.com"
+                to="https://useglass.lemonsqueezy.com/checkout/buy/32a541af-4f35-4f7d-b1df-53d5a0ecb4ef"
                 target="_blank"
                 rel="noreferrer"
               >
