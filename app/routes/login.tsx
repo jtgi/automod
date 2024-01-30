@@ -29,7 +29,6 @@ export default function Login() {
           autoPlay
           loop
           muted
-          controls
           playsInline
           src="/demo-vid.mp4"
         />
@@ -43,8 +42,8 @@ export default function Login() {
               holders.
             </li>
             <li>
-              Boost engagement by requiring a post be liked, recasted, followed
-              before visible.
+              Boost engagement by requiring a post be liked, recasted, or
+              followed.
             </li>
             <li>
               Reveal any text content, image, even other frames. (more soon)
