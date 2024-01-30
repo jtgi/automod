@@ -107,7 +107,8 @@ export default function App() {
         <AuthKitProvider config={farcasterConfig}>
           {!user &&
           location.pathname !== "/login" &&
-          location.pathname !== "/beta" ? (
+          location.pathname !== "/beta" &&
+          location.pathname !== "/disclosure" ? (
             <Login />
           ) : (
             <>

@@ -31,10 +31,10 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Farcaster Landscape" },
+    { title: "glass" },
     {
       name: "description",
-      content: "A collection of Brand3s that are making Farcaster possible",
+      content: "Gate content with Farcaster Frames",
     },
   ];
 };

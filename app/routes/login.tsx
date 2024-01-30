@@ -37,6 +37,7 @@ export default function Login() {
                 Reveal any text content, image, even other frames with more
                 redemption formats coming soon.
               </li>
+              <li>Zero code required.</li>
             </ul>
           </p>
 
