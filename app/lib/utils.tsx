@@ -1,6 +1,6 @@
 import { Frame } from "@prisma/client";
 import { type ClassValue, clsx } from "clsx";
-import { CSSProperties } from "react";
+import { CSSProperties, useRef, useState } from "react";
 import satori from "satori";
 import { twMerge } from "tailwind-merge";
 
@@ -53,4 +53,24 @@ export async function generateFrameSvg(
   );
 
   return svg;
+}
+
+export function useClipboard() {
+  const [copied, setCopied] = useState(false);
+  const ref = useRef();
+
+  const copy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+
+      if (ref.current) {
+        clearTimeout(ref.current);
+      }
+
+      setTimeout(() => setCopied(false), 1_000);
+    } catch (err) {}
+  };
+
+  return { copy, copied };
 }
