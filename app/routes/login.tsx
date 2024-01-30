@@ -23,23 +23,21 @@ export default function Login() {
         <h2 className="font-normal mb-8">Gate content with Farcaster Frames</h2>
 
         <div className="space-y-4">
-          <p>
-            <ul className="ml-4 list-outside list-disc space-y-2">
-              <li>
-                Create exclusive content for followers, ERC-20 and ERC-721 token
-                holders. Require minimum token balances or even specific tokens.
-              </li>
-              <li>
-                Boost engagement by requiring a post be liked, recasted,
-                followed before visible.
-              </li>
-              <li>
-                Reveal any text content, image, even other frames with more
-                redemption formats coming soon.
-              </li>
-              <li>Zero code required.</li>
-            </ul>
-          </p>
+          <ul className="ml-4 list-outside list-disc space-y-2">
+            <li>
+              Create exclusive content for followers, ERC-20 and ERC-721 token
+              holders. Require minimum token balances or even specific tokens.
+            </li>
+            <li>
+              Boost engagement by requiring a post be liked, recasted, followed
+              before visible.
+            </li>
+            <li>
+              Reveal any text content, image, even other frames with more
+              redemption formats coming soon.
+            </li>
+            <li>Zero code required.</li>
+          </ul>
 
           <p className="text-xs text-gray-600 ml-4">
             Available on Mainnet, Base, Optimism, and Zora
