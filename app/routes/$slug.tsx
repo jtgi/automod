@@ -26,64 +26,6 @@ type FrameResponseArgs = {
   postUrl?: string;
 };
 
-const frameResponse = (params: FrameResponseArgs) => {
-  const version = params.version || "vNext";
-  const html = `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      ${params.title ? `<title>${params.title}</title>` : ""}
-      ${
-        params.title
-          ? `<meta property="og:title" content="${params.title}">`
-          : ""
-      }
-      ${
-        params.description
-          ? `<meta property="description" content="${params.description}">
-      <meta property="og:description" content="${params.description}">`
-          : ""
-      }
-      <meta property="fc:frame" content="${version}">
-      <meta property="fc:frame:image" content="${params.image}">
-      ${
-        params.postUrl
-          ? `<meta property="fc:frame:post_url" content="${params.postUrl}">`
-          : ""
-      }
-      ${
-        params.buttons
-          ? params.buttons
-              .map(
-                (b, index) =>
-                  `<meta property="fc:frame:button:${index + 1}" content="${
-                    b.text
-                  }">`
-              )
-              .join("\n")
-          : ""
-      }
-    </head>
-    <body>
-      <h1>${params.title}</h1>
-      <p>${params.description}</p>
-      <div>
-      <img src="${params.image}" />
-      </div>
-      ${params.buttons
-        ?.map((b, index) => `<button name="button-${index}">${b.text}</button>`)
-        .join("\n")}
-    </body>
-  </html>
-  `;
-
-  return new Response(html, {
-    headers: {
-      "Content-Type": "text/html",
-    },
-  });
-};
-
 export async function action({ request, params }: LoaderFunctionArgs) {
   const data = await request.json();
   const env = getSharedEnv();
@@ -369,5 +311,62 @@ export async function loader({ params }: LoaderFunctionArgs) {
     description: frame.preRevealText,
     image: await generateFrame(frame, frame.preRevealText),
     buttons: [{ text: "Reveal" }],
+  });
+}
+function frameResponse(params: FrameResponseArgs) {
+  const version = params.version || "vNext";
+  const html = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      ${params.title ? `<title>${params.title}</title>` : ""}
+      ${
+        params.title
+          ? `<meta property="og:title" content="${params.title}">`
+          : ""
+      }
+      ${
+        params.description
+          ? `<meta property="description" content="${params.description}">
+      <meta property="og:description" content="${params.description}">`
+          : ""
+      }
+      <meta property="fc:frame" content="${version}">
+      <meta property="fc:frame:image" content="${params.image}">
+      ${
+        params.postUrl
+          ? `<meta property="fc:frame:post_url" content="${params.postUrl}">`
+          : ""
+      }
+      ${
+        params.buttons
+          ? params.buttons
+              .map(
+                (b, index) =>
+                  `<meta property="fc:frame:button:${index + 1}" content="${
+                    b.text
+                  }">`
+              )
+              .join("\n")
+          : ""
+      }
+    </head>
+    <body>
+      <h1>${params.title}</h1>
+      <p>${params.description}</p>
+      <div>
+      <img src="${params.image}" />
+      </div>
+      ${params.buttons
+        ?.map((b, index) => `<button name="button-${index}">${b.text}</button>`)
+        .join("\n")}
+    </body>
+  </html>
+  `;
+
+  return new Response(html, {
+    headers: {
+      "Content-Type": "text/html",
+    },
   });
 }
