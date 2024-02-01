@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import invariant from "tiny-invariant";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import { db } from "~/lib/db.server";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Input } from "~/components/ui/input";
-import { generateFrameSvg, useRouteData } from "~/lib/utils";
+import { generateFrameSvg } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { commitSession, getSession } from "~/lib/auth.server";
 import { Frame, User } from "@prisma/client";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Form, json } from "@remix-run/react";
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import {
   Select,
@@ -27,10 +24,86 @@ import {
 } from "~/components/ui/popover";
 import { Field, FieldLabel } from "~/components/ui/fields";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
+import { db } from "~/lib/db.server";
+import { commitSession, getSession } from "~/lib/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
   return typedjson({ user, env: getSharedEnv() });
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  if (process.env.NODE_ENV === "production") {
+    await requireUser({ request });
+  }
+
+  const formData = await request.formData();
+  const data = Object.fromEntries(formData.entries()) as any;
+
+  const existingFrame = await db.frame.findUnique({
+    where: {
+      slug: data.slug,
+    },
+  });
+
+  if (existingFrame) {
+    return json(
+      {
+        errors: {
+          slug: "Slug already exists",
+        },
+      },
+      { status: 400 }
+    );
+  }
+
+  // TODO: validation
+  const frame = await db.frame
+    .create({
+      data: {
+        slug: data.slug,
+        secretText: data.secretText,
+        preRevealText: data.preRevealText,
+        revealType: data.revealType,
+        frameUrl: data.frameUrl ? new URL(data.frameUrl).toString() : null,
+        requireLike: data.requireLike === "on",
+        requireRecast: data.requireRecast === "on",
+        requireFollow: data.requireFollow === "on",
+        requireSomeoneIFollow: data.requireSomeoneIFollow === "on",
+        requireHoldERC721: data.requireHoldERC721 === "on",
+        requireHoldERC20: data.requireHoldERC20 === "on",
+        backgroundColor: data.backgroundColor,
+        textColor: data.textColor,
+
+        requireERC20ContractAddress: data.requireERC20ContractAddress,
+        requireERC20MinBalance:
+          data.requireERC20MinBalance === ""
+            ? null
+            : data.requireERC20MinBalance,
+        requireERC20NetworkId: data.requireERC20NetworkId,
+        requireERC721ContractAddress: data.requireERC721ContractAddress,
+        requireERC721NetworkId: data.requireERC721NetworkId,
+        requireERC721TokenId:
+          data.requireERC721TokenId === "" ? null : data.requireERC721TokenId,
+      },
+    })
+    .catch((e) => {
+      console.error(e);
+      return e.message;
+    });
+
+  if (typeof frame === "string") {
+    return json({ error: frame }, { status: 400 });
+  }
+
+  const session = await getSession(request.headers.get("Cookie"));
+  session.flash("newFrame", frame.slug);
+
+  return redirect(`/~?newFrame=${frame.slug}`, {
+    headers: {
+      "Set-Cookie": await commitSession(session),
+    },
+  });
 }
 
 export default function NewFrame() {

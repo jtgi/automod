@@ -3,17 +3,11 @@ import { parseUnits, erc20Abi, erc721Abi, getAddress, getContract } from "viem";
 import { LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
-import { Message, getSSLHubRpcClient } from "@farcaster/hub-nodejs";
 import { generateFrame, getSharedEnv } from "~/lib/utils.server";
-import {
-  getUser,
-  pageFollowersDeep,
-  pageReactionsDeep,
-} from "~/lib/neynar.server";
+import { pageFollowersDeep } from "~/lib/neynar.server";
 import { clientsByChainId } from "~/lib/viem.server";
 import axios from "axios";
-
-const skipTrusted = false;
+import { MessageResponse } from "~/lib/types";
 
 type FrameResponseArgs = {
   title?: string;
@@ -47,71 +41,47 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     return json({ error: "Missing data", data }, { status: 400 });
   }
 
-  let validatedMessage: Message | undefined = undefined;
-  if (!skipTrusted) {
-    if (!data.trustedData) {
-      console.log("invalid data", { data });
-      return json({ error: "Missing trusted data", data }, { status: 400 });
+  const res = await axios.post(
+    `https://api.neynar.com/v2/farcaster/frame/validate`,
+    {
+      message_bytes_in_hex: data.trustedData.messageBytes,
+    },
+    {
+      headers: {
+        accept: "application/json",
+        api_key: process.env.NEYNAR_API_KEY,
+        "content-type": "application/json",
+        Accept: "application/json",
+      },
     }
+  );
 
-    const HUB_URL = process.env.HUB_URL || "nemes.farcaster.xyz:2283";
-    const client = getSSLHubRpcClient(HUB_URL);
-
-    const frameMessage = Message.decode(
-      Buffer.from(data.trustedData.messageBytes, "hex")
-    );
-    const result = await client.validateMessage(frameMessage);
-    if (
-      result.isOk() &&
-      result.value.valid &&
-      result.value.message?.data?.fid
-    ) {
-      validatedMessage = result.value.message;
-    } else {
-      console.log("invalid message", { result });
-      return json({ error: "Invalid message" }, { status: 400 });
-    }
-  } else {
-    validatedMessage = { data: data.untrustedData } as Message;
+  const message = res.data as MessageResponse;
+  if (!message.valid) {
+    return json({ error: "Invalid message" }, { status: 400 });
   }
 
-  if (
-    validatedMessage.data?.frameActionBody?.url.toString() !==
-    `${env.hostUrl}/${params.slug}`
-  ) {
+  const castInfo = message.action.cast;
+  const frameUrlSigned = castInfo.frames[0].frames_url;
+
+  console.log({ castInfo });
+
+  if (frameUrlSigned !== `${env.hostUrl}/${params.slug}`) {
     console.log("invalid url", {
-      actionBody: validatedMessage.data?.frameActionBody,
-      url: validatedMessage.data?.frameActionBody?.url.toString(),
+      signedUrl: frameUrlSigned,
+      expectedUrl: `${env.hostUrl}/${params.slug}`,
     });
     return json({ error: "Invalid url" }, { status: 400 });
   }
 
-  console.log({
-    validatedMessage: validatedMessage.data.frameActionBody,
-  });
-
-  if (!validatedMessage.data?.frameActionBody?.castId) {
-    console.log("missing castId in frame action payload", {
-      actionBody: validatedMessage.data?.frameActionBody,
-    });
-    return json({ error: "Invalid castId" }, { status: 400 });
-  }
-
-  const { hash } = validatedMessage.data!.frameActionBody!.castId;
-  const castHash = Buffer.from(hash).toString("hex");
-
-  // do some neynar shit
   if (frame.requireSomeoneIFollow) {
-    if (
-      validatedMessage.data?.frameActionBody.castId.fid !==
-      validatedMessage.data.fid
-    ) {
+    if (message.action.interactor[0].fid !== message.action.cast.author.fid) {
       const followers = await pageFollowersDeep({
-        fid: validatedMessage.data.frameActionBody.castId.fid,
+        fid: message.action.interactor[0].fid,
       });
 
       const isValid = followers.some(
-        (f) => f.fid == validatedMessage?.data?.fid
+        (f) => f.fid == message.action.cast.author.fid
       );
 
       if (!isValid) {
@@ -124,16 +94,13 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireFollow) {
-    if (
-      validatedMessage.data?.frameActionBody.castId.fid !==
-      validatedMessage.data.fid
-    ) {
+    if (message.action.interactor[0].fid !== message.action.cast.author.fid) {
       const followers = await pageFollowersDeep({
-        fid: validatedMessage.data.fid,
+        fid: message.action.cast.author.fid,
       });
 
       const isValid = followers.some(
-        (f) => f.fid == validatedMessage?.data?.frameActionBody?.castId?.fid
+        (f) => f.fid == message.action.interactor[0].fid
       );
 
       if (!isValid) {
@@ -146,7 +113,8 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireHoldERC20) {
-    const user = await getUser({ fid: String(validatedMessage.data.fid) });
+    const user = message.action.interactor[0];
+
     if (!user.verifications.length) {
       return frameResponse({
         image: await generateFrame(
@@ -193,7 +161,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireHoldERC721) {
-    const user = await getUser({ fid: String(validatedMessage.data.fid) });
+    const user = message.action.interactor[0];
     if (!user.verifications.length) {
       return frameResponse({
         image: await generateFrame(
@@ -246,13 +214,8 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireLike || frame.requireRecast) {
-    const reactions = await pageReactionsDeep({ hash: castHash });
-
     if (frame.requireRecast) {
-      const isValid = reactions.some(
-        (c) =>
-          c.reactor.fid == validatedMessage?.data?.fid && c.type === "recast"
-      );
+      const isValid = message.action.cast.viewer_context.recasted;
 
       if (!isValid) {
         if (!isValid) {
@@ -265,9 +228,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     }
 
     if (frame.requireLike) {
-      const isValid = reactions.some(
-        (c) => c.reactor.fid == validatedMessage?.data?.fid && c.type === "like"
-      );
+      const isValid = message.action.cast.viewer_context.liked;
 
       if (!isValid) {
         return frameResponse({
@@ -302,9 +263,13 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 export async function loader({ params }: LoaderFunctionArgs) {
   invariant(params.slug, "Frame slug is required");
 
-  const frame = await db.frame.findFirstOrThrow({
+  const frame = await db.frame.findFirst({
     where: { slug: params.slug },
   });
+
+  if (!frame) {
+    return json({ error: "Invalid frame" }, { status: 400 });
+  }
 
   return frameResponse({
     title: `Frame | ${frame.slug}`,

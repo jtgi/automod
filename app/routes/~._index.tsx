@@ -34,7 +34,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       user,
       frames,
       hostUrl: env.hostUrl,
-      newlyCreatedUrl: session.get("newFrame") ?? null,
+      newlyCreatedUrl: session.get("newFrame")
+        ? `${env.hostUrl}/${session.get("newFrame")}`
+        : null,
     },
     {
       headers: {
@@ -79,7 +81,7 @@ export default function FrameConfig() {
           <h2>{frame.slug}</h2>
           <div className="flex items-center gap-2">
             <Button asChild variant={"ghost"}>
-              <Link className="no-underline" to={`/${frame.slug}/edit`}>
+              <Link className="no-underline" to={`/~/${frame.slug}/edit`}>
                 Edit
               </Link>
             </Button>
