@@ -80,6 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
       },
       data: {
         secretText: data.secretText,
+        imageUrl: data.imageUrl,
         preRevealText: data.preRevealText,
         revealType: data.revealType,
         frameUrl: data.frameUrl ? new URL(data.frameUrl).toString() : null,
@@ -315,15 +316,25 @@ export function FrameForm(props: {
                     />
                   )}
                   {/* todo change this */}
-                  <Field
-                    name="image"
-                    label="Upload File"
-                    inputProps={{
-                      type: "file",
-                      name: "image",
-                      accept: "image/*",
-                    }}
-                  />
+                  <FieldLabel
+                    label="Image URL"
+                    className="flex-col items-start"
+                  >
+                    <div className="w-full">
+                      <Input
+                        name="imageUrl"
+                        defaultValue={props.frame?.imageUrl ?? undefined}
+                        required
+                        pattern="https://.*"
+                        placeholder="e.g. https://www.degens.lol/casino.png"
+                      />
+                      <div className="flex justify-between gap-4">
+                        <p className="text-xs text-gray-400 mt-1">
+                          800 x 421, PNG or JPEG, Upload support coming soon
+                        </p>
+                      </div>
+                    </div>
+                  </FieldLabel>
                 </>
               )}
 

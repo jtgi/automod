@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  await requireUser({ request });
+  const user = await requireUser({ request });
 
   const session = await getSession(request.headers.get("Cookie"));
   const formData = await request.formData();
@@ -67,6 +67,8 @@ export async function action({ request }: ActionFunctionArgs) {
     .create({
       data: {
         slug: data.slug,
+        userId: user.id,
+        imageUrl: data.imageUrl,
         secretText: data.secretText,
         preRevealText: data.preRevealText,
         revealType: data.revealType,
