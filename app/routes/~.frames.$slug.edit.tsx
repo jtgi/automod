@@ -14,14 +14,7 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { Frame } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form } from "@remix-run/react";
-import {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -38,14 +31,18 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Field, FieldLabel } from "~/components/ui/fields";
-import { getSharedEnv, requireUser } from "~/lib/utils.server";
+import {
+  getSharedEnv,
+  requireFrameOwner,
+  requireUser,
+} from "~/lib/utils.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.slug, "Frame slug or id is required");
 
   const [frame, session] = await Promise.all([
     db.frame.findFirstOrThrow({
-      where: { slug: params.slugOrId },
+      where: { slug: params.slug },
     }),
     getSession(request.headers.get("Cookie")),
   ]);
@@ -65,41 +62,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  await requireUser({ request });
+  const user = await requireUser({ request });
 
   const session = await getSession(request.headers.get("Cookie"));
   const formData = await request.formData();
   const data = Object.fromEntries(formData.entries()) as any;
 
-  const existingFrame = await db.frame.findUnique({
-    where: {
-      slug: data.slug,
-    },
-  });
+  await requireFrameOwner(user.id, data.slug);
 
-  if (existingFrame) {
-    session.flash("error", "Slug is already taken, try another.");
-    return typedjson(
-      {
-        errors: {
-          slug: "Slug already exists",
-        },
-        values: data,
-      },
-      {
-        status: 400,
-        headers: {
-          "Set-Cookie": await commitSession(session),
-        },
-      }
-    );
-  }
-
+  console.log("data", data);
   // TODO: validation
   const frame = await db.frame
-    .create({
-      data: {
+    .update({
+      where: {
         slug: data.slug,
+        userId: user.id,
+      },
+      data: {
         secretText: data.secretText,
         preRevealText: data.preRevealText,
         revealType: data.revealType,
@@ -136,7 +115,16 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
   if ("errors" in frame) {
-    return typedjson({ error: frame, values: data }, { status: 400 });
+    session.flash("errors", frame.errors.global);
+    return typedjson(
+      { errors: frame.errors, values: data },
+      {
+        status: 400,
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
   }
 
   session.flash("message", `Updated`);
@@ -180,7 +168,13 @@ export function FrameForm(props: {
     props.frame?.textColor ?? "white"
   );
   const [width, setWidth] = useState(800);
-  const [formValue, setFormValues] = useState<any>(props.frame ?? {});
+  const [formValue, setFormValues] = useState<any>(
+    props.frame
+      ? {
+          ...props.frame,
+        }
+      : {}
+  );
 
   const scale = Math.min(width / 800, 1.91);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -202,7 +196,7 @@ export function FrameForm(props: {
     if (props.frame) {
       renderPreviews(props.frame);
     }
-  }, [width]);
+  }, [width, revealType]);
 
   const renderPreviews = async (frame: Frame) => {
     console.log("renderingpreview", frame.preRevealText);
@@ -247,6 +241,7 @@ export function FrameForm(props: {
               <FieldLabel label="Slug" className="flex-col items-start">
                 <Input
                   name="slug"
+                  readOnly={props.isEditing}
                   placeholder="e.g. full-send"
                   pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
                   defaultValue={props.frame?.slug}
@@ -441,7 +436,7 @@ export function FrameForm(props: {
                   />
                 </FieldLabel>
 
-                {formValue.requireHoldERC721 === "on" && (
+                {formValue.requireHoldERC721 && (
                   <div className="py-4 border-t space-y-2">
                     <div className="flex items-center gap-4">
                       <label className="block mb-2 text-sm font-medium text-gray-700 w-[100px] text-right">
@@ -513,7 +508,7 @@ export function FrameForm(props: {
                   />
                 </FieldLabel>
 
-                {formValue.requireHoldERC20 === "on" && (
+                {formValue.requireHoldERC20 && (
                   <div className="py-4 border-t space-y-2">
                     <div className="flex items-center gap-4">
                       <label className="block mb-2 text-sm font-medium text-gray-700 w-[100px] text-right">

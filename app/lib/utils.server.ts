@@ -1,7 +1,9 @@
 import sharp from "sharp";
 import { authenticator } from "./auth.server";
-import { Frame } from "@prisma/client";
+import { Frame, User } from "@prisma/client";
 import { generateFrameSvg } from "./utils";
+import { db } from "./db.server";
+import { redirect } from "remix-typedjson";
 
 export async function convertSvgToPngBase64(
   svgString: string
@@ -14,6 +16,21 @@ export async function convertSvgToPngBase64(
     console.error("Error converting SVG to PNG:", error);
     return null;
   }
+}
+
+export function requireFrameOwner(userId: string, slug: string) {
+  const frame = db.frame.findFirst({
+    where: {
+      slug,
+      userId,
+    },
+  });
+
+  if (!frame) {
+    throw redirect(`/403`);
+  }
+
+  return frame;
 }
 
 export function requireUser({ request }: { request: Request }) {

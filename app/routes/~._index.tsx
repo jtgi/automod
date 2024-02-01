@@ -11,10 +11,18 @@ import {
 import { Input } from "~/components/ui/input";
 import { useClipboard } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { CheckIcon, CopyIcon } from "@radix-ui/react-icons";
+import { CheckIcon, CopyIcon, PlusIcon } from "@radix-ui/react-icons";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { Link } from "@remix-run/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -55,6 +63,48 @@ export default function FrameConfig() {
 
   return (
     <div>
+      {!frames.length && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>You dont have any frames yet, create one to get started.</div>
+          </CardContent>
+          <CardFooter>
+            <Button asChild>
+              <Link to="/~/frames/new">Create a new frame</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {frames.length > 0 && (
+        <div className="divide-y">
+          <div className="flex items-center justify-between mb-4">
+            <p className="font-semibold">Frames</p>
+          </div>
+          {frames.map((frame) => (
+            <div key={frame.id} className="flex items-center justify-between">
+              <Link
+                className="no-underline flex-auto w-full py-2"
+                to={`/~/frames/${frame.slug}/edit`}
+              >
+                <h2>{frame.slug}</h2>
+              </Link>
+              <CopyButton frame={frame} env={env} />
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="max-w-4xl mx-auto fixed bottom-2 left-1/2 -translate-x-1/2 w-full pb-4 px-8">
+        <Button className="w-full" asChild>
+          <Link className="no-underline" to="/~/frames/new">
+            <PlusIcon className="mr-2" /> New Frame
+          </Link>
+        </Button>
+      </div>
+
       <Dialog defaultOpen={!!newlyCreatedUrl}>
         <DialogContent>
           <DialogHeader>
@@ -73,28 +123,6 @@ export default function FrameConfig() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
-      {!frames.length && (
-        <div>
-          <h1>No frames yet.</h1>
-          <Link to="/~/frames/new">Create a new frame</Link>
-        </div>
-      )}
-      {frames.map((frame) => (
-        <div key={frame.id} className="flex items-center justify-between">
-          <h2>{frame.slug}</h2>
-          <div className="flex items-center gap-4">
-            <Button asChild variant={"ghost"}>
-              <Link
-                className="no-underline"
-                to={`/~/frames/${frame.slug}/edit`}
-              >
-                Edit
-              </Link>
-            </Button>
-            <CopyButton frame={frame} env={env} />
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -110,11 +138,12 @@ export function CopyButton({
 
   return (
     <Button
-      className="w-[150px]"
-      variant={"secondary"}
+      className="w-[100px]"
+      size={"sm"}
+      variant={"outline"}
       onClick={() => copy(`${env.hostUrl}/${frame.slug}`)}
     >
-      {copied ? "Copied!" : "Copy Link"}
+      {copied ? "Copied!" : "Copy URL"}
     </Button>
   );
 }

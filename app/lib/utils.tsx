@@ -1,7 +1,7 @@
 import { Frame } from "@prisma/client";
 import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
-import { CSSProperties, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import satori from "satori";
 import { twMerge } from "tailwind-merge";
 
@@ -81,4 +81,28 @@ export function useRouteData<T>(routeId: string): T | undefined {
   const data = matches.find((match) => match.id === routeId)?.data;
 
   return data as T | undefined;
+}
+
+export function useStickyPanel(stopPoint: number): number {
+  const [panelTop, setPanelTop] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = (): void => {
+      const maxScroll =
+        document.documentElement.offsetHeight - window.innerHeight - stopPoint;
+      const currentScroll = window.scrollY;
+
+      if (currentScroll >= maxScroll) {
+        setPanelTop(-(currentScroll - maxScroll));
+      } else {
+        setPanelTop(0);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [stopPoint]);
+
+  return panelTop;
 }
