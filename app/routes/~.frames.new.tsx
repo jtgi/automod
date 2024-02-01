@@ -37,6 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await requireUser({ request });
   }
 
+  const session = await getSession(request.headers.get("Cookie"));
   const formData = await request.formData();
   const data = Object.fromEntries(formData.entries()) as any;
 
@@ -47,13 +48,19 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (existingFrame) {
+    session.flash("error", "Slug is already taken, try another.");
     return json(
       {
         errors: {
           slug: "Slug already exists",
         },
       },
-      { status: 400 }
+      {
+        status: 400,
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
     );
   }
 
@@ -96,10 +103,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: frame }, { status: 400 });
   }
 
-  const session = await getSession(request.headers.get("Cookie"));
   session.flash("newFrame", frame.slug);
 
-  return redirect(`/~?newFrame=${frame.slug}`, {
+  return redirect(`/~`, {
     headers: {
       "Set-Cookie": await commitSession(session),
     },
@@ -117,7 +123,6 @@ export function FrameForm(props: {
   frame?: Frame;
   hostUrl: string;
 }) {
-  console.log(props);
   const [contentType, setContentType] = useState<string>("text");
   const [prerevealSvg, setPreRevealSvg] = useState<string>();
   const [revealedSvg, setRevealedSvg] = useState<string>();

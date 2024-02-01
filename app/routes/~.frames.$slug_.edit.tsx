@@ -85,7 +85,6 @@ export function FrameForm(props: { frame: Frame; hostUrl: string }) {
   const handleChange = async (e: FormEvent<HTMLFormElement>) => {
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
-    console.log("handleChange", data);
 
     // lol reimplementing formik
     setFormValues(data);

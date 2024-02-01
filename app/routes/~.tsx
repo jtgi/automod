@@ -12,11 +12,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
   const session = await getSession(request.headers.get("Cookie"));
   const message = session.get("message") ?? undefined;
+  const error = session.get("error") ?? undefined;
 
   return typedjson(
     {
       user,
       message,
+      error,
       env: getSharedEnv(),
     },
     {
@@ -28,13 +30,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-  const { env, message } = useTypedLoaderData<typeof loader>();
+  const { env, message, error } = useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
     if (message) {
       toast(message);
     }
-  }, [message]);
+
+    if (error) {
+      toast.error(error);
+    }
+  }, [message, error]);
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,

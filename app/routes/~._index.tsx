@@ -29,6 +29,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getSession(request.headers.get("Cookie")),
   ]);
 
+  console.log("newframe", session.get("newFrame"));
+
   return typedjson(
     {
       user,
@@ -58,8 +60,8 @@ export default function FrameConfig() {
             <DialogTitle>Success!</DialogTitle>
             <DialogDescription>Your frame has been created.</DialogDescription>
             <div className="flex items-center justify-center gap-2 py-4">
-              <Input value={newlyCreatedUrl} />
-              <Button onClick={() => copy(newlyCreatedUrl)}>
+              <Input value={newlyCreatedUrl!} />
+              <Button onClick={() => copy(newlyCreatedUrl!)}>
                 {copied ? (
                   <CheckIcon className="w-5 h-5" />
                 ) : (

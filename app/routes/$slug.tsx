@@ -218,12 +218,10 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       const isValid = message.action.cast.viewer_context.recasted;
 
       if (!isValid) {
-        if (!isValid) {
-          return frameResponse({
-            image: await generateFrame(frame, "Must recast to reveal"),
-            buttons: [{ text: "Try Again" }],
-          });
-        }
+        return frameResponse({
+          image: await generateFrame(frame, "Must recast to reveal"),
+          buttons: [{ text: "Try Again" }],
+        });
       }
     }
 
@@ -249,7 +247,6 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     });
   } else if (frame.revealType === "frame") {
     const { data } = await axios.get(frame.frameUrl!);
-    console.log({ data });
     return new Response(data, {
       headers: {
         "Content-Type": "text/html",
@@ -272,12 +269,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   return frameResponse({
-    title: `Frame | ${frame.slug}`,
+    title: `Glass | ${frame.slug}`,
     description: frame.preRevealText,
     image: await generateFrame(frame, frame.preRevealText),
     buttons: [{ text: "Reveal" }],
   });
 }
+
 function frameResponse(params: FrameResponseArgs) {
   const version = params.version || "vNext";
   const html = `
