@@ -4,7 +4,7 @@ import { LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { Message, getSSLHubRpcClient } from "@farcaster/hub-nodejs";
-import { generateFrame } from "~/lib/utils.server";
+import { generateFrame, getSharedEnv } from "~/lib/utils.server";
 import {
   getUser,
   pageFollowersDeep,
@@ -86,7 +86,7 @@ const frameResponse = (params: FrameResponseArgs) => {
 
 export async function action({ request, params }: LoaderFunctionArgs) {
   const data = await request.json();
-  const env = process.env;
+  const env = getSharedEnv();
 
   invariant(params.slug, "Frame slug is required");
 
@@ -135,7 +135,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
   if (
     validatedMessage.data?.frameActionBody?.url.toString() !==
-    `${env.HOST_URL}/${params.slug}`
+    `${env.hostUrl}/${params.slug}`
   ) {
     console.log("invalid url", {
       actionBody: validatedMessage.data?.frameActionBody,
@@ -155,7 +155,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     return json({ error: "Invalid castId" }, { status: 400 });
   }
 
-  const { fid, hash } = validatedMessage.data!.frameActionBody!.castId;
+  const { hash } = validatedMessage.data!.frameActionBody!.castId;
   const castHash = Buffer.from(hash).toString("hex");
 
   // do some neynar shit

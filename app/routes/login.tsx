@@ -1,73 +1,77 @@
-import { ArrowTopRightIcon } from "@radix-ui/react-icons";
+import {
+  AuthKitProvider,
+  SignInButton,
+  StatusAPIResponse,
+} from "@farcaster/auth-kit";
 import { LoaderFunctionArgs, json } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { redirect } from "remix-typedjson";
-import { Button } from "~/components/ui/button";
+import { useNavigate } from "@remix-run/react";
+import { useCallback } from "react";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
+import invariant from "tiny-invariant";
 import { authenticator } from "~/lib/auth.server";
+import { getSharedEnv } from "~/lib/utils.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await authenticator.isAuthenticated(request);
 
   if (user) {
-    throw redirect("/");
+    return redirect("/~");
   }
 
-  return json({});
+  return typedjson({
+    env: getSharedEnv(),
+  });
 }
 
 export default function Login() {
+  const { env } = useTypedLoaderData<typeof loader>();
+  const navigate = useNavigate();
+
+  const farcasterConfig = {
+    rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,
+    domain: new URL(env.hostUrl).host.split(":")[0],
+    siweUri: `${env.hostUrl}/login`,
+  };
+
+  const handleSuccess = useCallback((res: StatusAPIResponse) => {
+    invariant(res.message, "message is required");
+    invariant(res.signature, "signature is required");
+    invariant(res.nonce, "nonce is required");
+
+    const params = new URLSearchParams();
+    params.append("message", res.message);
+    params.append("signature", res.signature);
+    params.append("nonce", res.nonce);
+    res.username && params.append("username", res.username);
+    res.pfpUrl && params.append("pfpUrl", res.pfpUrl);
+
+    navigate(`/auth/farcaster?${params}`, {
+      replace: true,
+    });
+  }, []);
+
   return (
-    <div className="px-8 h-full w-full flex flex-col items-center justify-center min-h-screen">
-      <div className="max-w-xl">
-        <h1 className="text-center text-5xl logo">glass</h1>
-        <h2 className="text-center text-lg font-normal mb-4">
-          Gate content with Farcaster Frames
-        </h2>
+    <AuthKitProvider config={farcasterConfig}>
+      <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
+        <div className="max-w-xl flex flex-col justify-center items-center">
+          <h1 className="text-6xl logo">glass</h1>
+          <h2 className="font-normal mb-8">
+            Gate content with Farcaster Frames
+          </h2>
 
-        <video
-          className="w-full my-4 rounded-lg shadow-md"
-          autoPlay
-          loop
-          muted
-          playsInline
-          src="/demo-vid.mp4"
-        />
-
-        {/* play demo-vid.mp4 video here with autoplay */}
-
-        <div className="space-y-4">
-          <ul className="ml-4 list-outside list-disc space-y-2">
-            <li>
-              Create exclusive content for followers, ERC-20 and ERC-721 token
-              holders.
-            </li>
-            <li>
-              Boost engagement by requiring a post be liked, recasted, or
-              followed.
-            </li>
-            <li>
-              Reveal any text content, image, even other frames. (more soon)
-            </li>
-            <li>Zero code required.</li>
-          </ul>
-
-          <div className="pt-2 flex flex-col justify-center">
-            <Button asChild className="w-full sm:w-auto">
-              <Link
-                className="no-underline"
-                to="https://useglass.lemonsqueezy.com/checkout/buy/32a541af-4f35-4f7d-b1df-53d5a0ecb4ef"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Preorder Now <ArrowTopRightIcon className="ml-1" />
-              </Link>
-            </Button>
-            <span className="text-xs text-gray-500 block text-center mt-1">
-              Limited quantity, ships early Feb
-            </span>
+          <div className="space-y-4">
+            <p>
+              Glass is currently in private beta.
+              <br />
+              Reach out to <a href="https://warpcast.com/jtgi">@jtgi</a> for
+              access.
+            </p>
+            <div className="flex flex-row items-center justify-center pt-8">
+              <SignInButton onSuccess={handleSuccess} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </AuthKitProvider>
   );
 }

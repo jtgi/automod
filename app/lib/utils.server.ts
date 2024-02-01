@@ -17,20 +17,12 @@ export async function convertSvgToPngBase64(
 }
 
 export function requireUser({ request }: { request: Request }) {
-  const url = new URL(request.url);
   return authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,
   });
 }
 
-export async function generateFrame(
-  frame: Frame,
-  message: string,
-  options?: {
-    scale?: number;
-    hostUrl?: string;
-  }
-) {
+export async function generateFrame(frame: Frame, message: string) {
   const svg = await generateFrameSvgServer(frame, message);
   const imgSrc = await convertSvgToPngBase64(svg);
   if (!imgSrc) {
@@ -41,7 +33,18 @@ export async function generateFrame(
 }
 
 export async function generateFrameSvgServer(frame: Frame, message: string) {
-  return generateFrameSvg(frame, message, process.env.HOST_URL!, {
+  const env = getSharedEnv();
+  return generateFrameSvg(frame, message, env.hostUrl!, {
     scale: 1,
   });
+}
+
+export function getSharedEnv() {
+  return {
+    infuraProjectId: process.env.INFURA_PROJECT_ID!,
+    hostUrl:
+      process.env.NODE_ENV === "production"
+        ? process.env.PROD_URL!
+        : process.env.DEV_URL!,
+  };
 }

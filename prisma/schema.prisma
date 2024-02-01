@@ -11,11 +11,13 @@ datasource db {
 }
 
 model User {
-  id         Int     @id @default(autoincrement())
+  id         String  @id @default(cuid())
   email      String? @unique
   providerId String  @unique
   name       String?
   avatarUrl  String?
+
+  frames Frame[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -23,7 +25,7 @@ model User {
 }
 
 model Preorder {
-  id         Int    @id @default(autoincrement())
+  id         String @id @default(cuid())
   providerId String @unique
 
   createdAt DateTime  @default(now())
@@ -32,7 +34,7 @@ model Preorder {
 }
 
 model Frame {
-  id     Int     @id @default(autoincrement())
+  id     String  @id @default(cuid())
   slug   String  @unique
   active Boolean @default(true)
 
@@ -61,4 +63,7 @@ model Frame {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
 }

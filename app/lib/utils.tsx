@@ -1,4 +1,5 @@
 import { Frame } from "@prisma/client";
+import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
 import { CSSProperties, useRef, useState } from "react";
 import satori from "satori";
@@ -73,4 +74,11 @@ export function useClipboard() {
   };
 
   return { copy, copied };
+}
+
+export function useRouteData<T>(routeId: string): T | undefined {
+  const matches = useMatches();
+  const data = matches.find((match) => match.id === routeId)?.data;
+
+  return data as T | undefined;
 }

@@ -4,6 +4,7 @@ import { AuthenticateOptions, Strategy } from "remix-auth";
 import { SessionStorage } from "@remix-run/node";
 import { createAppClient, viemConnector } from "@farcaster/auth-kit";
 import { db } from "./db.server";
+import { getSharedEnv } from "./utils.server";
 
 export class FarcasterStrategy extends Strategy<
   User,
@@ -28,6 +29,8 @@ export class FarcasterStrategy extends Strategy<
       );
     }
 
+    const env = getSharedEnv();
+
     const appClient = createAppClient({
       ethereum: viemConnector(),
     });
@@ -35,7 +38,7 @@ export class FarcasterStrategy extends Strategy<
     const verifyResponse = await appClient.verifySignInMessage({
       message: credentials.message,
       signature: credentials.signature as `0x${string}`,
-      domain: new URL(process.env.HOST_URL!).host.split(":")[0],
+      domain: new URL(env.hostUrl).host.split(":")[0],
       nonce: credentials.nonce,
     });
     const { success, fid, error } = verifyResponse;
