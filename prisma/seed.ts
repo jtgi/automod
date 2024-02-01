@@ -1,6 +1,6 @@
 // cryptoadz: 0x1cb1a5e65610aeff2551a50f76a87a7d3fb649c6
 
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "~/lib/db.server";
 
 async function seed() {
@@ -43,9 +43,9 @@ async function seed() {
     backgroundColor: "blue",
     textColor: "red",
 
-    requireERC20ContractAddress: "0x4ed4e862860bed51a9570b96d89af5e1b0efefed", //degen
+    requireERC20ContractAddress: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", //usdc
     requireERC20NetworkId: "8453",
-    requireERC20MinBalance: "1",
+    requireERC20MinBalance: "0.50",
 
     requireERC721ContractAddress: "0x1cb1a5e65610aeff2551a50f76a87a7d3fb649c6", //toadz
     requireERC721NetworkId: "1",

@@ -5,7 +5,7 @@ import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { generateFrame, getSharedEnv } from "~/lib/utils.server";
 import { pageFollowersDeep } from "~/lib/neynar.server";
-import { clientsByChainId } from "~/lib/viem.server";
+import { chainByChainId, clientsByChainId } from "~/lib/viem.server";
 import axios from "axios";
 import { MessageResponse } from "~/lib/types";
 
@@ -16,6 +16,7 @@ type FrameResponseArgs = {
   image: string;
   buttons?: Array<{
     text: string;
+    url?: string;
   }>;
   postUrl?: string;
 };
@@ -64,7 +65,11 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   const castInfo = message.action.cast;
   const frameUrlSigned = castInfo.frames[0].frames_url;
 
-  console.log({ castInfo });
+  console.log({
+    message: message.action,
+    castInfo,
+    interactor: message.action.interactor,
+  });
 
   if (frameUrlSigned !== `${env.hostUrl}/${params.slug}`) {
     console.log("invalid url", {
@@ -75,9 +80,9 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireSomeoneIFollow) {
-    if (message.action.interactor[0].fid !== message.action.cast.author.fid) {
+    if (message.action.interactor.fid !== message.action.cast.author.fid) {
       const followers = await pageFollowersDeep({
-        fid: message.action.interactor[0].fid,
+        fid: message.action.interactor.fid,
       });
 
       const isValid = followers.some(
@@ -94,13 +99,13 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireFollow) {
-    if (message.action.interactor[0].fid !== message.action.cast.author.fid) {
+    if (message.action.interactor.fid !== message.action.cast.author.fid) {
       const followers = await pageFollowersDeep({
         fid: message.action.cast.author.fid,
       });
 
       const isValid = followers.some(
-        (f) => f.fid == message.action.interactor[0].fid
+        (f) => f.fid == message.action.interactor.fid
       );
 
       if (!isValid) {
@@ -113,7 +118,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireHoldERC20) {
-    const user = message.action.interactor[0];
+    const user = message.action.interactor;
 
     if (!user.verifications.length) {
       return frameResponse({
@@ -127,8 +132,8 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
     invariant(frame.requireERC20NetworkId, "Missing network id");
     invariant(frame.requireERC20ContractAddress, "Missing network id");
-    invariant(frame.requireERC20MinBalance, "Missing balance");
 
+    const minBalanceRequired = frame.requireERC20MinBalance || "0";
     const client = clientsByChainId[frame.requireERC20NetworkId];
     const contract = getContract({
       address: getAddress(frame.requireERC20ContractAddress),
@@ -142,7 +147,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       )
     );
     const decimals = await contract.read.decimals();
-    const minBalanceBigInt = parseUnits(frame.requireERC20MinBalance, decimals);
+    const minBalanceBigInt = parseUnits(minBalanceRequired, decimals);
     const sum = balances.reduce((a, b) => a + b, BigInt(0));
     const isValid = sum >= minBalanceBigInt;
 
@@ -161,7 +166,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   if (frame.requireHoldERC721) {
-    const user = message.action.interactor[0];
+    const user = message.action.interactor;
     if (!user.verifications.length) {
       return frameResponse({
         image: await generateFrame(
@@ -191,10 +196,16 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       );
 
       if (!isValid) {
+        const name = await contract.read.name();
+
         return frameResponse({
-          image: await generateFrame(frame, "Must hold NFT to reveal"),
+          image: await generateFrame(
+            frame,
+            `${name} #${frame.requireERC721TokenId} is required`
+          ),
           buttons: [{ text: "Try Again" }],
         });
+        // TODO: add a nice feature to show the user the token they need to hold
       }
     } else {
       const balances = await Promise.all(
@@ -205,8 +216,9 @@ export async function action({ request, params }: LoaderFunctionArgs) {
       const isValid = balances.some((balance) => balance > BigInt(0));
 
       if (!isValid) {
+        const name = await contract.read.name();
         return frameResponse({
-          image: await generateFrame(frame, "Must hold NFT to reveal"),
+          image: await generateFrame(frame, `${name} holders only`),
           buttons: [{ text: "Try Again" }],
         });
       }

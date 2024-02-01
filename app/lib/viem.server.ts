@@ -33,3 +33,10 @@ export const clientsByChainId = {
   [String(base.id)]: baseClient,
   [String(arbitrum.id)]: arbitrumClient,
 };
+
+export const chainByChainId = {
+  [String(mainnet.id)]: mainnet,
+  [String(optimism.id)]: optimism,
+  [String(base.id)]: base,
+  [String(arbitrum.id)]: arbitrum,
+};

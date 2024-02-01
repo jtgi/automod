@@ -6,7 +6,7 @@ export interface MessageResponse {
 
 export interface Action {
   object: string;
-  interactor: Interactor[];
+  interactor: Interactor;
   tapped_button: TappedButton;
   cast: Cast;
 }

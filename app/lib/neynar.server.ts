@@ -63,11 +63,14 @@ export async function pageFollowersDeep(props: { fid: number }) {
   while (cursor !== null) {
     const response = await neynar.fetchUserFollowers(props.fid, {
       limit: 150,
-      cursor,
+      cursor: cursor || undefined,
     });
 
     results = results.concat(response.result.users);
-    cursor = response.result.next.cursor;
+    cursor =
+      cursor !== response.result.next.cursor
+        ? response.result.next.cursor
+        : null;
   }
 
   cache.set(cacheKey, results);
