@@ -5,6 +5,5 @@ export default {
       buffer: true,
     }
   },
-  serverDependenciesToBundle: [/^@farcaster.*/],
   ignoredRouteFiles: ["**/.*"],
 };

@@ -101,6 +101,9 @@ dependencies:
   sharp:
     specifier: ^0.33.2
     version: 0.33.2
+  siwe:
+    specifier: ^2.1.4
+    version: 2.1.4(ethers@6.10.0)
   sonner:
     specifier: ^1.4.0
     version: 1.4.0(react-dom@18.2.0)(react@18.2.0)
