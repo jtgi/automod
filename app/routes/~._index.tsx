@@ -35,6 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       user,
       frames,
+      env: getSharedEnv(),
       hostUrl: env.hostUrl,
       newlyCreatedUrl: session.get("newFrame")
         ? `${env.hostUrl}/${session.get("newFrame")}`
@@ -49,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { frames, newlyCreatedUrl } = useTypedLoaderData<typeof loader>();
+  const { frames, newlyCreatedUrl, env } = useTypedLoaderData<typeof loader>();
   const { copy, copied } = useClipboard();
 
   return (
@@ -81,18 +82,39 @@ export default function FrameConfig() {
       {frames.map((frame) => (
         <div key={frame.id} className="flex items-center justify-between">
           <h2>{frame.slug}</h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Button asChild variant={"ghost"}>
-              <Link className="no-underline" to={`/~/${frame.slug}/edit`}>
+              <Link
+                className="no-underline"
+                to={`/~/frames/${frame.slug}/edit`}
+              >
                 Edit
               </Link>
             </Button>
-            <Button className="w-[150px]" variant={"secondary"}>
-              {copied ? "Copied!" : "Copy Link"}
-            </Button>
+            <CopyButton frame={frame} env={env} />
           </div>
         </div>
       ))}
     </div>
+  );
+}
+
+export function CopyButton({
+  frame,
+  env,
+}: {
+  frame: { slug: string };
+  env: { hostUrl: string };
+}) {
+  const { copy, copied } = useClipboard();
+
+  return (
+    <Button
+      className="w-[150px]"
+      variant={"secondary"}
+      onClick={() => copy(`${env.hostUrl}/${frame.slug}`)}
+    >
+      {copied ? "Copied!" : "Copy Link"}
+    </Button>
   );
 }

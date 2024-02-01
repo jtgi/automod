@@ -33,9 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  if (process.env.NODE_ENV === "production") {
-    await requireUser({ request });
-  }
+  await requireUser({ request });
 
   const session = await getSession(request.headers.get("Cookie"));
   const formData = await request.formData();

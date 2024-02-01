@@ -5,7 +5,7 @@ export function FieldLabel(
   props: {
     position?: "left" | "right";
     label: React.ReactNode;
-    labelProps?: React.HTMLAttributes<HTMLLabelElement>;
+    labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
   } & React.HTMLAttributes<HTMLDivElement>
 ) {
   const _position = props.position || "left";
