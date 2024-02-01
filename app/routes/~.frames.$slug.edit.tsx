@@ -168,7 +168,7 @@ export function FrameForm(props: {
   const [textColor, setTextColor] = useState<string>(
     props.frame?.textColor ?? "white"
   );
-  const [width, setWidth] = useState(800);
+  const [width, setWidth] = useState(400);
   const [formValue, setFormValues] = useState<any>(
     props.frame
       ? {
@@ -330,7 +330,7 @@ export function FrameForm(props: {
                       />
                       <div className="flex justify-between gap-4">
                         <p className="text-xs text-gray-400 mt-1">
-                          800 x 421, PNG or JPEG, Upload support coming soon
+                          800 x 418, PNG, GIF, JPEG. Upload support coming soon.
                         </p>
                       </div>
                     </div>
@@ -652,7 +652,7 @@ export function FrameForm(props: {
               <h2>Preview</h2>
               <div className="space-y-8">
                 <div>
-                  <h3>Welcome Screen</h3>
+                  <p className=" font-semibold">Welcome Screen</p>
                   {prerevealSvg && (
                     <div
                       className="rounded-lg"
@@ -662,10 +662,31 @@ export function FrameForm(props: {
                 </div>
 
                 <div>
-                  <h3>After Reveal</h3>
-                  {revealedSvg && (
+                  <p className="font-semibold">After Reveal</p>
+                  {revealType === "image" && (
+                    <>
+                      {formValue?.imageUrl ? (
+                        <img
+                          src={formValue.imageUrl}
+                          className="w-full rounded-lg"
+                          style={{ maxWidth: width, maxHeight: width / 1.91 }}
+                          alt="image"
+                        />
+                      ) : (
+                        <div className="rounded-lg border border-dashed p-8 flex items-center justify-center text-sm text-gray-400">
+                          Enter an Image URL
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {revealType === "frame" && (
+                    <div className="rounded-lg border border-dashed p-8 flex items-center justify-center text-sm text-gray-400">
+                      Frame Previews are not available yet.
+                    </div>
+                  )}
+                  {revealType === "text" && (
                     <div
-                      dangerouslySetInnerHTML={{ __html: revealedSvg }}
+                      dangerouslySetInnerHTML={{ __html: revealedSvg! }}
                     ></div>
                   )}
                 </div>
