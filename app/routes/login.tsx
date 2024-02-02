@@ -3,15 +3,27 @@ import {
   SignInButton,
   StatusAPIResponse,
 } from "@farcaster/auth-kit";
-import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { LoaderFunctionArgs } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import { useCallback } from "react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
+import { Alert } from "~/components/ui/alert";
 import { authenticator } from "~/lib/auth.server";
 import { getSharedEnv } from "~/lib/utils.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const error = url.searchParams.get("error");
+
+  if (code) {
+    return await authenticator.authenticate("otp", request, {
+      successRedirect: "/~",
+      failureRedirect: "/login?error=invalid-otp",
+    });
+  }
+
   const user = await authenticator.isAuthenticated(request);
 
   if (user) {
@@ -20,11 +32,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return typedjson({
     env: getSharedEnv(),
+    error,
   });
 }
 
 export default function Login() {
-  const { env } = useTypedLoaderData<typeof loader>();
+  const { env, error } = useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const farcasterConfig = {
@@ -58,6 +71,12 @@ export default function Login() {
           <h2 className="font-normal mb-8">
             Gate content with Farcaster Frames
           </h2>
+
+          {error && (
+            <Alert className="mb-8" variant="destructive">
+              {error}
+            </Alert>
+          )}
 
           <div className="space-y-4">
             <p>

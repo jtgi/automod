@@ -1,11 +1,22 @@
 import { ArrowTopRightIcon } from "@radix-ui/react-icons";
-import { Link } from "@remix-run/react";
+import { Link, useLocation } from "@remix-run/react";
 import { Button } from "~/components/ui/button";
 
 export default function Marketing() {
+  const location = useLocation();
+
   return (
     <div className="px-8 h-full w-full flex flex-col items-center justify-center min-h-screen">
       <div className="max-w-xl">
+        {location.search.includes("error=invalid_invite_code") && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 my-8 rounded relative">
+            <strong className="font-bold">
+              Damn. That invite has expired.
+              <br />
+              Purchase the presale for priority access.
+            </strong>
+          </div>
+        )}
         <h1 className="text-center text-5xl logo">glass</h1>
         <h2 className="text-center text-lg font-normal mb-4">
           Gate content with Farcaster Frames

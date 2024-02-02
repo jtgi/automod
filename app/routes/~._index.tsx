@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { db } from "~/lib/db.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
@@ -18,7 +19,6 @@ import { Link } from "@remix-run/react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -37,7 +37,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getSession(request.headers.get("Cookie")),
   ]);
 
-  console.log("newframe", session.get("newFrame"));
+  const newFrame = session.get("newFrame");
 
   return typedjson(
     {
@@ -45,9 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       frames,
       env: getSharedEnv(),
       hostUrl: env.hostUrl,
-      newlyCreatedUrl: session.get("newFrame")
-        ? `${env.hostUrl}/${session.get("newFrame")}`
-        : null,
+      newlyCreatedUrl: newFrame ? `${env.hostUrl}/${newFrame}` : null,
     },
     {
       headers: {
@@ -69,13 +67,32 @@ export default function FrameConfig() {
             <CardTitle>Welcome</CardTitle>
           </CardHeader>
           <CardContent>
-            <div>You dont have any frames yet, create one to get started.</div>
+            <div className="space-y-4">
+              <p>Thanks for joining the private beta.</p>
+              <p>
+                Glass is still a work in progress so you should expect some bugs
+                and things missing.
+              </p>
+              <p>
+                If something doesn't work or you have a feature request, ping me
+                on <Link to="https://warpcast/jtgi">Farcaster</Link> or use the{" "}
+                <Link
+                  to={"https://tally.so/r/w2P22b"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  feedback form
+                </Link>
+                . I'll fix it.
+              </p>
+              <p>
+                To get started{" "}
+                <Link to="/~/frames/new">create a new frame.</Link>
+              </p>
+
+              <p className="mt-4">–jtgi</p>
+            </div>
           </CardContent>
-          <CardFooter>
-            <Button asChild>
-              <Link to="/~/frames/new">Create a new frame</Link>
-            </Button>
-          </CardFooter>
         </Card>
       )}
 
@@ -106,17 +123,17 @@ export default function FrameConfig() {
       </div>
 
       <Dialog defaultOpen={!!newlyCreatedUrl}>
-        <DialogContent>
+        <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Success!</DialogTitle>
             <DialogDescription>Your frame has been created.</DialogDescription>
-            <div className="flex items-center justify-center gap-2 py-4">
+            <div className="flex flex-col items-center justify-center gap-2 py-4">
               <Input value={newlyCreatedUrl!} />
-              <Button onClick={() => copy(newlyCreatedUrl!)}>
+              <Button className="w-full" onClick={() => copy(newlyCreatedUrl!)}>
                 {copied ? (
                   <CheckIcon className="w-5 h-5" />
                 ) : (
-                  <CopyIcon className="w-5 h-5" />
+                  <span>Copy Link</span>
                 )}
               </Button>
             </div>

@@ -55,9 +55,21 @@ export default function Index() {
           <Link to="/~" className="no-underline">
             <h1 className="logo text-3xl">glass</h1>
           </Link>
-          <Form method="post" action="/logout">
-            <Button variant={"ghost"}>Logout</Button>
-          </Form>
+          <div className="flex space-x-4">
+            <Button asChild variant={"outline"}>
+              <Link
+                to={"https://tally.so/r/w2P22b"}
+                className="no-underline"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Feedback
+              </Link>
+            </Button>
+            <Form method="post" action="/~/logout">
+              <Button variant={"ghost"}>Logout</Button>
+            </Form>
+          </div>
         </nav>
         <Outlet />
       </main>

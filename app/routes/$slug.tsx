@@ -16,7 +16,7 @@ type FrameResponseArgs = {
   image: string;
   buttons?: Array<{
     text: string;
-    url?: string;
+    isRedirect?: boolean;
   }>;
   postUrl?: string;
 };
@@ -288,7 +288,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   });
 }
 
-function frameResponse(params: FrameResponseArgs) {
+export function frameResponse(params: FrameResponseArgs) {
   const version = params.version || "vNext";
   const html = `
   <!DOCTYPE html>
@@ -316,12 +316,17 @@ function frameResponse(params: FrameResponseArgs) {
       ${
         params.buttons
           ? params.buttons
-              .map(
-                (b, index) =>
-                  `<meta property="fc:frame:button:${index + 1}" content="${
-                    b.text
-                  }">`
-              )
+              .map((b, index) => {
+                let out = `<meta property="fc:frame:button:${
+                  index + 1
+                }" content="${b.text}">`;
+                if (b.isRedirect) {
+                  out += `\n<meta property="fc:frame:button:${
+                    index + 1
+                  }:action" content="post_redirect">`;
+                }
+                return out;
+              })
               .join("\n")
           : ""
       }
@@ -342,6 +347,7 @@ function frameResponse(params: FrameResponseArgs) {
   return new Response(html, {
     headers: {
       "Content-Type": "text/html",
+      "Cache-Control": "no-store, max-age=0",
     },
   });
 }

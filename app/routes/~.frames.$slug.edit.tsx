@@ -70,7 +70,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   await requireFrameOwner(user.id, data.slug);
 
-  console.log("data", data);
   // TODO: validation
   const frame = await db.frame
     .update({
