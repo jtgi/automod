@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { InviteCode, User } from "@prisma/client";
 import { FarcasterUser } from "./auth.server";
 import { AuthenticateOptions, Strategy } from "remix-auth";
 import { SessionStorage } from "@remix-run/node";
@@ -53,20 +53,51 @@ export class FarcasterStrategy extends Strategy<
       );
     }
 
-    const isPreorder = await db.preorder.findUnique({
-      where: {
-        providerId: fid.toString(),
-      },
-    });
+    const inviteCode = url.searchParams.get("invite");
+    let invite: InviteCode | null = null;
+    if (inviteCode) {
+      invite = await db.inviteCode.findUnique({
+        where: {
+          code: inviteCode,
+        },
+      });
 
-    if (!isPreorder) {
-      return await this.failure(
-        "Access denied",
-        request,
-        sessionStorage,
-        options,
-        error
-      );
+      if (!invite) {
+        return await this.failure(
+          "Invalid invite code",
+          request,
+          sessionStorage,
+          options
+        );
+      }
+
+      await db.preorder.upsert({
+        where: {
+          providerId: fid.toString(),
+        },
+        create: {
+          providerId: fid.toString(),
+        },
+        update: {
+          providerId: fid.toString(),
+        },
+      });
+    } else {
+      const isPreorder = await db.preorder.findUnique({
+        where: {
+          providerId: fid.toString(),
+        },
+      });
+
+      if (!isPreorder) {
+        return await this.failure(
+          "Access denied",
+          request,
+          sessionStorage,
+          options,
+          error
+        );
+      }
     }
 
     const user = await this.verify({
@@ -75,6 +106,17 @@ export class FarcasterStrategy extends Strategy<
       pfpUrl: credentials.pfpUrl,
       request,
     });
+
+    if (invite) {
+      await db.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          claimedInviteCodeId: invite.id,
+        },
+      });
+    }
 
     return this.success(user, request, sessionStorage, options);
   }

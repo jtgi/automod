@@ -12,17 +12,11 @@ import {
 import { Input } from "~/components/ui/input";
 import { useClipboard } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { CheckIcon, CopyIcon, PlusIcon } from "@radix-ui/react-icons";
+import { CheckIcon, PlusIcon } from "@radix-ui/react-icons";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { Link } from "@remix-run/react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });

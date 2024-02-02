@@ -1,28 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { Input } from "~/components/ui/input";
-import { generateFrameSvg } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { Frame, User } from "@prisma/client";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, json } from "@remix-run/react";
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Textarea } from "~/components/ui/textarea";
-import { Checkbox } from "~/components/ui/checkbox";
-import { HexColorPicker } from "react-colorful";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
-import { Field, FieldLabel } from "~/components/ui/fields";
+import { json } from "@remix-run/react";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { db } from "~/lib/db.server";
 import { commitSession, getSession } from "~/lib/auth.server";

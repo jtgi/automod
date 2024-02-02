@@ -16,6 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const error = url.searchParams.get("error");
+  const invite = url.searchParams.get("invite");
 
   if (code) {
     return await authenticator.authenticate("otp", request, {
@@ -32,12 +33,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return typedjson({
     env: getSharedEnv(),
+    invite,
     error,
   });
 }
 
 export default function Login() {
-  const { env, error } = useTypedLoaderData<typeof loader>();
+  const { env, error, invite } = useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const farcasterConfig = {
@@ -57,6 +59,7 @@ export default function Login() {
     params.append("nonce", res.nonce);
     res.username && params.append("username", res.username);
     res.pfpUrl && params.append("pfpUrl", res.pfpUrl);
+    invite && params.append("invite", invite);
 
     navigate(`/auth/farcaster?${params}`, {
       replace: true,
