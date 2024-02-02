@@ -18,7 +18,7 @@ export default function Marketing() {
             </strong>
           </div>
         )}
-        <h1 className="text-center text-5xl logo">glass</h1>
+        <h1 className="text-center text-5xl logo mt-8">glass</h1>
         <h2 className="text-center text-lg font-normal mb-4">
           Gate content with Farcaster Frames
         </h2>
@@ -44,13 +44,11 @@ export default function Marketing() {
               Boost engagement by requiring a post be liked, recasted, or
               followed.
             </li>
-            <li>
-              Reveal any text content, image, even other frames. (more soon)
-            </li>
+            <li>Reveal any text content, image, even other frames.</li>
             <li>Zero code required.</li>
           </ul>
 
-          <div className="pt-2 flex flex-col justify-center">
+          <div className="pt-2 flex flex-col justify-center space-y-2 pb-20">
             <Button asChild className="w-full sm:w-auto">
               <Link
                 className="no-underline"
@@ -60,6 +58,8 @@ export default function Marketing() {
               >
                 Preorder with Credit Card <ArrowTopRightIcon className="ml-1" />
               </Link>
+            </Button>
+            <Button asChild className="w-full sm:w-auto">
               <Link
                 className="no-underline"
                 to="https://commerce.coinbase.com/checkout/fbb049d3-49e3-4e21-8b42-e7e78d5aa502"
