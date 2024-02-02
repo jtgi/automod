@@ -32,6 +32,7 @@ model InviteCode {
   id     String  @id @default(cuid())
   active Boolean @default(true)
   limit  Int     @default(1)
+  note   String?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
