@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
   });
 
-  if (!inviteDef) {
+  if (!inviteDef || inviteDef.claims.length >= inviteDef.limit) {
     return new Response("OK", {
       status: 302,
       headers: {
@@ -92,17 +92,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         claimedInviteCodeId: inviteDef.id,
       },
     });
-
-    if (inviteDef.claims.length + 1 >= inviteDef.limit) {
-      await db.inviteCode.update({
-        where: {
-          id: inviteDef.id,
-        },
-        data: {
-          active: false,
-        },
-      });
-    }
   }
 
   await db.preorder.upsert({
@@ -139,6 +128,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
     where: {
       id: params.invite,
     },
+    include: {
+      claims: true,
+    },
   });
 
   console.log({ invite });
@@ -160,7 +152,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     image: await generateFrame({
       message: "Invites are limited. Claim yours now.",
     }),
-    postUrl: `${getSharedEnv().hostUrl}/x/invite/${invite.id}`,
+    postUrl: `${getSharedEnv().hostUrl}/x/finvite/${invite.id}`,
     buttons: [
       {
         text: "Claim Invite",

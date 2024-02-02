@@ -10,9 +10,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
     where: {
       id: params.invite,
     },
+    include: {
+      claims: true,
+    },
   });
 
-  if (!invite || !invite.active) {
+  if (!invite || invite.claims.length >= invite.limit) {
     throw redirect("/?error=invalid_invite_code");
   }
 

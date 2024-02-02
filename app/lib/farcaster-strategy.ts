@@ -58,7 +58,7 @@ export class FarcasterStrategy extends Strategy<
     if (inviteCode) {
       invite = await db.inviteCode.findUnique({
         where: {
-          code: inviteCode,
+          id: inviteCode,
         },
       });
 
@@ -107,7 +107,7 @@ export class FarcasterStrategy extends Strategy<
       request,
     });
 
-    if (invite) {
+    if (invite && !user.claimedInviteCodeId) {
       await db.user.update({
         where: {
           id: user.id,

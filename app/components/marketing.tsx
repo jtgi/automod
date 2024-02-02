@@ -13,7 +13,8 @@ export default function Marketing() {
             <strong className="font-bold">
               Damn. That invite has expired.
               <br />
-              Purchase the presale for priority access.
+              More will be onboarding soon, purchase the presale for priority
+              access and a discount.
             </strong>
           </div>
         )}
