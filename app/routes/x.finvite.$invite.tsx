@@ -18,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const inviteDef = await db.inviteCode.findUnique({
     where: {
-      code: invite,
+      id: invite,
       active: true,
     },
     include: {
@@ -132,12 +132,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 }
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   invariant(params.invite, "Invite code is required");
 
   const invite = await db.inviteCode.findFirstOrThrow({
     where: {
-      code: params.invite,
+      id: params.invite,
     },
   });
 
@@ -160,7 +160,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     image: await generateFrame({
       message: "Invites are limited. Claim yours now.",
     }),
-    postUrl: `${getSharedEnv().hostUrl}/x/invite/${invite.code}`,
+    postUrl: `${getSharedEnv().hostUrl}/x/invite/${invite.id}`,
     buttons: [
       {
         text: "Claim Invite",

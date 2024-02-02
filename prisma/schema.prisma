@@ -30,7 +30,6 @@ model User {
 
 model InviteCode {
   id     String  @id @default(cuid())
-  code   String  @unique
   active Boolean @default(true)
   limit  Int     @default(1)
 
