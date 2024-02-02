@@ -14,7 +14,7 @@ export default function Marketing() {
               Damn. That invite has expired.
               <br />
               More will be onboarding soon, purchase the presale for priority
-              access and a discount.
+              access and 3 months free.
             </strong>
           </div>
         )}
@@ -58,7 +58,15 @@ export default function Marketing() {
                 target="_blank"
                 rel="noreferrer"
               >
-                Preorder Now <ArrowTopRightIcon className="ml-1" />
+                Preorder with Credit Card <ArrowTopRightIcon className="ml-1" />
+              </Link>
+              <Link
+                className="no-underline"
+                to="https://commerce.coinbase.com/checkout/fbb049d3-49e3-4e21-8b42-e7e78d5aa502"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Preorder with Crypto <ArrowTopRightIcon className="ml-1" />
               </Link>
             </Button>
             <span className="text-xs text-gray-500 block text-center mt-1">
