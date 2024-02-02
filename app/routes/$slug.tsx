@@ -47,6 +47,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     `https://api.neynar.com/v2/farcaster/frame/validate`,
     {
       message_bytes_in_hex: data.trustedData.messageBytes,
+      follow_context: true,
     },
     {
       headers: {
@@ -83,16 +84,10 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   const cacheKey = `frameResult:${message.action.cast.hash}:${message.action.interactor.fid}:${frame.id}`;
   const cached = cache.get<string>(cacheKey);
 
-  if (cached === "true") {
+  if (cached !== "true") {
     if (frame.requireSomeoneIFollow) {
       if (message.action.interactor.fid !== message.action.cast.author.fid) {
-        const followers = await pageFollowersDeep({
-          fid: message.action.interactor.fid,
-        });
-
-        const isValid = followers.some(
-          (f) => f.fid == message.action.cast.author.fid
-        );
+        const isValid = message.action.interactor.viewer_context!.following;
 
         if (!isValid) {
           return frameResponse({
@@ -105,13 +100,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
     if (frame.requireFollow) {
       if (message.action.interactor.fid !== message.action.cast.author.fid) {
-        const followers = await pageFollowersDeep({
-          fid: message.action.cast.author.fid,
-        });
-
-        const isValid = followers.some(
-          (f) => f.fid == message.action.interactor.fid
-        );
+        const isValid = message.action.interactor.viewer_context!.followed_by;
 
         if (!isValid) {
           return frameResponse({

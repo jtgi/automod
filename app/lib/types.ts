@@ -106,6 +106,10 @@ export interface Interactor {
   following_count: number;
   verifications: string[];
   active_status: string;
+  viewer_context?: {
+    following: boolean;
+    followed_by: boolean;
+  };
 }
 
 export interface InteractorProfile {
