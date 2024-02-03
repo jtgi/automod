@@ -133,14 +133,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
     },
   });
 
-  console.log({ invite });
-
-  if (!invite.active) {
+  if (!invite.active || invite.claims.length >= invite.limit) {
     return frameResponse({
       title: "No invites left",
       description: "glass is in private beta and invites are limited.",
       image: await generateFrame({
-        message: "All invites have been claimed. Stay tuned.",
+        message: "All invites have been claimed. Preorder for priority access.",
       }),
     });
   }
