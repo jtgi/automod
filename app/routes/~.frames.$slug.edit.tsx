@@ -95,7 +95,7 @@ export async function action({ request }: ActionFunctionArgs) {
         textColor: data.textColor,
 
         requirePassword:
-          data.requirePassword === "" ? null : data.requirePassword,
+          data.requirePasswordCheckbox === "on" ? data.requirePassword : null,
         requireERC20ContractAddress: data.requireERC20ContractAddress,
         requireERC20MinBalance:
           data.requireERC20MinBalance === ""
@@ -176,6 +176,7 @@ export function FrameForm(props: {
     props.frame
       ? {
           ...props.frame,
+          requirePasswordCheckbox: !!props.frame.requirePassword,
         }
       : {}
   );
@@ -393,7 +394,6 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireLike}
                   />
                 </FieldLabel>
-
                 <FieldLabel
                   label="Must Recast"
                   position="right"
@@ -407,7 +407,6 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireRecast}
                   />
                 </FieldLabel>
-
                 <FieldLabel
                   label="Must Enter Password"
                   position="right"
@@ -421,8 +420,7 @@ export function FrameForm(props: {
                     defaultChecked={!!props.frame?.requirePassword}
                   />
                 </FieldLabel>
-
-                {formValue.requirePassword && (
+                {formValue.requirePasswordCheckbox && (
                   <div className="pt-1 pb-4">
                     <Input
                       required
@@ -433,7 +431,6 @@ export function FrameForm(props: {
                     />
                   </div>
                 )}
-
                 <FieldLabel
                   label="Must Follow Me"
                   position="right"
@@ -447,7 +444,6 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireFollow}
                   />
                 </FieldLabel>
-
                 <FieldLabel
                   label="Must Be Someone I Follow"
                   position="right"
@@ -461,7 +457,6 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireSomeoneIFollow}
                   />
                 </FieldLabel>
-
                 <FieldLabel
                   label="Must Hold ERC-721"
                   position="right"
@@ -475,7 +470,6 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireHoldERC721}
                   />
                 </FieldLabel>
-
                 {formValue.requireHoldERC721 && (
                   <div className="py-4 border-t space-y-2">
                     <div className="flex items-center gap-4">
@@ -533,7 +527,6 @@ export function FrameForm(props: {
                     </div>
                   </div>
                 )}
-
                 <FieldLabel
                   label="Must Hold ERC-20"
                   position="right"
@@ -547,7 +540,6 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireHoldERC20}
                   />
                 </FieldLabel>
-
                 {formValue.requireHoldERC20 && (
                   <div className="py-4 border-t space-y-2">
                     <div className="flex items-center gap-4">
