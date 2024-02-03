@@ -71,6 +71,7 @@ model Frame {
   imageUrl              String?
   revealType            String  @default("text")
   preRevealText         String
+  requirePassword       String?
   requireLike           Boolean @default(false)
   requireRecast         Boolean @default(false)
   requireFollow         Boolean @default(false)

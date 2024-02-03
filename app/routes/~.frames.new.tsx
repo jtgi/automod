@@ -87,6 +87,8 @@ export async function action({ request }: ActionFunctionArgs) {
         preRevealText: data.preRevealText,
         revealType: data.revealType,
         frameUrl: data.frameUrl ? new URL(data.frameUrl).toString() : null,
+        requirePassword:
+          data.requirePassword === "" ? null : data.requirePassword,
         requireLike: data.requireLike === "on",
         requireRecast: data.requireRecast === "on",
         requireFollow: data.requireFollow === "on",

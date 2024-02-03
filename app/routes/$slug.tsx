@@ -4,14 +4,15 @@ import { LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { generateFrame, getSharedEnv } from "~/lib/utils.server";
-import { pageFollowersDeep } from "~/lib/neynar.server";
 import { clientsByChainId } from "~/lib/viem.server";
 import axios from "axios";
 import { MessageResponse } from "~/lib/types";
 import { cache } from "~/lib/cache.server";
+import { Message, getSSLHubRpcClient } from "@farcaster/hub-nodejs";
 
 type FrameResponseArgs = {
   title?: string;
+  input?: string;
   description?: string;
   version?: string;
   image: string;
@@ -65,6 +66,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
   }
 
   const castInfo = message.action.cast;
+  console.log({ castInfo });
   const frameUrlSigned = castInfo.frames[0].frames_url;
 
   console.log({
@@ -95,6 +97,64 @@ export async function action({ request, params }: LoaderFunctionArgs) {
             buttons: [{ text: "Try Again" }],
           });
         }
+      }
+    }
+
+    if (frame.requirePassword) {
+      let validatedMessage: Message | undefined = undefined;
+
+      if (!data.trustedData) {
+        console.log("invalid data", { data });
+        return json({ error: "Missing trusted data", data }, { status: 400 });
+      }
+
+      const HUB_URL = "nemes.farcaster.xyz:2283";
+      const client = getSSLHubRpcClient(HUB_URL);
+
+      const frameMessage = Message.decode(
+        Buffer.from(data.trustedData.messageBytes, "hex")
+      );
+
+      const result = await client.validateMessage(frameMessage);
+      if (
+        result.isOk() &&
+        result.value.valid &&
+        result.value.message?.data?.fid
+      ) {
+        validatedMessage = result.value.message;
+      } else {
+        console.log("invalid message", { result });
+        return json({ error: "Invalid message" }, { status: 400 });
+      }
+
+      if (
+        validatedMessage.data?.frameActionBody?.url.toString() !==
+        `${env.hostUrl}/${params.slug}`
+      ) {
+        console.log("invalid url", {
+          url: validatedMessage.data?.frameActionBody?.url.toString(),
+          actionBody: validatedMessage.data?.frameActionBody,
+          hostUrl: env.hostUrl,
+        });
+        return json({ error: "Invalid url" }, { status: 400 });
+      }
+
+      console.log("password message", {
+        validatedMessage: {
+          fid: validatedMessage.data!.fid.toString(),
+          userData: validatedMessage.data?.userDataBody?.value,
+          password:
+            validatedMessage.data?.frameActionBody?.inputText.toString(),
+        },
+      });
+      const passwordEntered =
+        validatedMessage.data?.frameActionBody?.inputText.toString();
+      if (passwordEntered !== frame.requirePassword) {
+        return frameResponse({
+          image: await generateFrame(frame, "Invalid password"),
+          input: "Enter password",
+          buttons: [{ text: "Try Again" }],
+        });
       }
     }
 
@@ -283,6 +343,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     title: `Glass | ${frame.slug}`,
     description: frame.preRevealText,
     image: await generateFrame(frame, frame.preRevealText),
+    input: frame.requirePassword ? "Enter password" : undefined,
     buttons: [{ text: "Reveal" }],
   });
 }
@@ -303,6 +364,11 @@ export function frameResponse(params: FrameResponseArgs) {
         params.description
           ? `<meta property="description" content="${params.description}">
       <meta property="og:description" content="${params.description}">`
+          : ""
+      }
+      ${
+        params.input
+          ? `<meta property="fc:frame:input:text" content="${params.input}">`
           : ""
       }
       <meta property="fc:frame" content="${version}">

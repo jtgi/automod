@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@farcaster/auth-kit": "^0.1.4",
-    "@farcaster/hub-nodejs": "^0.10.21",
+    "@farcaster/hub-nodejs": "^0.10.23",
     "@neynar/nodejs-sdk": "^1.7.0",
     "@prisma/client": "^5.8.1",
     "@radix-ui/react-checkbox": "^1.0.4",

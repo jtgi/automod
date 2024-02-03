@@ -70,6 +70,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   await requireFrameOwner(user.id, data.slug);
 
+  console.log(data.requirePasswordCheckbox, data.requirePassword);
+
   // TODO: validation
   const frame = await db.frame
     .update({
@@ -92,6 +94,8 @@ export async function action({ request }: ActionFunctionArgs) {
         backgroundColor: data.backgroundColor,
         textColor: data.textColor,
 
+        requirePassword:
+          data.requirePassword === "" ? null : data.requirePassword,
         requireERC20ContractAddress: data.requireERC20ContractAddress,
         requireERC20MinBalance:
           data.requireERC20MinBalance === ""
@@ -403,6 +407,32 @@ export function FrameForm(props: {
                     defaultChecked={props.frame?.requireRecast}
                   />
                 </FieldLabel>
+
+                <FieldLabel
+                  label="Must Enter Password"
+                  position="right"
+                  labelProps={{
+                    htmlFor: "requirePasswordCheckbox",
+                  }}
+                >
+                  <Checkbox
+                    id="requirePasswordCheckbox"
+                    name="requirePasswordCheckbox"
+                    defaultChecked={!!props.frame?.requirePassword}
+                  />
+                </FieldLabel>
+
+                {formValue.requirePassword && (
+                  <div className="pt-1 pb-4">
+                    <Input
+                      required
+                      id="requirePassword"
+                      name="requirePassword"
+                      defaultValue={props.frame?.requirePassword ?? undefined}
+                      placeholder="e.g. wowow"
+                    />
+                  </div>
+                )}
 
                 <FieldLabel
                   label="Must Follow Me"

@@ -9,8 +9,8 @@ dependencies:
     specifier: ^0.1.4
     version: 0.1.4(@types/react@18.2.47)(react-dom@18.2.0)(react@18.2.0)(viem@2.5.0)
   '@farcaster/hub-nodejs':
-    specifier: ^0.10.21
-    version: 0.10.21(typescript@5.3.3)
+    specifier: ^0.10.23
+    version: 0.10.23(typescript@5.3.3)
   '@neynar/nodejs-sdk':
     specifier: ^1.7.0
     version: 1.7.0(typescript@5.3.3)
@@ -994,10 +994,27 @@ packages:
       - zod
     dev: false
 
-  /@farcaster/hub-nodejs@0.10.21(typescript@5.3.3):
-    resolution: {integrity: sha512-tOv1iKbCl4jsiKUiQr5Duu1vCFV54wRN4+Xt/PKYk7ihy1+MJ9U6lCqkXNH52xtye7hGshKsHrH9CaQU8FO/sA==}
+  /@farcaster/core@0.13.7(typescript@5.3.3):
+    resolution: {integrity: sha512-TMvVrlnGAWdHWCe36doFIMT7oj7HdN94rxdME5MDM+EKQyj4E9bgMghh/3il0waMr6PPG5ZlE4rJrhnTYqaIAw==}
     dependencies:
-      '@farcaster/core': 0.13.5(typescript@5.3.3)
+      '@noble/curves': 1.3.0
+      '@noble/hashes': 1.3.3
+      ffi-napi: 4.0.3
+      neverthrow: 6.1.0
+      ref-napi: 3.0.3
+      viem: 1.21.4(typescript@5.3.3)
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
+
+  /@farcaster/hub-nodejs@0.10.23(typescript@5.3.3):
+    resolution: {integrity: sha512-gDgO+qni/VoP5Kfn6P5oA3CNC6SQKRjOihKW3WWRbTzfTouVfOhef3+3t4FuTazuVy4KrZsGdv1njzcm2J8qhg==}
+    dependencies:
+      '@farcaster/core': 0.13.7(typescript@5.3.3)
       '@grpc/grpc-js': 1.8.21
       '@noble/hashes': 1.3.3
       neverthrow: 6.1.0
