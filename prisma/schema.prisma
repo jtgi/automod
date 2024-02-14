@@ -14,85 +14,25 @@ model User {
   id         String  @id @default(cuid())
   email      String? @unique
   providerId String  @unique
-  name       String?
-  avatarUrl  String?
-
-  frames Frame[]
-  otps   Otp[]
-
-  claimedInviteCode   InviteCode? @relation(fields: [claimedInviteCodeId], references: [id])
-  claimedInviteCodeId String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-}
-
-model InviteCode {
-  id     String  @id @default(cuid())
-  active Boolean @default(true)
-  limit  Int     @default(1)
-  note   String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  claims User[]
-}
-
-model Otp {
-  id     String  @id @default(cuid())
-  code   String  @unique @default(cuid())
-  active Boolean @default(false)
-  userId String
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  sex        String
+  seeking    String
+  name       String
+  avatarUrl  String
+  userData   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sightings Seen[]
 }
 
-model Preorder {
-  id         String @id @default(cuid())
-  providerId String @unique
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-}
-
-model Frame {
-  id     String  @id @default(cuid())
-  slug   String  @unique
-  active Boolean @default(true)
-
-  secretText            String?
-  frameUrl              String?
-  imageUrl              String?
-  revealType            String  @default("text")
-  preRevealText         String
-  requirePassword       String?
-  requireLike           Boolean @default(false)
-  requireRecast         Boolean @default(false)
-  requireFollow         Boolean @default(false)
-  requireSomeoneIFollow Boolean @default(false)
-  requireHoldERC721     Boolean @default(false)
-  requireHoldERC20      Boolean @default(false)
-  backgroundColor       String
-  textColor             String
-
-  requireERC721ContractAddress String?
-  requireERC721TokenId         String?
-  requireERC721NetworkId       String?
-
-  requireERC20ContractAddress String?
-  requireERC20NetworkId       String?
-  requireERC20MinBalance      String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
+model Seen {
+  id     String @id @default(cuid())
   user   User   @relation(fields: [userId], references: [id])
   userId String
+  toFid  String
+  result String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

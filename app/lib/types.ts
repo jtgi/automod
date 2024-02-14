@@ -1,14 +1,20 @@
+import { CSSProperties } from "react";
+import { Frame as FrameModel } from "@prisma/client";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface MessageResponse {
   valid: boolean;
   action: Action;
 }
 
+export type ExtendedFrame = FrameModel & { cssPropsJson: CSSProperties };
+
 export interface Action {
   object: string;
   interactor: Interactor;
   tapped_button: TappedButton;
   cast: Cast;
+  url: string;
 }
 
 export interface Cast {
@@ -23,7 +29,7 @@ export interface Cast {
   text: string;
   timestamp: Date;
   embeds: Embed[];
-  frames: Frame[];
+  frames?: Frame[];
   reactions: Reactions;
   replies: Replies;
   mentioned_profiles: any[];

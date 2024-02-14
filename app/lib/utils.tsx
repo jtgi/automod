@@ -10,7 +10,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export async function generateFrameSvg(
-  frame: Frame,
   message: string,
   hostUrl: string,
   options?: {
@@ -22,9 +21,9 @@ export async function generateFrameSvg(
   const scale = options?.scale || 1;
   const styles: CSSProperties = {
     display: "flex",
-    color: frame.textColor || "white",
+    color: "white",
     fontFamily: "Inter Regular",
-    backgroundColor: frame.backgroundColor || "black",
+    backgroundColor: "black",
     height: "100%",
     width: "100%",
     padding: 72 * scale,

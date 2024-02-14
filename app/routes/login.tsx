@@ -70,10 +70,8 @@ export default function Login() {
     <AuthKitProvider config={farcasterConfig}>
       <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
         <div className="max-w-xl flex flex-col justify-center items-center">
-          <h1 className="text-6xl logo">glass</h1>
-          <h2 className="font-normal mb-8">
-            Gate content with Farcaster Frames
-          </h2>
+          <h1 className="text-6xl logo">dating on-frame</h1>
+          <h2 className="font-normal mb-8">what could go wrong?</h2>
 
           {error && (
             <Alert className="mb-8" variant="destructive">
@@ -81,16 +79,8 @@ export default function Login() {
             </Alert>
           )}
 
-          <div className="space-y-4">
-            <p>
-              Glass is currently in private beta.
-              <br />
-              Reach out to <a href="https://warpcast.com/jtgi">@jtgi</a> for
-              access.
-            </p>
-            <div className="flex flex-row items-center justify-center pt-8">
-              <SignInButton onSuccess={handleSuccess} />
-            </div>
+          <div className="flex flex-row items-center justify-center pt-8">
+            <SignInButton onSuccess={handleSuccess} />
           </div>
         </div>
       </div>

@@ -53,19 +53,9 @@ export default function Index() {
       <main className="w-full max-w-4xl px-8 mx-auto min-h-screen flex flex-col pb-[200px]">
         <nav className="w-full flex justify-between max-w-4xl mx-auto py-8">
           <Link to="/~" className="no-underline">
-            <h1 className="logo text-3xl">glass</h1>
+            <h1 className="logo text-3xl">onframe dating</h1>
           </Link>
           <div className="flex space-x-4">
-            <Button asChild variant={"outline"}>
-              <Link
-                to={"https://tally.so/r/w2P22b"}
-                className="no-underline"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Feedback
-              </Link>
-            </Button>
             <Form method="post" action="/~/logout">
               <Button variant={"ghost"}>Logout</Button>
             </Form>

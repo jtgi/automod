@@ -1,5 +1,120 @@
-import Marketing from "~/components/marketing";
+import {
+  AuthKitProvider,
+  SignInButton,
+  StatusAPIResponse,
+} from "@farcaster/auth-kit";
+import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { useNavigate } from "@remix-run/react";
+import { useCallback } from "react";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
+import invariant from "tiny-invariant";
+import { Alert } from "~/components/ui/alert";
+import { authenticator } from "~/lib/auth.server";
+import { getSharedEnv } from "~/lib/utils.server";
 
-export default function Index() {
-  return <Marketing />;
+// export meta
+export const meta: MetaFunction<typeof loader> = (data) => {
+  return [
+    { title: "Farcaster Dating" },
+    {
+      property: "og:title",
+      content: "Frame Dating",
+    },
+    {
+      name: "description",
+      content: "Dating on farcaster",
+    },
+    {
+      name: "fc:frame",
+      content: "vNext",
+    },
+    {
+      name: "fc:frame:image",
+      content: `${data.data.env.hostUrl}/elmo.gif`,
+    },
+    {
+      name: "fc:frame:post_url",
+      content: `${data.data.env.hostUrl}/start`,
+    },
+    {
+      name: "fc:frame:button:1",
+      content: "Start",
+    },
+  ];
+};
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code");
+  const error = url.searchParams.get("error");
+  const invite = url.searchParams.get("invite");
+
+  if (code) {
+    return await authenticator.authenticate("otp", request, {
+      successRedirect: "/~",
+      failureRedirect: "/login?error=invalid-otp",
+    });
+  }
+
+  const user = await authenticator.isAuthenticated(request);
+
+  if (user) {
+    return redirect("/~");
+  }
+
+  return typedjson({
+    env: getSharedEnv(),
+    invite,
+    error,
+  });
+}
+
+export default function Login() {
+  const { env, error, invite } = useTypedLoaderData<typeof loader>();
+  const navigate = useNavigate();
+
+  const farcasterConfig = {
+    rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,
+    domain: new URL(env.hostUrl).host.split(":")[0],
+    siweUri: `${env.hostUrl}/login`,
+  };
+
+  const handleSuccess = useCallback((res: StatusAPIResponse) => {
+    invariant(res.message, "message is required");
+    invariant(res.signature, "signature is required");
+    invariant(res.nonce, "nonce is required");
+
+    const params = new URLSearchParams();
+    params.append("message", res.message);
+    params.append("signature", res.signature);
+    params.append("nonce", res.nonce);
+    res.username && params.append("username", res.username);
+    res.pfpUrl && params.append("pfpUrl", res.pfpUrl);
+    invite && params.append("invite", invite);
+
+    navigate(`/auth/farcaster?${params}`, {
+      replace: true,
+    });
+  }, []);
+
+  return (
+    <AuthKitProvider config={farcasterConfig}>
+      <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
+        <div className="max-w-xl flex flex-col justify-center items-center">
+          <h1 className="text-6xl logo">dating on-frame</h1>
+          <h2 className="font-normal mb-8">what could go wrong?</h2>
+
+          {error && (
+            <Alert className="mb-8" variant="destructive">
+              {error}
+            </Alert>
+          )}
+
+          <div className="flex flex-row items-center justify-center pt-8">
+            <SignInButton onSuccess={handleSuccess} />
+          </div>
+        </div>
+      </div>
+    </AuthKitProvider>
+  );
 }

@@ -82,22 +82,6 @@ export class FarcasterStrategy extends Strategy<
           providerId: fid.toString(),
         },
       });
-    } else {
-      const isPreorder = await db.preorder.findUnique({
-        where: {
-          providerId: fid.toString(),
-        },
-      });
-
-      if (!isPreorder) {
-        return await this.failure(
-          "Access denied",
-          request,
-          sessionStorage,
-          options,
-          error
-        );
-      }
     }
 
     const user = await this.verify({
