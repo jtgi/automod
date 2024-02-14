@@ -28,10 +28,10 @@ export async function action({ request }: ActionFunctionArgs) {
       image: await generateSystemFrame("Setup your profile. I'm a..."),
       buttons: [
         {
-          text: "Male",
+          text: "Guy",
         },
         {
-          text: "Female",
+          text: "Girl",
         },
       ],
       postUrl: `${env.hostUrl}/setup1`,

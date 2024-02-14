@@ -14,9 +14,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const message = await parseMessage(data);
   const seeking =
     message.action.tapped_button.index === 1
-      ? "male"
+      ? "guy"
       : message.action.tapped_button.index === 2
-      ? "female"
+      ? "girl"
       : "any";
 
   const user = await db.user.upsert({

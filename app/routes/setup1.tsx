@@ -11,7 +11,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const env = getSharedEnv();
 
   const message = await parseMessage(data);
-  const sex = message.action.tapped_button.index === 1 ? "male" : "female";
+  const sex = message.action.tapped_button.index === 1 ? "guy" : "girl";
 
   return frameResponse({
     title: "onframe dating",
@@ -19,6 +19,6 @@ export async function action({ request }: ActionFunctionArgs) {
     description: "Dating on farcaster",
     image: await generateSystemFrame(`Who you seeking?`),
     postUrl: `${env.hostUrl}/setup2?sex=${sex}`,
-    buttons: [{ text: "Male" }, { text: "Female" }, { text: "Either" }],
+    buttons: [{ text: "Guy" }, { text: "Girl" }, { text: "Either" }],
   });
 }
