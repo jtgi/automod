@@ -1,13 +1,10 @@
 import { CSSProperties } from "react";
-import { Frame as FrameModel } from "@prisma/client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface MessageResponse {
   valid: boolean;
   action: Action;
 }
-
-export type ExtendedFrame = FrameModel & { cssPropsJson: CSSProperties };
 
 export interface Action {
   object: string;
