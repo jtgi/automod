@@ -30,7 +30,7 @@ export const meta: MetaFunction<typeof loader> = (data) => {
     },
     {
       name: "fc:frame:image",
-      content: `${data.data.env.hostUrl}/elmo.gif`,
+      content: `${data.data.env.hostUrl}/preview.png`,
     },
     {
       name: "fc:frame:post_url",
@@ -101,8 +101,8 @@ export default function Login() {
     <AuthKitProvider config={farcasterConfig}>
       <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
         <div className="max-w-xl flex flex-col justify-center items-center">
-          <h1 className="text-6xl logo">dating on frame</h1>
-          <h2 className="font-normal mb-8">what could go wrong?</h2>
+          <h1 className="text-6xl logo">relationship.computer</h1>
+          <h2 className="font-normal mb-8">dating on frame</h2>
 
           {error && (
             <Alert className="mb-8" variant="destructive">
