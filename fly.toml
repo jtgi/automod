@@ -1,10 +1,14 @@
-# fly.toml app configuration file generated for onchain-dating on 2024-02-14T22:38:21+09:00
+# fly.toml app configuration file generated for framer on 2024-01-28T21:40:00+09:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
 app = 'onchain-dating'
 primary_region = 'lax'
+
+[mounts]
+  destination = "/data"
+  source = "data"
 
 [build]
 
@@ -14,7 +18,7 @@ primary_region = 'lax'
   auto_stop_machines = true
   auto_start_machines = true
   max_machines_running = 1
-  min_machines_running = 0
+  min_machines_running = 1
   processes = ['app']
 
 [[vm]]
