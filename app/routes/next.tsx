@@ -4,6 +4,7 @@ import axios from "axios";
 import satori from "satori";
 import { db } from "~/lib/db.server";
 import {
+  convertSvgToPngBase64,
   frameResponse,
   generateSystemFrame,
   getSharedEnv,
@@ -41,19 +42,30 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const liked = message.action.tapped_button.index === 2;
+    const user = await db.user.findFirstOrThrow({
+      where: {
+        providerId: String(message.action.interactor.fid),
+      },
+    });
 
     await db.seen.create({
       data: {
-        userId: String(message.action.interactor.fid),
+        userId: user.id,
         toFid: candidateFid,
         result: liked ? "like" : "dislike",
       },
     });
 
     if (liked) {
+      const user = await db.user.findFirstOrThrow({
+        where: {
+          providerId: String(candidateFid),
+        },
+      });
+
       const isMutual = await db.seen.findFirst({
         where: {
-          userId: candidateFid,
+          userId: user.id,
           toFid: String(message.action.interactor.fid),
           result: "like",
         },
@@ -91,12 +103,16 @@ export async function renderCandidate(user: User) {
   const contentType = imageResponse.headers["content-type"] || "image/jpeg";
   const dataURL = `data:${contentType};base64,${base64}`;
 
+  const fontData = await axios.get(getSharedEnv().hostUrl + "/Inter-Bold.ttf", {
+    responseType: "arraybuffer",
+  });
+
   const svg = await satori(
     <div
       style={{
         display: "flex",
         color: "white",
-        fontFamily: "Inter Regular",
+        fontFamily: "Inter",
         backgroundColor: "black",
         height: "100%",
         width: "100%",
@@ -114,20 +130,36 @@ export async function renderCandidate(user: User) {
         style={{ borderRadius: "50%", width: 200, marginBottom: 5 }}
       />
       <h1>@{user.name}</h1>
-      <p>{userData.profile}</p>
+      <p>{userData.profile?.bio?.text}</p>
     </div>,
     {
       width: 800,
-      height: 800,
-      fonts: [],
+      height: 418,
+      fonts: [
+        {
+          name: "Inter",
+          data: fontData.data,
+          style: "normal",
+        },
+      ],
     }
   );
 
-  return svg;
+  return convertSvgToPngBase64(svg);
 }
 
 export async function getNextCandidate(user: User) {
-  return db.user.findFirst({
+  const seenUserIds = await db.seen.findMany({
+    where: {
+      userId: user.id,
+    },
+    select: {
+      toFid: true, // Assuming 'toFid' refers to the IDs of users that have been seen
+    },
+  });
+
+  const seenIds = seenUserIds.map((seen) => seen.toFid);
+  const next = await db.user.findFirst({
     where: {
       providerId: {
         not: user.providerId,
@@ -136,18 +168,20 @@ export async function getNextCandidate(user: User) {
         in: [user.sex, "any"],
       },
       sex: user.seeking === "any" ? undefined : user.seeking,
-      NOT: {
-        sightings: {
-          some: {
-            userId: user.id,
+      AND: [
+        {
+          providerId: {
+            notIn: seenIds,
           },
         },
-      },
+      ],
     },
     orderBy: {
       createdAt: "asc",
     },
   });
+
+  return next;
 }
 
 export async function renderNextCandidateFrame(interactorFid: string | number) {
@@ -170,6 +204,10 @@ export async function renderNextCandidateFrame(interactorFid: string | number) {
         {
           text: "I'm feelin lucky",
         },
+        {
+          text: "Matches",
+          link: `${getSharedEnv().hostUrl}/~`,
+        },
       ],
       postUrl: `${getSharedEnv().hostUrl}/next`,
     });
@@ -182,10 +220,18 @@ export async function renderNextCandidateFrame(interactorFid: string | number) {
     image: await renderCandidate(next),
     buttons: [
       {
-        text: "Nay",
+        text: "👎",
       },
       {
-        text: "Yay",
+        text: "👍",
+      },
+      {
+        text: `@${next.name}`,
+        link: `https://warpcast/${next.providerId}`,
+      },
+      {
+        text: "Matches",
+        link: `${getSharedEnv().hostUrl}/~`,
       },
     ],
     postUrl: `${getSharedEnv().hostUrl}/next?fid=${next.providerId}`,

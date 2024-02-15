@@ -4,11 +4,12 @@ import {
   StatusAPIResponse,
 } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
-import { useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { useCallback } from "react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { Alert } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
 import { authenticator } from "~/lib/auth.server";
 import { getSharedEnv } from "~/lib/utils.server";
 
@@ -27,6 +28,10 @@ export const meta: MetaFunction<typeof loader> = (data) => {
     {
       name: "fc:frame",
       content: "vNext",
+    },
+    {
+      name: "og:image",
+      content: `${data.data.env.hostUrl}/preview.png`,
     },
     {
       name: "fc:frame:image",
@@ -58,19 +63,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const user = await authenticator.isAuthenticated(request);
 
-  if (user) {
-    return redirect("/~");
-  }
-
   return typedjson({
     env: getSharedEnv(),
+    user,
     invite,
     error,
   });
 }
 
 export default function Login() {
-  const { env, error, invite } = useTypedLoaderData<typeof loader>();
+  const { user, env, error, invite } = useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const farcasterConfig = {
@@ -110,9 +112,15 @@ export default function Login() {
             </Alert>
           )}
 
-          <div className="flex flex-row items-center justify-center pt-8">
-            <SignInButton onSuccess={handleSuccess} />
-          </div>
+          {user ? (
+            <Button asChild className="no-underline">
+              <Link to="/~">Continue</Link>
+            </Button>
+          ) : (
+            <div className="flex flex-row items-center justify-center pt-8">
+              <SignInButton onSuccess={handleSuccess} />
+            </div>
+          )}
         </div>
       </div>
     </AuthKitProvider>

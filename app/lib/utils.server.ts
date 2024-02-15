@@ -71,7 +71,14 @@ export function frameResponse(params: FrameResponseArgs) {
                 let out = `<meta property="fc:frame:button:${
                   index + 1
                 }" content="${b.text}">`;
-                if (b.isRedirect) {
+                if (b.link) {
+                  out += `\n<meta property="fc:frame:button:${
+                    index + 1
+                  }:action" content="link">`;
+                  out += `\n<meta property="fc:frame:button:${
+                    index + 1
+                  }:target" content="${b.link}">`;
+                } else if (b.isRedirect) {
                   out += `\n<meta property="fc:frame:button:${
                     index + 1
                   }:action" content="post_redirect">`;
@@ -111,6 +118,7 @@ type FrameResponseArgs = {
   image: string;
   buttons?: Array<{
     text: string;
+    link?: string;
     isRedirect?: boolean;
   }>;
   postUrl?: string;
