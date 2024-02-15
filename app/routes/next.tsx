@@ -35,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
         image: await generateSystemFrame("That's not a real candidate..."),
         buttons: [
           {
-            text: "I'm feelin lucky",
+            text: "Play Again",
           },
         ],
       });
@@ -81,7 +81,11 @@ export async function action({ request }: ActionFunctionArgs) {
           ),
           buttons: [
             {
-              text: "Panic",
+              text: "Continue",
+            },
+            {
+              text: `@${user.name}`,
+              link: `https://warpcast/${user.providerId}`,
             },
           ],
           postUrl: `${env.hostUrl}/next`,

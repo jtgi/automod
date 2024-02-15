@@ -43,7 +43,7 @@ export const meta: MetaFunction<typeof loader> = (data) => {
     },
     {
       name: "fc:frame:button:1",
-      content: "Start",
+      content: "Play",
     },
   ];
 };
