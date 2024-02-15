@@ -85,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
             },
             {
               text: `@${user.name}`,
-              link: `https://warpcast/${user.providerId}`,
+              link: `https://warpcast/${user.name}`,
             },
           ],
           postUrl: `${env.hostUrl}/next`,
