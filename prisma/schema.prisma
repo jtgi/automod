@@ -11,28 +11,31 @@ datasource db {
 }
 
 model User {
-  id         String  @id @default(cuid())
-  email      String? @unique
-  providerId String  @unique
-  sex        String
-  seeking    String
-  name       String
-  avatarUrl  String
-  userData   String
+  id    String  @id
+  email String? @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sightings Seen[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  ruleSets  RuleSet[]
 }
 
-model Seen {
-  id     String @id @default(cuid())
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-  toFid  String
-  result String
-
+model RuleSet {
+  id        String   @id
+  name      String
+  rules     Rule[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  User   User?   @relation(fields: [userId], references: [id])
+  userId String?
+}
+
+model Rule {
+  id        String   @id
+  name      String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ruleSet   RuleSet? @relation(fields: [ruleSetId], references: [id])
+  ruleSetId String?
 }
