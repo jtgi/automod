@@ -104,3 +104,4 @@ Now you'll need to pick a host to deploy it to.
 ## CI/CD
 
 Commits to main deploy on fly
+# automod
