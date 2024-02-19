@@ -103,8 +103,10 @@ export default function Login() {
     <AuthKitProvider config={farcasterConfig}>
       <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
         <div className="max-w-xl flex flex-col justify-center items-center">
-          <h1 className="text-6xl logo">relationship.computer</h1>
-          <h2 className="font-normal mb-8">dating on frame</h2>
+          <h1 className="text-6xl logo">automod</h1>
+          <h2 className="font-normal mb-8">
+            use bots to keep your channel high quality
+          </h2>
 
           {error && (
             <Alert className="mb-8" variant="destructive">

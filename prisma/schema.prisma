@@ -13,29 +13,45 @@ datasource db {
 model User {
   id    String  @id
   email String? @unique
+  plan  String  @default("basic")
+  role  String  @default("admin")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  ruleSets  RuleSet[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  moderatedChannels ModeratedChannel[]
+}
+
+model ModeratedChannel {
+  id             String          @id
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  active         Boolean         @default(true)
+  user           User            @relation(fields: [userId], references: [id])
+  userId         String
+  banThreshold   Int?
+  ruleSets       RuleSet[]
+  moderationLogs ModerationLog[]
 }
 
 model RuleSet {
-  id        String   @id
-  name      String
-  rules     Rule[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  User   User?   @relation(fields: [userId], references: [id])
-  userId String?
+  id        String           @id @default(cuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  active    Boolean          @default(true)
+  rule      String // Stores JSON string of rules
+  actions   String // Stores JSON string of actions
+  channel   ModeratedChannel @relation(fields: [channelId], references: [id])
+  channelId String
 }
 
-model Rule {
-  id        String   @id
-  name      String
-  value     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ruleSet   RuleSet? @relation(fields: [ruleSetId], references: [id])
-  ruleSetId String?
+model ModerationLog {
+  id              String           @id @default(cuid())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  action          String
+  reason          String
+  castHash        String?
+  affectedUserFid String
+  channel         ModeratedChannel @relation(fields: [channelId], references: [id])
+  channelId       String
 }

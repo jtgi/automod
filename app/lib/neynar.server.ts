@@ -4,8 +4,26 @@ import {
   FollowResponseUser,
   Reaction,
 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
-import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
+
+export async function getChannel(props: { name: string }) {
+  const cacheKey = `channel:${props.name}`;
+  const cached = cache.get<Channel>(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const response = await neynar.lookupChannel(props.name);
+  cache.set(
+    cacheKey,
+    response.channel,
+    process.env.NODE_ENV === "development" ? 0 : 60 * 60 * 24
+  );
+
+  return response.channel;
+}
 
 export async function getUser(props: { fid: string }) {
   const cacheKey = `user:${props.fid}`;

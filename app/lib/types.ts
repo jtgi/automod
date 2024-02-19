@@ -1,12 +1,14 @@
 import { CSSProperties } from "react";
 
+// neynar gaps
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface MessageResponse {
   valid: boolean;
-  action: Action;
+  action: FrameAction;
 }
 
-export interface Action {
+export interface FrameAction {
   object: string;
   interactor: Interactor;
   tapped_button: TappedButton;

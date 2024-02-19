@@ -1,16 +1,16 @@
-# fly.toml app configuration file generated for framer on 2024-01-28T21:40:00+09:00
+# fly.toml app configuration file generated for automod on 2024-02-19T13:11:27+09:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'onchain-dating'
+app = 'automod'
 primary_region = 'lax'
 
-[mounts]
-  destination = "/data"
-  source = "data"
-
 [build]
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'
 
 [http_service]
   internal_port = 3000
