@@ -16,14 +16,14 @@ import { getSharedEnv } from "~/lib/utils.server";
 // export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
   return [
-    { title: "Farcaster Dating" },
+    { title: "automod" },
     {
       property: "og:title",
       content: "Frame Dating",
     },
     {
       name: "description",
-      content: "Dating on farcaster",
+      content: "Automate channel spam with bots",
     },
     {
       name: "fc:frame",
@@ -32,18 +32,6 @@ export const meta: MetaFunction<typeof loader> = (data) => {
     {
       name: "og:image",
       content: `${data.data.env.hostUrl}/preview.png`,
-    },
-    {
-      name: "fc:frame:image",
-      content: `${data.data.env.hostUrl}/preview.png`,
-    },
-    {
-      name: "fc:frame:post_url",
-      content: `${data.data.env.hostUrl}/start`,
-    },
-    {
-      name: "fc:frame:button:1",
-      content: "Play",
     },
   ];
 };
@@ -104,9 +92,7 @@ export default function Login() {
       <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
         <div className="max-w-xl flex flex-col justify-center items-center">
           <h1 className="text-6xl logo">automod</h1>
-          <h2 className="font-normal mb-8">
-            use bots to keep your channel high quality
-          </h2>
+          <h2 className="font-normal mb-8">automate channel spam with bots</h2>
 
           {error && (
             <Alert className="mb-8" variant="destructive">
