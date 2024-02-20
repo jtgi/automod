@@ -4,6 +4,7 @@ import { Input } from "./input";
 export function FieldLabel(
   props: {
     position?: "left" | "right";
+    description?: string;
     label: React.ReactNode;
     labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
   } & React.HTMLAttributes<HTMLDivElement>
@@ -22,6 +23,9 @@ export function FieldLabel(
           >
             {props.label}
           </label>
+          {props.description && (
+            <div className="text-sm text-gray-500">{props.description}</div>
+          )}
           {props.children}
         </>
       ) : (
@@ -33,6 +37,9 @@ export function FieldLabel(
           >
             {props.label}
           </label>
+          {props.description && (
+            <div className="text-sm text-gray-500">{props.description}</div>
+          )}
         </>
       )}
     </div>

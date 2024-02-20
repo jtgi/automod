@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm exec prisma generate && remix build",
-    "db:reset": "prisma migrate reset --force",
+    "db:reset": "prisma db push --force-reset && prisma db seed",
     "dev": "remix dev --manual",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/index.js",
@@ -41,6 +41,7 @@
     "react": "^18.2.0",
     "react-colorful": "^5.6.1",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.50.1",
     "remix-auth": "^3.6.0",
     "remix-typedjson": "^0.4.1",
     "satori": "^0.10.11",

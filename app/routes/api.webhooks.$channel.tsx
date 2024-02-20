@@ -8,7 +8,7 @@ import {
   Action,
   Rule,
   actionDefinitions,
-  ruleDefinitions,
+  ruleFunctions,
 } from "~/lib/validations.server";
 import { ban, hideQuietly, warnAndHide } from "~/lib/warpcast.server";
 
@@ -266,7 +266,7 @@ function evaluateRule(
   | {
       didViolateRule: false;
     } {
-  const check = ruleDefinitions[rule.name];
+  const check = ruleFunctions[rule.name];
   const error = check(cast, rule);
 
   if (error) {

@@ -2,7 +2,148 @@ import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { z } from "zod";
 import { ban, coolDown, hideQuietly, warnAndHide } from "./warpcast.server";
 
+export type RuleDefinition = {
+  friendlyName: string;
+  description: string;
+  args: Record<
+    string,
+    {
+      type: string;
+      friendlyName: string;
+      description: string;
+      required?: boolean;
+    }
+  >;
+};
+
+export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
+  and: {
+    friendlyName: "And",
+    description: "Combine multiple rules together",
+    args: {},
+  },
+
+  or: {
+    friendlyName: "Or",
+    description: "Combine multiple rules together",
+    args: {},
+  },
+
+  containsText: {
+    friendlyName: "Contains Text",
+    description: "Check if the text contains a specific string",
+    args: {
+      searchText: {
+        type: "string",
+        friendlyName: "Search Text",
+        description: "The text to search for",
+      },
+      caseSensitive: {
+        type: "boolean",
+        friendlyName: "Case Sensitive",
+        description: "If checked, 'abc' is different from 'ABC'",
+      },
+    },
+  },
+  containsTooManyMentions: {
+    friendlyName: "Contains Too Many Mentions",
+    description: "Check if the text contains too many mentions",
+    args: {
+      maxMentions: {
+        type: "number",
+        required: true,
+        friendlyName: "Max Mentions",
+        description: "The maximum number of mentions allowed",
+      },
+    },
+  },
+  containsLinks: {
+    friendlyName: "Contains Links",
+    description: "Check if the text contains any links",
+    args: {
+      maxLinks: {
+        type: "number",
+        friendlyName: "Max Links",
+        description: "The maximum number of links allowed",
+      },
+    },
+  },
+  userProfileContainsText: {
+    friendlyName: "User Profile Contains Text",
+    description: "Check if the user's profile contains a specific string",
+    args: {
+      searchText: {
+        type: "string",
+        friendlyName: "Search Text",
+        description: "The text to search for",
+      },
+      caseSensitive: {
+        type: "boolean",
+        friendlyName: "Case Sensitive",
+        description: "If checked, 'abc' is different from 'ABC'",
+      },
+    },
+  },
+  userDisplayNameContainsText: {
+    friendlyName: "User Display Name Contains Text",
+    description: "Check if the user's display name contains a specific string",
+    args: {
+      searchText: {
+        type: "string",
+        friendlyName: "Search Text",
+        description: "The text to search for",
+      },
+      caseSensitive: {
+        type: "boolean",
+        friendlyName: "Case Sensitive",
+        description: "If checked 'abc' is different from 'ABC'",
+      },
+    },
+  },
+
+  userFollowerCount: {
+    friendlyName: "User Follower Count",
+    description: "Check if the user's follower count is within a range",
+    args: {
+      min: {
+        type: "number",
+        friendlyName: "Min",
+        description: "The minimum number of followers",
+      },
+      max: {
+        type: "number",
+        friendlyName: "Max",
+        description: "The maximum number of followers",
+      },
+    },
+  },
+
+  userIsActive: {
+    friendlyName: "User Is Active",
+    description: "Check if the user is active",
+  },
+
+  userFidInRange: {
+    friendlyName: "User FID In Range",
+    description: "Check if the user's FID is within a range",
+    args: {
+      minFid: {
+        type: "number",
+        friendlyName: "Min FID",
+        description: "The minimum FID",
+      },
+      maxFid: {
+        type: "number",
+        friendlyName: "Max FID",
+        description: "The maximum FID",
+      },
+    },
+  },
+} as const;
+
 export const ruleNames = [
+  "and",
+  "or",
   "containsText",
   "containsTooManyMentions",
   "containsLinks",
@@ -44,13 +185,15 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
 });
 
-const ActionSchema = z.object({
+export const ActionSchema = z.object({
   type: z.enum(actionTypes),
 });
 
 export type Action = z.infer<typeof ActionSchema>;
 
-export const ruleDefinitions: Record<RuleName, CheckFunction> = {
+export const ruleFunctions: Record<RuleName, CheckFunction> = {
+  and: () => undefined,
+  or: () => undefined, // TODO
   containsText: containsText,
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
@@ -70,10 +213,10 @@ export const actionDefinitions: Record<ActionType, ActionFunction> = {
 
 // Rule: contains text, option to ignore case
 function containsText(cast: Cast, rule: Rule) {
-  const { searchText, ignoreCase } = rule.args;
+  const { searchText, caseSensitive } = rule.args;
 
-  const text = ignoreCase ? cast.text.toLowerCase() : cast.text;
-  const search = ignoreCase ? searchText.toLowerCase() : searchText;
+  const text = caseSensitive ? cast.text.toLowerCase() : cast.text;
+  const search = caseSensitive ? searchText.toLowerCase() : searchText;
 
   if (text.includes(search)) {
     return `Text contains the text: ${searchText}`;
@@ -100,8 +243,8 @@ function containsLinks(cast: Cast, _rule: Rule) {
 }
 
 function userProfileContainsText(cast: Cast, rule: Rule) {
-  const { searchText, ignoreCase } = rule.args;
-  const containsText = ignoreCase
+  const { searchText, caseSensitive } = rule.args;
+  const containsText = caseSensitive
     ? cast.author.profile.bio.text
         .toLowerCase()
         .includes(searchText.toLowerCase())
@@ -113,8 +256,8 @@ function userProfileContainsText(cast: Cast, rule: Rule) {
 }
 
 function userDisplayNameContainsText(cast: Cast, rule: Rule) {
-  const { searchText, ignoreCase } = rule.args;
-  const containsText = ignoreCase
+  const { searchText, caseSensitive } = rule.args;
+  const containsText = caseSensitive
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.display_name.includes(searchText);
 

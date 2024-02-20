@@ -17,13 +17,30 @@ async function seed() {
     },
   });
 
-  const rule: Rule = {
+  const containsSpam: Rule = {
     name: "containsText",
     type: "CONDITION",
     args: {
       searchText: "spam",
-      ignoreCase: true,
+      caseSensitive: true,
     },
+  };
+
+  const containsHotChocolate: Rule = {
+    name: "containsText",
+    type: "CONDITION",
+    args: {
+      searchText: "hot chocolate",
+      caseSensitive: true,
+    },
+  };
+
+  const orRule: Rule = {
+    name: "and",
+    type: "LOGICAL",
+    args: {},
+    operation: "OR",
+    conditions: [containsHotChocolate, containsSpam],
   };
 
   const actions: Array<Action> = [
@@ -36,14 +53,6 @@ async function seed() {
     id: "jtgi",
     banThreshold: 3,
     userId: user.id,
-    ruleSets: {
-      create: [
-        {
-          rule: JSON.stringify(rule),
-          actions: JSON.stringify(actions),
-        },
-      ],
-    },
   };
 
   const modChannel = await db.moderatedChannel.upsert({
@@ -52,6 +61,22 @@ async function seed() {
     },
     create: fields,
     update: fields,
+  });
+
+  const rules = await db.ruleSet.upsert({
+    where: {
+      id: "seededRules",
+    },
+    update: {
+      rule: JSON.stringify(orRule),
+      actions: JSON.stringify(actions),
+    },
+    create: {
+      id: "seededRules",
+      rule: JSON.stringify(orRule),
+      actions: JSON.stringify(actions),
+      channelId: modChannel.id,
+    },
   });
 }
 
