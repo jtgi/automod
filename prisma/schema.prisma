@@ -10,8 +10,42 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Order {
+  id  String @id @default(cuid())
+  fid String @unique
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+}
+
+model InviteCode {
+  id     String  @id @default(cuid())
+  active Boolean @default(true)
+  limit  Int     @default(1)
+  note   String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  claims User[]
+}
+
+model Otp {
+  id     String  @id @default(cuid())
+  code   String  @unique @default(cuid())
+  active Boolean @default(false)
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model User {
   id    String  @id
+  name  String
   email String? @unique
   plan  String  @default("basic")
   role  String  @default("admin")
@@ -19,6 +53,9 @@ model User {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   moderatedChannels ModeratedChannel[]
+  invite            InviteCode?        @relation(fields: [inviteCodeId], references: [id])
+  inviteCodeId      String?
+  otps              Otp[]
 }
 
 model ModeratedChannel {
@@ -45,13 +82,15 @@ model RuleSet {
 }
 
 model ModerationLog {
-  id              String           @id @default(cuid())
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  action          String
-  reason          String
-  castHash        String?
-  affectedUserFid String
-  channel         ModeratedChannel @relation(fields: [channelId], references: [id])
-  channelId       String
+  id                    String           @id @default(cuid())
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  action                String
+  reason                String
+  castHash              String?
+  affectedUserFid       String
+  affectedUsername      String
+  affectedUserAvatarUrl String?
+  channel               ModeratedChannel @relation(fields: [channelId], references: [id])
+  channelId             String
 }

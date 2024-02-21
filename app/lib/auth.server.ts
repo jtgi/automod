@@ -67,13 +67,14 @@ export async function verifyFarcasterUser(
 ) {
   const user = await db.user.findFirst({
     where: {
-      providerId: args.fid,
+      id: args.fid,
     },
   });
 
   if (!user) {
     return await db.user.create({
       data: {
+        id: args.fid,
         name: args.username || args.fid,
         avatarUrl: args.pfpUrl,
         providerId: args.fid,

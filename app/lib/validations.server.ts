@@ -5,6 +5,7 @@ import { ban, coolDown, hideQuietly, warnAndHide } from "./warpcast.server";
 export type RuleDefinition = {
   friendlyName: string;
   description: string;
+  hidden?: boolean;
   args: Record<
     string,
     {
@@ -20,11 +21,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
     friendlyName: "And",
     description: "Combine multiple rules together",
+    hidden: true,
     args: {},
   },
 
   or: {
     friendlyName: "Or",
+    hidden: true,
     description: "Combine multiple rules together",
     args: {},
   },
@@ -121,6 +124,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userIsActive: {
     friendlyName: "User Is Active",
     description: "Check if the user is active",
+    args: {},
   },
 
   userFidInRange: {
@@ -137,6 +141,56 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         friendlyName: "Max FID",
         description: "The maximum FID",
       },
+    },
+  },
+} as const;
+
+export type ActionDefinition = {
+  friendlyName: string;
+  description: string;
+  args: Record<
+    string,
+    {
+      type: string;
+      friendlyName: string;
+      description: string;
+    }
+  >;
+};
+
+// TODO: Action Args!
+export const actionDefinitions: Record<ActionType, ActionDefinition> = {
+  hideQuietly: {
+    friendlyName: "Hide Quietly",
+    description: "Hide the cast without notifying the user",
+    args: {},
+  },
+  ban: {
+    friendlyName: "Ban",
+    description: "Ban the user",
+    args: {},
+  },
+  warnAndHide: {
+    friendlyName: "Warn and Hide",
+    description: "Warn the user and hide the cast",
+    args: {
+      // warnMessage: {
+      //   type: "string",
+      //   friendlyName: "Warn Message",
+      //   description: "The message to send to the user",
+      // },
+    },
+  },
+  coolDown: {
+    friendlyName: "Cool Down",
+    description: "Hide the user's casts for a period of time",
+    hidden: true,
+    args: {
+      // duration: {
+      //   type: "number",
+      //   friendlyName: "Minutes",
+      //   description: "The duration of the cool down in minutes",
+      // },
     },
   },
 } as const;
@@ -204,7 +258,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userFidInRange: userFidInRange,
 };
 
-export const actionDefinitions: Record<ActionType, ActionFunction> = {
+export const actionFunctions: Record<ActionType, ActionFunction> = {
   hideQuietly: hideQuietly,
   ban: ban,
   warnAndHide: warnAndHide,

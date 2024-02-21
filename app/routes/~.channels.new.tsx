@@ -9,10 +9,15 @@ import {
   useForm,
   useFormContext,
 } from "react-hook-form";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
-import { getSharedEnv, requireUser } from "~/lib/utils.server";
+import {
+  errorResponse,
+  getSharedEnv,
+  isChannelLead,
+  requireUser,
+} from "~/lib/utils.server";
 import {
   Select,
   SelectContent,
@@ -22,9 +27,13 @@ import {
 } from "~/components/ui/select";
 import {
   Action,
+  ActionSchema,
   Rule,
   RuleDefinition,
   RuleName,
+  RuleSchema,
+  actionDefinitions,
+  actionFunctions,
   ruleDefinitions,
   ruleNames,
 } from "~/lib/validations.server";
@@ -32,6 +41,85 @@ import { Input } from "~/components/ui/input";
 import { FieldLabel } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { TrashIcon } from "@radix-ui/react-icons";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { useFetcher, useSubmit } from "@remix-run/react";
+import { getChannel } from "~/lib/neynar.server";
+import { getSession } from "~/lib/auth.server";
+import { db } from "~/lib/db.server";
+import { z } from "zod";
+
+export async function action({ request }: ActionFunctionArgs) {
+  const user = await requireUser({ request });
+  const data = await request.json();
+
+  const { isLead, channel } = await isChannelLead(user.id, data.id);
+  if (!isLead) {
+    return errorResponse({
+      request,
+      message:
+        "Only the channel lead can configure moderation. If the lead has changed, please contact support.",
+    });
+  }
+
+  const RuleSetSchema = z.object({
+    id: z.string().optional(),
+    ruleParsed: RuleSchema,
+    actionsParsed: z.array(ActionSchema),
+  });
+
+  const moderatedChannelSchema = z.object({
+    id: z.string(),
+    banThreshold: z.coerce.number().optional(),
+    ruleSets: z.array(RuleSetSchema),
+  });
+
+  const channelResult = moderatedChannelSchema.safeParse(data);
+
+  if (!channelResult.success) {
+    console.log(channelResult.error);
+    return errorResponse({
+      request,
+      message: "Invalid data.",
+    });
+  }
+
+  const channelExists = await db.moderatedChannel.findFirst({
+    where: {
+      id: channelResult.data.id,
+    },
+  });
+
+  if (channelExists) {
+    return errorResponse({
+      request,
+      message: "Channel already exists",
+    });
+  }
+
+  const newChannel = await db.moderatedChannel.create({
+    data: {
+      id: channelResult.data.id,
+      user: {
+        connect: {
+          id: user.id,
+        },
+      },
+      banThreshold: channelResult.data.banThreshold,
+      ruleSets: {
+        create: channelResult.data.ruleSets.map((ruleSet) => {
+          return {
+            id: ruleSet.id,
+            rule: JSON.stringify(ruleSet.ruleParsed),
+            actions: JSON.stringify(ruleSet.actionsParsed),
+          };
+        }),
+      },
+    },
+  });
+
+  return redirect(`/~/channels/${newChannel.id}`);
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -39,6 +127,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return typedjson({
     user,
+    actionDefinitions,
     ruleDefinitions,
     ruleNames,
     env: getSharedEnv(),
@@ -46,13 +135,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { user, env, ruleNames, ruleDefinitions } =
+  const { user, env, ruleNames, ruleDefinitions, actionDefinitions } =
     useTypedLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4">
       <h2>New Moderation</h2>
       <ChannelForm
+        actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}
         ruleNames={ruleNames}
         defaultValues={{
@@ -63,21 +153,25 @@ export default function FrameConfig() {
   );
 }
 
-type FormValues = {
+export type FormValues = {
   id?: string;
-  banThreshold?: number;
+  banThreshold?: number | null;
   ruleSets: Array<{
     id?: string;
+    active: boolean;
+    logicType: "and" | "or";
     ruleParsed: Array<Rule>;
     actionsParsed: Array<Action>;
   }>;
 };
 
 export function ChannelForm(props: {
+  actionDefinitions: typeof actionDefinitions;
   ruleDefinitions: typeof ruleDefinitions;
   ruleNames: readonly RuleName[];
   defaultValues: FormValues;
 }) {
+  const submit = useSubmit();
   const methods = useForm<FormValues>({
     defaultValues: props.defaultValues,
   });
@@ -96,19 +190,84 @@ export function ChannelForm(props: {
   });
 
   const onSubmit = (data: FormValues) => {
-    console.log(data);
-  };
+    const newRuleSets = [];
+    for (let ruleSet of data.ruleSets) {
+      if (ruleSet.logicType === "and") {
+        const rule: Rule = {
+          name: "and",
+          type: "LOGICAL",
+          args: {},
+          operation: "AND",
+          conditions: ruleSet.ruleParsed,
+        };
 
-  const value = watch();
+        newRuleSets.push({
+          ...ruleSet,
+          rule,
+          ruleParsed: rule,
+        });
+      } else if (ruleSet.logicType === "or") {
+        const rule: Rule = {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: ruleSet.ruleParsed,
+        };
+
+        newRuleSets.push({
+          ...ruleSet,
+          rule,
+          ruleParsed: rule,
+        });
+      }
+    }
+
+    submit(
+      {
+        ...data,
+        banThreshold: data.banThreshold || 0,
+        ruleSets: newRuleSets,
+      },
+      {
+        encType: "application/json",
+        method: "post",
+      }
+    );
+  };
 
   return (
     <div className="flex">
       <FormProvider {...methods}>
         <form
+          id="channel-form"
           method="post"
           className="w-full space-y-7"
           onSubmit={handleSubmit(onSubmit)}
         >
+          <fieldset disabled={isSubmitting} className="space-y-7">
+            <FieldLabel label="Channel Name" className="flex-col items-start">
+              <Input
+                placeholder="base"
+                pattern="^[a-zA-Z0-9\-]+$"
+                required
+                {...register("id", { required: true })}
+              />
+            </FieldLabel>
+
+            <FieldLabel
+              label="Ban Threshold"
+              className="flex-col items-start"
+              description="The number of warns before a user is banned."
+            >
+              <Input
+                type="number"
+                placeholder="∞"
+                {...register("banThreshold")}
+              />
+            </FieldLabel>
+          </fieldset>
+
           <fieldset disabled={isSubmitting} className="space-y-7">
             {fields.map((ruleSetField, ruleSetIndex) => (
               <Card key={ruleSetField.id}>
@@ -119,19 +278,24 @@ export function ChannelForm(props: {
                       type="button"
                       variant={"ghost"}
                       onClick={() => {
-                        if (confirm("Are you sure?")) {
+                        if (
+                          confirm(
+                            "Are you sure you want to delete this rule set?"
+                          )
+                        ) {
                           remove(ruleSetIndex);
                         }
                       }}
-                      className="text-red-400"
+                      className="text-red-700 rounded-full"
                     >
-                      Remove
+                      <TrashIcon />
                     </Button>
                   </div>
                 </CardHeader>
 
                 <CardContent>
                   <RuleSetEditor
+                    actionDefinitions={props.actionDefinitions}
                     ruleDefinitions={props.ruleDefinitions}
                     rulesNames={props.ruleNames}
                     ruleSetIndex={ruleSetIndex}
@@ -145,25 +309,43 @@ export function ChannelForm(props: {
 
             <Button
               type="button"
+              variant={"secondary"}
               onClick={() =>
-                append({ id: "", ruleParsed: [], actionsParsed: [] })
+                append({
+                  id: "",
+                  active: true,
+                  ruleParsed: [],
+                  actionsParsed: [],
+                  logicType: "and",
+                })
               }
               className="add-ruleSet-button-class"
             >
-              Add RuleSet
+              Add Rule Set
             </Button>
           </fieldset>
-          <button type="submit" className="submit-button-class">
-            Submit
-          </button>
+
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <Button type="submit" size={"lg"} className="w-full">
+            {isSubmitting
+              ? props.defaultValues.id
+                ? "Updating"
+                : "Creating"
+              : props.defaultValues.id
+              ? "Update"
+              : "Create"}
+          </Button>
         </form>
       </FormProvider>
-      <pre className="text-xs">{JSON.stringify(value, null, 2)}</pre>
     </div>
   );
 }
 
 function RuleSetEditor(props: {
+  actionDefinitions: typeof actionDefinitions;
   ruleDefinitions: typeof ruleDefinitions;
   rulesNames: readonly RuleName[];
   ruleSetIndex: number;
@@ -195,7 +377,9 @@ function RuleSetEditor(props: {
   return (
     <div>
       <div className="space-y-4">
-        <h3>Rules</h3>
+        <div>
+          <h3>Rules</h3>
+        </div>
         <div className="space-y-4">
           {ruleFields.map((ruleField, ruleIndex) => {
             const ruleName = props.watch(
@@ -205,44 +389,56 @@ function RuleSetEditor(props: {
             return (
               <Card key={ruleField.id}>
                 <CardHeader>
-                  <CardTitle>
-                    {props.ruleDefinitions[ruleName].friendlyName}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>
+                      {props.ruleDefinitions[ruleName].friendlyName}
+                    </CardTitle>
+                    <Button
+                      type="button"
+                      className="rounded-full text-red-700"
+                      onClick={() => removeRule(ruleIndex)}
+                      variant={"ghost"}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <Controller
-                    name={
-                      `ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const
-                    }
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a rule" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {rulesNames.map((ruleName) => (
-                            <SelectItem key={ruleName} value={ruleName}>
-                              {props.ruleDefinitions[ruleName].friendlyName} -{" "}
-                              <span className="text-gray-500">
-                                {props.ruleDefinitions[ruleName].description}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
+                  <div className="space-y-4">
+                    <Controller
+                      name={
+                        `ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const
+                      }
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a rule" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {rulesNames.map((ruleName) => (
+                              <SelectItem key={ruleName} value={ruleName}>
+                                {props.ruleDefinitions[ruleName].friendlyName} -{" "}
+                                <span className="text-gray-500">
+                                  {props.ruleDefinitions[ruleName].description}
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
 
-                  <RuleArgs
-                    ruleDefinition={props.ruleDefinitions[ruleName]}
-                    ruleName={ruleName}
-                    ruleIndex={ruleIndex}
-                    ruleSetIndex={ruleSetIndex}
-                  />
+                    <RuleArgs
+                      ruleDefinition={props.ruleDefinitions[ruleName]}
+                      ruleName={ruleName}
+                      ruleIndex={ruleIndex}
+                      ruleSetIndex={ruleSetIndex}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -250,6 +446,7 @@ function RuleSetEditor(props: {
         </div>
         <Button
           type="button"
+          variant={"secondary"}
           onClick={() =>
             appendRule({
               name: "containsText",
@@ -262,28 +459,118 @@ function RuleSetEditor(props: {
         </Button>
       </div>
 
-      <div>
+      <div className="py-6">
+        <hr />
+      </div>
+
+      <div className="space-y-4">
         <h3>Actions</h3>
-        {/* Actions */}
-        {actionFields.map((actionField, actionIndex) => (
-          <div key={actionField.id}>
-            {/* Action inputs */}
-            <Button
-              type="button"
-              onClick={() => removeAction(actionIndex)}
-              variant={"destructive"}
+        <div className="space-y-4">
+          {actionFields.map((actionField, actionIndex) => {
+            const actionType = props.watch(
+              `ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`
+            );
+
+            return (
+              <Card key={actionField.id}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>
+                      {props.actionDefinitions[actionType].friendlyName}
+                    </CardTitle>
+                    <Button
+                      type="button"
+                      onClick={() => removeAction(actionIndex)}
+                      variant={"ghost"}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Controller
+                    name={`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`}
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        defaultValue={actionField.type}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an action" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(props.actionDefinitions).map(
+                            ([actionName, actionDef]) => (
+                              <SelectItem key={actionName} value={actionName}>
+                                {actionDef.friendlyName} -{" "}
+                                <span className="text-gray-500">
+                                  {actionDef.description}
+                                </span>
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
+          <Button
+            type="button"
+            onClick={() => appendAction({ type: "hideQuietly" })}
+            variant={"secondary"}
+          >
+            Add Action
+          </Button>
+        </div>
+      </div>
+
+      <div className="py-6">
+        <hr />
+      </div>
+
+      <div className="space-y-4">
+        <h3>Apply actions when</h3>
+        <Controller
+          name={`ruleSets.${ruleSetIndex}.logicType`}
+          control={control}
+          render={(controllerProps) => (
+            <RadioGroup
+              name={`ruleSets.${ruleSetIndex}.logicType`}
+              defaultValue="and"
+              onValueChange={controllerProps.field.onChange}
+              {...controllerProps}
             >
-              Remove Action
-            </Button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => appendAction({ type: "hideQuietly" })}
-          className="add-action-button-class"
-        >
-          Add Action
-        </button>
+              <FieldLabel
+                label="All rules match"
+                position="right"
+                labelProps={{
+                  htmlFor: `ruleSets.${ruleSetIndex}.logicType.and`,
+                }}
+              >
+                <RadioGroupItem
+                  value="and"
+                  id={`ruleSets.${ruleSetIndex}.logicType.and`}
+                />
+              </FieldLabel>
+              <FieldLabel
+                label="Any rule matches"
+                position="right"
+                labelProps={{
+                  htmlFor: `ruleSets.${ruleSetIndex}.logicType.or`,
+                }}
+              >
+                <RadioGroupItem
+                  value="or"
+                  id={`ruleSets.${ruleSetIndex}.logicType.or`}
+                />
+              </FieldLabel>
+            </RadioGroup>
+          )}
+        />
       </div>
     </div>
   );
@@ -298,67 +585,67 @@ function RuleArgs(props: {
   const { register, control } = useFormContext<FormValues>();
   const ruleDef = props.ruleDefinition;
 
-  return (
-    <div className="space-y-4">
-      {Object.entries(ruleDef.args).map(([argName, argDef]) => {
-        if (argDef.type === "number") {
-          return (
-            <FieldLabel
-              key={argName}
-              label={argDef.friendlyName}
-              description={argDef.description}
-              className="flex-col items-start"
-            >
-              <Input
-                type="number"
-                required={argDef.required}
-                {...register(
-                  `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
-                )}
+  return Object.entries(ruleDef.args).map(([argName, argDef]) => {
+    if (argDef.type === "number") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <Input
+            type="number"
+            required={argDef.required}
+            {...register(
+              `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
+            )}
+          />
+        </FieldLabel>
+      );
+    }
+    if (argDef.type === "string") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <Input
+            required={argDef.required}
+            {...register(
+              `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
+            )}
+          />
+        </FieldLabel>
+      );
+    }
+    if (argDef.type === "boolean") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          labelProps={{
+            htmlFor: `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`,
+          }}
+          description={argDef.description}
+          position="right"
+        >
+          <Controller
+            control={control}
+            name={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}
+            render={({ field: { onChange, name, value } }) => (
+              <Checkbox
+                id={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}
+                name={name}
+                onCheckedChange={onChange}
+                checked={value}
               />
-            </FieldLabel>
-          );
-        }
-        if (argDef.type === "string") {
-          return (
-            <FieldLabel
-              key={argName}
-              label={argDef.friendlyName}
-              description={argDef.description}
-              className="flex-col items-start"
-            >
-              <Input
-                required={argDef.required}
-                {...register(
-                  `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
-                )}
-              />
-            </FieldLabel>
-          );
-        }
-        if (argDef.type === "boolean") {
-          return (
-            <FieldLabel
-              key={argName}
-              label={argDef.friendlyName}
-              description={argDef.description}
-              position="right"
-            >
-              <Controller
-                control={control}
-                name={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}
-                render={({ field: { onChange, name, value } }) => (
-                  <Checkbox
-                    name={name}
-                    onCheckedChange={onChange}
-                    checked={value}
-                  />
-                )}
-              />
-            </FieldLabel>
-          );
-        }
-      })}
-    </div>
-  );
+            )}
+          />
+        </FieldLabel>
+      );
+    }
+  });
 }

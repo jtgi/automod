@@ -23,10 +23,10 @@ export function FieldLabel(
           >
             {props.label}
           </label>
-          {props.description && (
-            <div className="text-sm text-gray-500">{props.description}</div>
-          )}
           {props.children}
+          {props.description && (
+            <div className="text-xs text-gray-500">{props.description}</div>
+          )}
         </>
       ) : (
         <>
@@ -38,7 +38,7 @@ export function FieldLabel(
             {props.label}
           </label>
           {props.description && (
-            <div className="text-sm text-gray-500">{props.description}</div>
+            <div className="text-xs text-gray-500">{props.description}</div>
           )}
         </>
       )}

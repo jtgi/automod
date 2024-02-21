@@ -71,15 +71,15 @@ export class FarcasterStrategy extends Strategy<
         );
       }
 
-      await db.preorder.upsert({
+      await db.order.upsert({
         where: {
-          providerId: fid.toString(),
+          fid: fid.toString(),
         },
         create: {
-          providerId: fid.toString(),
+          fid: fid.toString(),
         },
         update: {
-          providerId: fid.toString(),
+          fid: fid.toString(),
         },
       });
     }
@@ -91,13 +91,13 @@ export class FarcasterStrategy extends Strategy<
       request,
     });
 
-    if (invite && !user.claimedInviteCodeId) {
+    if (invite && !user.inviteCodeId) {
       await db.user.update({
         where: {
           id: user.id,
         },
         data: {
-          claimedInviteCodeId: invite.id,
+          inviteCodeId: invite.id,
         },
       });
     }

@@ -7,7 +7,7 @@ import { getChannel, getUser } from "~/lib/neynar.server";
 import {
   Action,
   Rule,
-  actionDefinitions,
+  actionFunctions,
   ruleFunctions,
 } from "~/lib/validations.server";
 import { ban, hideQuietly, warnAndHide } from "~/lib/warpcast.server";
@@ -169,10 +169,9 @@ async function validateCast({
       }
 
       for (const action of actions) {
-        const actionFn = actionDefinitions[action.type];
+        const actionFn = actionFunctions[action.type];
         await actionFn({ channel: channel.name || channel.id, cast }).catch(
           (e) => {
-            console.error(e);
             console.error(e.response?.data);
             throw e;
           }
@@ -199,6 +198,8 @@ async function logModerationAction(
       channelId: moderatedChannelId,
       action: actionType,
       reason,
+      affectedUsername: cast.author.username,
+      affectedUserAvatarUrl: cast.author.pfp_url,
       affectedUserFid: String(cast.author.fid),
       castHash: cast.hash,
     },

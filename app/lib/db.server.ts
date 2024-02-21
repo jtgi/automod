@@ -13,7 +13,9 @@ const db = singleton("prisma", () =>
             rule: true,
           },
           compute(data): Rule {
-            return RuleSchema.parse(data.rule);
+            console.log("data.rule", data.rule);
+            return JSON.parse(data.rule);
+            // return RuleSchema.parse(JSON.parse(data.rule));
           },
         },
         actionsParsed: {
@@ -21,7 +23,9 @@ const db = singleton("prisma", () =>
             actions: true,
           },
           compute(data): Action {
-            return ActionSchema.parse(data.actions);
+            console.log("data.actions", data.actions);
+            return JSON.parse(data.actions);
+            // return ActionSchema.parse(JSON.parse(data.actions));
           },
         },
       },

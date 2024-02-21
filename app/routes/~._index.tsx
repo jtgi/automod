@@ -61,12 +61,18 @@ export default function FrameConfig() {
           <div className="flex items-center justify-between">
             <h2>Moderated Channels</h2>
             <Button asChild>
-              <Link to="/~/channels/new">New Channel</Link>
+              <Link className="no-underline" to="/~/channels/new">
+                New Channel
+              </Link>
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {channels.map((channel) => (
-              <Link to={`/~/channels/${channel.id}`} key={channel.id}>
+              <Link
+                to={`/~/channels/${channel.id}`}
+                className="no-underline"
+                key={channel.id}
+              >
                 <Card>
                   <CardHeader>
                     <CardTitle>{channel.id}</CardTitle>

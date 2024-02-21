@@ -19,7 +19,7 @@ export const meta: MetaFunction<typeof loader> = (data) => {
     { title: "automod" },
     {
       property: "og:title",
-      content: "Frame Dating",
+      content: "automod",
     },
     {
       name: "description",

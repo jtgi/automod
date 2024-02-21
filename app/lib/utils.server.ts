@@ -1,8 +1,12 @@
 import sharp from "sharp";
-import { authenticator } from "./auth.server";
+import { authenticator, commitSession, getSession } from "./auth.server";
 import { generateFrameSvg } from "./utils";
 import axios from "axios";
 import { MessageResponse } from "./types";
+import { getChannel } from "./neynar.server";
+import { redirect } from "remix-typedjson";
+import { json } from "@remix-run/node";
+import { db } from "./db.server";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -14,6 +18,44 @@ export function requireUser({ request }: { request: Request }) {
   return authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,
   });
+}
+
+export async function requireUserOwnsChannel(props: {
+  userId: string;
+  channelId: string;
+}) {
+  const channel = await db.moderatedChannel.findUnique({
+    where: {
+      id: props.channelId,
+      userId: props.userId,
+    },
+    include: {
+      ruleSets: true,
+      moderationLogs: {
+        take: 25,
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+  });
+
+  if (!channel) {
+    throw redirect(`/`, { status: 403 });
+  }
+
+  return channel;
+}
+
+export async function isChannelLead(userId: string, channelId: string) {
+  const channel = await getChannel({ name: channelId }).catch(() => {
+    return null;
+  });
+
+  return {
+    isLead: channel?.lead && channel.lead.fid === +userId,
+    channel,
+  };
 }
 
 export async function generateSystemFrame(message: string) {
@@ -154,4 +196,18 @@ export async function parseMessage(payload: any) {
   }
 
   return message;
+}
+
+export async function errorResponse(props: {
+  request: Request;
+  message: string;
+}) {
+  const session = await getSession(props.request.headers.get("Cookie"));
+  session.flash("error", props.message);
+  return json(
+    {
+      message: props.message,
+    },
+    { status: 400, headers: { "Set-Cookie": await commitSession(session) } }
+  );
 }

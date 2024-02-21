@@ -11,6 +11,7 @@ async function seed() {
     },
     create: {
       id: "5179",
+      name: "jtgi",
     },
     update: {
       id: "5179",
