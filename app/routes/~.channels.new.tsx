@@ -41,7 +41,7 @@ import { FieldLabel } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { useSubmit } from "@remix-run/react";
+import { useFetcher, useSubmit } from "@remix-run/react";
 import { db } from "~/lib/db.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -106,7 +106,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
-  const env = getSharedEnv();
 
   return typedjson({
     user,
@@ -154,7 +153,7 @@ export function ChannelForm(props: {
   ruleNames: readonly RuleName[];
   defaultValues: FormValues;
 }) {
-  const submit = useSubmit();
+  const fetcher = useFetcher();
   const methods = useForm<FormValues>({
     defaultValues: props.defaultValues,
   });
@@ -206,7 +205,7 @@ export function ChannelForm(props: {
       }
     }
 
-    submit(
+    fetcher.submit(
       {
         ...data,
         banThreshold: data.banThreshold || 0,
@@ -231,6 +230,7 @@ export function ChannelForm(props: {
           <fieldset disabled={isSubmitting} className="space-y-7">
             <FieldLabel label="Channel Name" className="flex-col items-start">
               <Input
+                disabled={!!props.defaultValues.id}
                 placeholder="base"
                 pattern="^[a-zA-Z0-9\-]+$"
                 required
@@ -314,11 +314,16 @@ export function ChannelForm(props: {
             <hr />
           </div>
 
-          <Button type="submit" size={"lg"} className="w-full">
-            {isSubmitting
+          <Button
+            type="submit"
+            size={"lg"}
+            className="w-full"
+            disabled={fetcher.state === "submitting"}
+          >
+            {fetcher.state === "submitting"
               ? props.defaultValues.id
-                ? "Updating"
-                : "Creating"
+                ? "Updating..."
+                : "Creating..."
               : props.defaultValues.id
               ? "Update"
               : "Create"}
@@ -525,8 +530,8 @@ function RuleSetEditor(props: {
         <hr />
       </div>
 
-      <div className="space-y-4">
-        <p className=" font-medium">Apply actions when</p>
+      <div className="space-y-4 pb-8">
+        <p className=" font-medium">Apply actions when...</p>
         <Controller
           name={`ruleSets.${ruleSetIndex}.logicType`}
           control={control}

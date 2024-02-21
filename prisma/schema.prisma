@@ -63,7 +63,7 @@ model ModeratedChannel {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   active         Boolean         @default(true)
-  user           User            @relation(fields: [userId], references: [id])
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   userId         String
   banThreshold   Int?
   ruleSets       RuleSet[]
@@ -71,13 +71,14 @@ model ModeratedChannel {
 }
 
 model RuleSet {
-  id        String           @id @default(cuid())
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  active    Boolean          @default(true)
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
   rule      String // Stores JSON string of rules
   actions   String // Stores JSON string of actions
-  channel   ModeratedChannel @relation(fields: [channelId], references: [id])
+
+  channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId String
 }
 

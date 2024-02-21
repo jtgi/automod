@@ -121,8 +121,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
-  userIsActive: {
-    friendlyName: "User Is Active",
+  userIsNotActive: {
+    friendlyName: "User Is Not Active",
     description: "Check if the user is active",
     args: {},
   },
@@ -200,7 +200,7 @@ export const ruleNames = [
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
-  "userIsActive",
+  "userIsNotActive",
   "userFidInRange",
 ] as const;
 
@@ -262,7 +262,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userProfileContainsText: userProfileContainsText,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
-  userIsActive: userIsActive,
+  userIsNotActive: userIsNotActive,
   userFidInRange: userFidInRange,
 };
 
@@ -274,11 +274,11 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
 } as const;
 
 // Rule: contains text, option to ignore case
-function containsText(cast: Cast, rule: Rule) {
+export function containsText(cast: Cast, rule: Rule) {
   const { searchText, caseSensitive } = rule.args;
 
-  const text = caseSensitive ? cast.text.toLowerCase() : cast.text;
-  const search = caseSensitive ? searchText.toLowerCase() : searchText;
+  const text = caseSensitive ? cast.text : cast.text.toLowerCase();
+  const search = caseSensitive ? searchText : searchText.toLowerCase();
 
   if (text.includes(search)) {
     return `Text contains the text: ${searchText}`;
@@ -286,7 +286,7 @@ function containsText(cast: Cast, rule: Rule) {
 }
 
 // Rule: contains too many mentions (@...)
-function containsTooManyMentions(cast: Cast, rule: Rule) {
+export function containsTooManyMentions(cast: Cast, rule: Rule) {
   const { maxMentions } = rule.args;
 
   const mentions = cast.text.match(/@\w+/g) || [];
@@ -297,16 +297,16 @@ function containsTooManyMentions(cast: Cast, rule: Rule) {
 }
 
 // Rule: contains links
-function containsLinks(cast: Cast, _rule: Rule) {
+export function containsLinks(cast: Cast, _rule: Rule) {
   const regex = /https?:\/\/\S+/i;
   if (regex.test(cast.text)) {
     return `Text contains a link: ${cast.text.match(regex)}`;
   }
 }
 
-function userProfileContainsText(cast: Cast, rule: Rule) {
+export function userProfileContainsText(cast: Cast, rule: Rule) {
   const { searchText, caseSensitive } = rule.args;
-  const containsText = caseSensitive
+  const containsText = !caseSensitive
     ? cast.author.profile.bio.text
         .toLowerCase()
         .includes(searchText.toLowerCase())
@@ -317,9 +317,9 @@ function userProfileContainsText(cast: Cast, rule: Rule) {
   }
 }
 
-function userDisplayNameContainsText(cast: Cast, rule: Rule) {
+export function userDisplayNameContainsText(cast: Cast, rule: Rule) {
   const { searchText, caseSensitive } = rule.args;
-  const containsText = caseSensitive
+  const containsText = !caseSensitive
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.display_name.includes(searchText);
 
@@ -328,7 +328,7 @@ function userDisplayNameContainsText(cast: Cast, rule: Rule) {
   }
 }
 
-function userFollowerCount(cast: Cast, rule: Rule) {
+export function userFollowerCount(cast: Cast, rule: Rule) {
   const { min, max } = rule.args as { min?: number; max?: number };
 
   if (min) {
@@ -345,14 +345,14 @@ function userFollowerCount(cast: Cast, rule: Rule) {
 }
 
 // Rule: user active_status must be active
-function userIsActive(cast: Cast, _rule: Rule) {
+export function userIsNotActive(cast: Cast, _rule: Rule) {
   if (cast.author.active_status !== "active") {
     return `User is not active`;
   }
 }
 
 // Rule: user fid must be in range
-function userFidInRange(cast: Cast, rule: Rule) {
+export function userFidInRange(cast: Cast, rule: Rule) {
   const { minFid, maxFid } = rule.args as { minFid?: number; maxFid?: number };
 
   if (minFid) {

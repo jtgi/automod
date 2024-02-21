@@ -12,32 +12,7 @@ import {
 } from "~/lib/validations.server";
 import { ban, hideQuietly, warnAndHide } from "~/lib/warpcast.server";
 
-/**
- * invite flow
- * - user sees landing page
- * - user pays, redirect sets channel limit from plan
- * - generate invite link and send to user
- * - user clicks link, logs in with farcaster
- * - user clicks "new channel mod"
- * - user clicks "invite automod to your channel"
- *   - automod follows channel
- * - user adds automod as cohost
- * - security consideration
- *   - when an automod rule is created for a channel we must check:
- *     - the user is a cohost of a channel
- *     - another ruleset for the channel doesn't already exist, if it does, it must be detached first.
- *     - no transfers or team based stuff for v0, i'll do it manually
- * - user configures rules
- * - saves
- * - automod adds warpcast channel url to neynar subscription
- *
- * new cast comes in
- * - automod looks up rule set by channel
- * - automod checks rule set
- * - automod logs if any action
- */
-
-const userPlans = {
+export const userPlans = {
   basic: {
     maxChannels: 1,
     maxRules: 1,
@@ -123,7 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return json({});
 }
 
-async function validateCast({
+export async function validateCast({
   channel,
   moderatedChannel,
   cast,
@@ -136,7 +111,7 @@ async function validateCast({
     const rule: Rule = JSON.parse(ruleSet.rule);
     const actions: Action[] = JSON.parse(ruleSet.actions);
 
-    const ruleEvaluation = evaluateRules(cast, rule); // Assuming evaluateRules from previous context
+    const ruleEvaluation = evaluateRules(cast, rule);
 
     if (ruleEvaluation.didViolateRule) {
       if (moderatedChannel.banThreshold) {
@@ -152,18 +127,20 @@ async function validateCast({
 
         if (
           violations[0] &&
-          violations[0]._count._all > moderatedChannel.banThreshold
+          violations[0]._count._all >= moderatedChannel.banThreshold
         ) {
           await ban({
             channel: channel.name || channel.id,
             cast,
           });
+
           await logModerationAction(
             moderatedChannel.id,
             "ban",
-            `User is banned for violating more than ${moderatedChannel.banThreshold} rules.`,
+            `User exceeded warn threshold of ${moderatedChannel.banThreshold} and is banned.`,
             cast
           );
+
           return json({ message: "User banned" });
         }
       }
@@ -176,6 +153,7 @@ async function validateCast({
             throw e;
           }
         );
+
         await logModerationAction(
           moderatedChannel.id,
           action.type,

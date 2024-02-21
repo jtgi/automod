@@ -49,7 +49,7 @@ export default function FrameConfig() {
           <CardContent>
             <Button asChild>
               <Link className="no-underline" to="/~/channels/new">
-                New Channel
+                + New Channel
               </Link>
             </Button>
           </CardContent>
@@ -62,7 +62,7 @@ export default function FrameConfig() {
             <h2>Moderated Channels</h2>
             <Button asChild>
               <Link className="no-underline" to="/~/channels/new">
-                New Channel
+                + New Channel
               </Link>
             </Button>
           </div>
