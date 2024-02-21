@@ -10,6 +10,7 @@ import {
 } from "~/lib/utils.server";
 import {
   ActionSchema,
+  ModeratedChannelSchema,
   RuleSchema,
   actionDefinitions,
   ruleDefinitions,
@@ -43,22 +44,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const RuleSetSchema = z.object({
-    id: z.string().optional(),
-    ruleParsed: RuleSchema,
-    actionsParsed: z.array(ActionSchema),
-  });
+  const ch = ModeratedChannelSchema.safeParse(data);
 
-  const moderatedChannelSchema = z.object({
-    id: z.string(),
-    banThreshold: z.coerce.number().optional(),
-    ruleSets: z.array(RuleSetSchema),
-  });
-
-  const channelResult = moderatedChannelSchema.safeParse(data);
-
-  if (!channelResult.success) {
-    console.log(JSON.stringify(channelResult.error, null, 2));
+  if (!ch.success) {
+    console.error(JSON.stringify(ch.error, null, 2));
     return errorResponse({
       request,
       message: "Invalid data.",
@@ -70,10 +59,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       id: modChannel.id,
     },
     data: {
-      banThreshold: channelResult.data.banThreshold,
+      banThreshold: ch.data.banThreshold,
       ruleSets: {
         deleteMany: {},
-        create: channelResult.data.ruleSets.map((ruleSet) => {
+        create: ch.data.ruleSets.map((ruleSet) => {
           return {
             rule: JSON.stringify(ruleSet.ruleParsed),
             actions: JSON.stringify(ruleSet.actionsParsed),

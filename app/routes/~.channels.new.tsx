@@ -1,4 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
+import { X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -10,7 +11,7 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
 import {
   errorResponse,
@@ -27,13 +28,11 @@ import {
 } from "~/components/ui/select";
 import {
   Action,
-  ActionSchema,
+  ModeratedChannelSchema,
   Rule,
   RuleDefinition,
   RuleName,
-  RuleSchema,
   actionDefinitions,
-  actionFunctions,
   ruleDefinitions,
   ruleNames,
 } from "~/lib/validations.server";
@@ -41,13 +40,9 @@ import { Input } from "~/components/ui/input";
 import { FieldLabel } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { TrashIcon } from "@radix-ui/react-icons";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { useFetcher, useSubmit } from "@remix-run/react";
-import { getChannel } from "~/lib/neynar.server";
-import { getSession } from "~/lib/auth.server";
+import { useSubmit } from "@remix-run/react";
 import { db } from "~/lib/db.server";
-import { z } from "zod";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -62,22 +57,10 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const RuleSetSchema = z.object({
-    id: z.string().optional(),
-    ruleParsed: RuleSchema,
-    actionsParsed: z.array(ActionSchema),
-  });
-
-  const moderatedChannelSchema = z.object({
-    id: z.string(),
-    banThreshold: z.coerce.number().optional(),
-    ruleSets: z.array(RuleSetSchema),
-  });
-
-  const channelResult = moderatedChannelSchema.safeParse(data);
+  const channelResult = ModeratedChannelSchema.safeParse(data);
 
   if (!channelResult.success) {
-    console.log(channelResult.error);
+    console.error(channelResult.error);
     return errorResponse({
       request,
       message: "Invalid data.",
@@ -271,7 +254,7 @@ export function ChannelForm(props: {
           <fieldset disabled={isSubmitting} className="space-y-7">
             {fields.map((ruleSetField, ruleSetIndex) => (
               <Card key={ruleSetField.id}>
-                <CardHeader>
+                <CardHeader className="bg-slate-50 rounded-xl">
                   <div className="flex items-center justify-between">
                     <CardTitle>Rule Set {ruleSetIndex + 1}</CardTitle>
                     <Button
@@ -286,14 +269,16 @@ export function ChannelForm(props: {
                           remove(ruleSetIndex);
                         }
                       }}
-                      className="text-red-700 rounded-full"
+                      className="rounded-full"
                     >
-                      <TrashIcon />
+                      <X className="w-5 h-5" />
                     </Button>
                   </div>
                 </CardHeader>
 
-                <CardContent>
+                <hr />
+
+                <CardContent className="pt-4">
                   <RuleSetEditor
                     actionDefinitions={props.actionDefinitions}
                     ruleDefinitions={props.ruleDefinitions}
@@ -360,7 +345,6 @@ function RuleSetEditor(props: {
     append: appendRule,
   } = useFieldArray({
     control,
-    // @ts-ignore
     name: `ruleSets.${ruleSetIndex}.ruleParsed`,
   });
 
@@ -370,7 +354,6 @@ function RuleSetEditor(props: {
     remove: removeAction,
   } = useFieldArray({
     control,
-    // @ts-ignore
     name: `ruleSets.${ruleSetIndex}.actionsParsed`,
   });
 
@@ -378,7 +361,11 @@ function RuleSetEditor(props: {
     <div>
       <div className="space-y-4">
         <div>
-          <h3>Rules</h3>
+          <p className=" font-medium">Rules</p>
+          <p className="text-gray-500 text-sm">
+            Configure checks to verify everytime a cast comes in to your
+            channel.
+          </p>
         </div>
         <div className="space-y-4">
           {ruleFields.map((ruleField, ruleIndex) => {
@@ -387,51 +374,56 @@ function RuleSetEditor(props: {
             );
 
             return (
-              <Card key={ruleField.id}>
+              <Card key={ruleField.id} className="w-full rounded-sm">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>
-                      {props.ruleDefinitions[ruleName].friendlyName}
+                  <div className="flex justify-between">
+                    <CardTitle className=" font-normal">
+                      <FieldLabel
+                        label="Type"
+                        className="flex-col items-start w-full"
+                        description={
+                          props.ruleDefinitions[ruleName].description
+                        }
+                      >
+                        <Controller
+                          name={
+                            `ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const
+                          }
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a rule" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(props.ruleDefinitions)
+                                  .filter((args) => !args[1].hidden)
+                                  .map(([name, ruleDef]) => (
+                                    <SelectItem key={name} value={name}>
+                                      {ruleDef.friendlyName}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </FieldLabel>
                     </CardTitle>
                     <Button
                       type="button"
-                      className="rounded-full text-red-700"
+                      className="rounded-full p-0 "
                       onClick={() => removeRule(ruleIndex)}
                       variant={"ghost"}
                     >
-                      <TrashIcon />
+                      <X className="w-5 h-5" />
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <Controller
-                      name={
-                        `ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const
-                      }
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a rule" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {rulesNames.map((ruleName) => (
-                              <SelectItem key={ruleName} value={ruleName}>
-                                {props.ruleDefinitions[ruleName].friendlyName} -{" "}
-                                <span className="text-gray-500">
-                                  {props.ruleDefinitions[ruleName].description}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-
+                  <div className="space-y-6">
                     <RuleArgs
                       ruleDefinition={props.ruleDefinitions[ruleName]}
                       ruleName={ruleName}
@@ -459,12 +451,17 @@ function RuleSetEditor(props: {
         </Button>
       </div>
 
-      <div className="py-6">
+      <div className="py-12">
         <hr />
       </div>
 
       <div className="space-y-4">
-        <h3>Actions</h3>
+        <div>
+          <p className=" font-medium">Actions</p>
+          <p className="text-gray-500 text-sm">
+            Configure what actions to take when the rules are met.
+          </p>
+        </div>
         <div className="space-y-4">
           {actionFields.map((actionField, actionIndex) => {
             const actionType = props.watch(
@@ -472,22 +469,11 @@ function RuleSetEditor(props: {
             );
 
             return (
-              <Card key={actionField.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>
-                      {props.actionDefinitions[actionType].friendlyName}
-                    </CardTitle>
-                    <Button
-                      type="button"
-                      onClick={() => removeAction(actionIndex)}
-                      variant={"ghost"}
-                    >
-                      <TrashIcon />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
+              <div
+                key={actionField.id}
+                className="flex items-start justify-between gap-8"
+              >
+                <p className="w-full">
                   <Controller
                     name={`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`}
                     control={control}
@@ -496,26 +482,33 @@ function RuleSetEditor(props: {
                         defaultValue={actionField.type}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select an action" />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(props.actionDefinitions).map(
-                            ([actionName, actionDef]) => (
+                          {Object.entries(props.actionDefinitions)
+                            .filter((args) => !args[1].hidden)
+                            .map(([actionName, actionDef]) => (
                               <SelectItem key={actionName} value={actionName}>
-                                {actionDef.friendlyName} -{" "}
-                                <span className="text-gray-500">
-                                  {actionDef.description}
-                                </span>
+                                {actionDef.friendlyName}
                               </SelectItem>
-                            )
-                          )}
+                            ))}
                         </SelectContent>
                       </Select>
                     )}
                   />
-                </CardContent>
-              </Card>
+                  <span className="text-gray-500 text-xs pl-3">
+                    {props.actionDefinitions[actionType].description}
+                  </span>
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => removeAction(actionIndex)}
+                  variant={"ghost"}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             );
           })}
           <Button
@@ -528,12 +521,12 @@ function RuleSetEditor(props: {
         </div>
       </div>
 
-      <div className="py-6">
+      <div className="py-12">
         <hr />
       </div>
 
       <div className="space-y-4">
-        <h3>Apply actions when</h3>
+        <p className=" font-medium">Apply actions when</p>
         <Controller
           name={`ruleSets.${ruleSetIndex}.logicType`}
           control={control}
@@ -626,10 +619,11 @@ function RuleArgs(props: {
         <FieldLabel
           key={argName}
           label={argDef.friendlyName}
+          className="gap-2"
           labelProps={{
             htmlFor: `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`,
           }}
-          description={argDef.description}
+          // description={argDef.description}
           position="right"
         >
           <Controller

@@ -148,6 +148,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 export type ActionDefinition = {
   friendlyName: string;
   description: string;
+  hidden?: boolean;
   args: Record<
     string,
     {
@@ -167,19 +168,14 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   },
   ban: {
     friendlyName: "Ban",
-    description: "Ban the user",
+    description: "Ban 'em for good",
     args: {},
   },
   warnAndHide: {
     friendlyName: "Warn and Hide",
-    description: "Warn the user and hide the cast",
-    args: {
-      // warnMessage: {
-      //   type: "string",
-      //   friendlyName: "Warn Message",
-      //   description: "The message to send to the user",
-      // },
-    },
+    description:
+      "Hide the cast and let them know it was hidden via a notification",
+    args: {},
   },
   coolDown: {
     friendlyName: "Cool Down",
@@ -244,6 +240,18 @@ export const ActionSchema = z.object({
 });
 
 export type Action = z.infer<typeof ActionSchema>;
+
+export const RuleSetSchema = z.object({
+  id: z.string().optional(),
+  ruleParsed: RuleSchema,
+  actionsParsed: z.array(ActionSchema).min(1),
+});
+
+export const ModeratedChannelSchema = z.object({
+  id: z.string(),
+  banThreshold: z.coerce.number().optional(),
+  ruleSets: z.array(RuleSetSchema).min(1),
+});
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
   and: () => undefined,
