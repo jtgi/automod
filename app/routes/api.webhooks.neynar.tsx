@@ -53,7 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   await requireValidSignature({
     request,
-    payload: await request.text(),
+    payload: rawPayload,
     sharedSecret: process.env.NEYNAR_WEBHOOK_SECRET!,
     incomingSignature: request.headers.get("X-Neynar-Signature")!,
   });
