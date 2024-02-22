@@ -21,12 +21,9 @@ export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
       },
     }
   );
-  const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
-    ?.parent_urls as string[] | undefined;
-
-  if (!webhooks) {
-    throw new Error("No current webhooks found", webhook.data);
-  }
+  const webhooks =
+    (webhook.data.webhook?.subscription?.filters?.["cast.created"]
+      ?.root_parent_urls as string[]) || [];
 
   if (webhooks.includes(channelUrl)) {
     return;
@@ -44,8 +41,8 @@ export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
       subscription: {
         "cast.created": {
           author_fids: [],
-          root_parent_urls: [],
-          parent_urls: webhooks,
+          root_parent_urls: webhooks,
+          parent_urls: [],
           mentioned_fids: [],
         },
       },

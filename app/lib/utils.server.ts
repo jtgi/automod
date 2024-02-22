@@ -28,14 +28,11 @@ export async function requireValidSignature(props: {
   incomingSignature: string;
 }) {
   const computedSignature = crypto
-    .createHmac("sha256", props.sharedSecret)
+    .createHmac("sha512", props.sharedSecret)
     .update(props.payload)
     .digest("hex");
 
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(computedSignature),
-    Buffer.from(props.incomingSignature)
-  );
+  const isValid = computedSignature === props.incomingSignature;
 
   if (!isValid) {
     console.error(`Invalid signature`, props.incomingSignature, props.payload);

@@ -1,6 +1,7 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import * as crypto from "crypto";
 import { ModeratedChannel, Prisma } from "@prisma/client";
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { getChannel, getUser } from "~/lib/neynar.server";
@@ -45,7 +46,10 @@ type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
 
 export async function action({ request }: ActionFunctionArgs) {
   const rawPayload = await request.text();
-  const webhookNotif = JSON.parse(rawPayload) as { type: string; data: Cast };
+  const webhookNotif = JSON.parse(rawPayload) as {
+    type: string;
+    data: Cast & { root_parent_url: string };
+  };
 
   if (webhookNotif.type !== "cast.created") {
     return json({ message: "Invalid webhook type" }, { status: 400 });
@@ -58,11 +62,11 @@ export async function action({ request }: ActionFunctionArgs) {
     incomingSignature: request.headers.get("X-Neynar-Signature")!,
   });
 
-  const channelName = webhookNotif.data.parent_url?.split("/").pop();
+  const channelName = webhookNotif.data.root_parent_url?.split("/").pop();
 
   if (!channelName) {
     console.error(
-      `Couldn't extract channel name: ${webhookNotif.data.parent_url}`
+      `Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`
     );
     return json({ message: "Invalid parent_url" }, { status: 400 });
   }
