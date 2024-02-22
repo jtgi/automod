@@ -34,6 +34,7 @@ jobs:
 
   deploy:
     name: Deploy app
+    requires: typecheck
     runs-on: ubuntu-latest
     concurrency: deploy-group # optional: ensure only one action runs at a time
     steps:
