@@ -168,9 +168,19 @@ describe("containsLinks", () => {
   it("should detect links in the text", () => {
     const c = cast({ text: "Check out this link https://example.com" });
     const r = rule({});
-    expect(containsLinks(c, r)).toBe(
-      "Text contains a link: https://example.com"
-    );
+    expect(containsLinks(c, r)).toBe("Too many links. Max: 0");
+  });
+
+  it("should detect links based on a threshold", () => {
+    const c = cast({
+      text: "Check out this link https://example.com and https://example2.com",
+    });
+
+    const r1 = rule({ args: { maxLinks: 2 } });
+    expect(containsLinks(c, r1)).toBeUndefined();
+
+    const r2 = rule({ args: { maxLinks: 1 } });
+    expect(containsLinks(c, r2)).toBe("Too many links. Max: 1");
   });
 
   it("should return undefined if no links are found", () => {

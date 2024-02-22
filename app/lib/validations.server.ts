@@ -296,11 +296,13 @@ export function containsTooManyMentions(cast: Cast, rule: Rule) {
   }
 }
 
-// Rule: contains links
-export function containsLinks(cast: Cast, _rule: Rule) {
-  const regex = /https?:\/\/\S+/i;
-  if (regex.test(cast.text)) {
-    return `Text contains a link: ${cast.text.match(regex)}`;
+export function containsLinks(cast: Cast, rule: Rule) {
+  const maxLinks = rule.args.maxLinks || 0;
+  const regex = /https?:\/\/\S+/gi;
+  const matches = cast.text.match(regex) || [];
+
+  if (matches.length > maxLinks) {
+    return `Too many links. Max: ${maxLinks}`;
   }
 }
 

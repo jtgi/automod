@@ -16,6 +16,7 @@ import {
 } from "~/lib/utils.server";
 import { Button } from "~/components/ui/button";
 import { Link } from "@remix-run/react";
+import { actionDefinitions } from "~/lib/validations.server";
 
 // prisma type with channel moderation logs
 
@@ -42,12 +43,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     user,
     channel,
     moderationLogs,
+    actionDefinitions: actionDefinitions,
     env: getSharedEnv(),
   });
 }
 
 export default function Screen() {
-  const { user, channel, moderationLogs, env } =
+  const { user, channel, moderationLogs, actionDefinitions, env } =
     useTypedLoaderData<typeof loader>();
 
   return (
@@ -55,6 +57,7 @@ export default function Screen() {
       <p className="uppercase text-[8px] tracking-wider text-gray-500">
         CHANNEL
       </p>
+
       <div className="flex items-center justify-between">
         <h1>{channel.id}</h1>
         <Button asChild variant={"secondary"}>
@@ -71,27 +74,41 @@ export default function Screen() {
       <h2>Log</h2>
       <div className="divide-y">
         {moderationLogs.map((log) => (
-          <div className="flex items-center gap-4 py-2">
-            <div>{log.createdAt.toDateString()}</div>
-            <Avatar className="block">
-              <AvatarImage
-                src={log.affectedUserAvatarUrl ?? undefined}
-                alt={"@" + log.affectedUsername}
-              />
-              <AvatarFallback>
-                {log.affectedUsername.slice(0, 2).toLocaleUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col gap-4">
-              <p className="font-semibold">
-                <a
-                  href={`https://warpcast.com/${log.affectedUsername}`}
-                  target="_blank"
-                >
-                  @{log.affectedUsername}
-                </a>
-              </p>
-              <p>{log.reason}</p>
+          <div className="flex flex-col sm:flex-row gap-4 py-2">
+            <p
+              className="text-sm w-[150px] text-gray-400"
+              title={log.createdAt.toISOString()}
+            >
+              {log.createdAt.toLocaleString()}
+            </p>
+            <div className="flex gap-2">
+              <Avatar className="block w-11 h-11">
+                <AvatarImage
+                  src={log.affectedUserAvatarUrl ?? undefined}
+                  alt={"@" + log.affectedUsername}
+                />
+                <AvatarFallback>
+                  {log.affectedUsername.slice(0, 2).toLocaleUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <p className="font-semibold">
+                  <a
+                    href={`https://warpcast.com/${log.affectedUsername}`}
+                    target="_blank"
+                  >
+                    @{log.affectedUsername}
+                  </a>
+                </p>
+                <p>
+                  {
+                    actionDefinitions[
+                      log.action as keyof typeof actionDefinitions
+                    ].friendlyName
+                  }
+                  , {log.reason}
+                </p>
+              </div>
             </div>
           </div>
         ))}

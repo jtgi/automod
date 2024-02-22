@@ -241,7 +241,7 @@ function evaluateRules(
         return {
           didViolateRule: true,
           failedRule: rule,
-          explanation: `All of the following rules were violated: ${evaluations
+          explanation: `${evaluations
             // @ts-expect-error ts doesnt acknowledge `every`
             // in discriminated union
             .map((e) => e.explanation)
@@ -281,6 +281,10 @@ function evaluateRule(
     } {
   const check = ruleFunctions[rule.name];
   const error = check(cast, rule);
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(rule.name, error);
+  }
 
   if (error) {
     return {
