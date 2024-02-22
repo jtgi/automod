@@ -68,7 +68,8 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(channelResult.error);
     return errorResponse({
       request,
-      message: "Invalid data.",
+      message:
+        "Invalid rule configuration. Must have at least one rule and action for each rule set.",
     });
   }
 
@@ -81,9 +82,15 @@ export async function action({ request }: ActionFunctionArgs) {
   if (channelExists) {
     return errorResponse({
       request,
-      message: "Channel already exists",
+      message: "Moderation for that channel already exists",
     });
   }
+
+  console.log(
+    "Creating new moderated channel",
+    channelResult.data,
+    channelExists
+  );
 
   const newChannel = await db.moderatedChannel.create({
     data: {
@@ -97,7 +104,6 @@ export async function action({ request }: ActionFunctionArgs) {
       ruleSets: {
         create: channelResult.data.ruleSets.map((ruleSet) => {
           return {
-            id: ruleSet.id,
             rule: JSON.stringify(ruleSet.ruleParsed),
             actions: JSON.stringify(ruleSet.actionsParsed),
           };

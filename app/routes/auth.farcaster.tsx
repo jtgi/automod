@@ -4,6 +4,7 @@ import { authenticator } from "~/lib/auth.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   return await authenticator.authenticate("farcaster", request, {
     successRedirect: "/~",
+    failureRedirect: "/login?error=no-access",
   });
 }
 

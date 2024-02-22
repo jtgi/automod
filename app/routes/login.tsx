@@ -75,7 +75,14 @@ export default function Login() {
 
           {error && (
             <Alert className="mb-8" variant="destructive">
-              {error}
+              {error === "no-access" ? (
+                <p>
+                  automod is currently in private beta, reach out{" "}
+                  <a href="https://warpcast.com/jtgi">for access</a>
+                </p>
+              ) : (
+                error
+              )}
             </Alert>
           )}
 
