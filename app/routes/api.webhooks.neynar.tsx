@@ -44,7 +44,8 @@ type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
 >;
 
 export async function action({ request }: ActionFunctionArgs) {
-  const webhookNotif = (await request.json()) as { type: string; data: Cast };
+  const rawPayload = await request.text();
+  const webhookNotif = JSON.parse(rawPayload) as { type: string; data: Cast };
 
   if (webhookNotif.type !== "cast.created") {
     return json({ message: "Invalid webhook type" }, { status: 400 });
