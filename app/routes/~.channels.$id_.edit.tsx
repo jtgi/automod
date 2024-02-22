@@ -21,6 +21,7 @@ import { db } from "~/lib/db.server";
 import { z } from "zod";
 import invariant from "tiny-invariant";
 import { ChannelForm, FormValues } from "./~.channels.new";
+import { isCohost } from "~/lib/warpcast.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -33,14 +34,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const data = await request.json();
 
-  console.log(JSON.stringify(data, null, 2));
+  const isHost = await isCohost({
+    fid: +user.id,
+    channel: data.id,
+  });
 
-  const { isLead, channel } = await isChannelLead(user.id, data.id);
-  if (!isLead) {
+  if (!isHost) {
     return errorResponse({
       request,
-      message:
-        "Only the channel lead can configure moderation. If the lead has changed, please contact support.",
+      message: "Only cohosts can configure moderation.",
     });
   }
 

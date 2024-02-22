@@ -43,17 +43,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useFetcher, useSubmit } from "@remix-run/react";
 import { db } from "~/lib/db.server";
+import { isCohost } from "~/lib/warpcast.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
   const data = await request.json();
 
-  const { isLead, channel } = await isChannelLead(user.id, data.id);
-  if (!isLead) {
+  const isHost = await isCohost({
+    fid: +user.id,
+    channel: data.id,
+  });
+
+  if (!isHost) {
     return errorResponse({
       request,
-      message:
-        "Only the channel lead can configure moderation. If the lead has changed, please contact support.",
+      message: "Only cohosts can configure moderation.",
     });
   }
 
@@ -241,7 +245,7 @@ export function ChannelForm(props: {
             <FieldLabel
               label="Ban Threshold"
               className="flex-col items-start"
-              description="The number of warns before a user is banned."
+              description="The number of warns before a user is banned. Example, if its set to 2, when the user breaks rules the 3rd time they are banned."
             >
               <Input
                 type="number"

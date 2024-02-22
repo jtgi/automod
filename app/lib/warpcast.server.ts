@@ -1,8 +1,46 @@
 import axios, { AxiosResponse } from "axios";
 import { Action, ActionFunction } from "./validations.server";
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { cache } from "./cache.server";
 
 const token = process.env.WARPCAST_TOKEN!;
+
+type HostResult = {
+  result: {
+    hosts: Array<{
+      fid: number;
+      username: string;
+      displayName: string;
+      pfp: {
+        url: string;
+        verified: boolean;
+      };
+    }>;
+  };
+};
+
+export async function isCohost(props: { fid: number; channel: string }) {
+  const rsp = await getChannelHosts(props);
+  return rsp.result.hosts.some((host) => host.fid == props.fid);
+}
+
+export async function getChannelHosts(props: {
+  channel: string;
+}): Promise<HostResult> {
+  const cacheKey = `getChannelHosts-${props.channel}`;
+  const cached = cache.get<HostResult>(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const result = await axios.get(
+    `https://client.warpcast.com/v2/get-channel-hosts?channelKey=${props.channel}`
+  );
+
+  cache.set(cacheKey, result.data, 60 * 60);
+  return result.data;
+}
 
 export async function coolDown({
   channel,
