@@ -14,7 +14,12 @@ export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
 export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
   const webhook = await axios.get(
     `https://api.neynar.com/v2/farcaster/webhook?webhook_id=${process.env
-      .NEYNAR_WEBHOOK_ID!}`
+      .NEYNAR_WEBHOOK_ID!}`,
+    {
+      headers: {
+        api_key: process.env.NEYNAR_API_KEY!,
+      },
+    }
   );
   const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
     ?.parent_urls as string[] | undefined;
@@ -29,20 +34,28 @@ export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
 
   webhooks.push(channelUrl);
 
-  return axios.put(`https://api.neynar.com/v2/farcaster/webhook/`, {
-    webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
-    name: "automod",
-    url: `${getSharedEnv().hostUrl}/api/webhooks/jtgi`,
-    description: "automod webhook",
-    subscription: {
-      "cast.created": {
-        author_fids: [],
-        root_parent_urls: [],
-        parent_urls: webhooks,
-        mentioned_fids: [],
+  return axios.put(
+    `https://api.neynar.com/v2/farcaster/webhook/`,
+    {
+      webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
+      name: "automod",
+      url: `${getSharedEnv().hostUrl}/api/webhooks/jtgi`,
+      description: "automod webhook",
+      subscription: {
+        "cast.created": {
+          author_fids: [],
+          root_parent_urls: [],
+          parent_urls: webhooks,
+          mentioned_fids: [],
+        },
       },
     },
-  });
+    {
+      headers: {
+        api_key: process.env.NEYNAR_API_KEY!,
+      },
+    }
+  );
 }
 
 export async function getChannel(props: { name: string }) {
