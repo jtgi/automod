@@ -536,7 +536,6 @@ describe("validateCast", () => {
     const logs2 = await prisma.moderationLog.findMany({
       where: { channelId: mc.id },
     });
-    console.log(logs2);
     expect(logs2).toHaveLength(2);
     expect(logs2[1].action).toBe("ban");
     expect(logs2[1].reason).toBe(
