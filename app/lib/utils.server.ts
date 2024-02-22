@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import * as crypto from "crypto";
 import { authenticator, commitSession, getSession } from "./auth.server";
 import { generateFrameSvg } from "./utils";
 import axios from "axios";
@@ -18,6 +19,28 @@ export function requireUser({ request }: { request: Request }) {
   return authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,
   });
+}
+
+export async function requireValidSignature(props: {
+  request: Request;
+  payload: string;
+  sharedSecret: string;
+  incomingSignature: string;
+}) {
+  const computedSignature = crypto
+    .createHmac("sha256", props.sharedSecret)
+    .update(props.payload)
+    .digest("hex");
+
+  const isValid = crypto.timingSafeEqual(
+    Buffer.from(computedSignature),
+    Buffer.from(props.incomingSignature)
+  );
+
+  if (!isValid) {
+    console.error(`Invalid signature`, props.incomingSignature, props.payload);
+    throw redirect(`/`, { status: 403 });
+  }
 }
 
 export async function requireUserOwnsChannel(props: {
@@ -191,7 +214,6 @@ export async function parseMessage(payload: any) {
   if (
     new URL(message.action.url).host !== new URL(getSharedEnv().hostUrl).host
   ) {
-    console.log({ url: message.action.url, hostUrl: getSharedEnv().hostUrl });
     throw new Error("No spoofs sir");
   }
 

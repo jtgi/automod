@@ -4,13 +4,14 @@ import { ActionFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { getChannel, getUser } from "~/lib/neynar.server";
+import { requireValidSignature } from "~/lib/utils.server";
 import {
   Action,
   Rule,
   actionFunctions,
   ruleFunctions,
 } from "~/lib/validations.server";
-import { ban, hideQuietly, warnAndHide } from "~/lib/warpcast.server";
+import { ban, hideQuietly, isCohost, warnAndHide } from "~/lib/warpcast.server";
 
 export const userPlans = {
   basic: {
@@ -42,11 +43,31 @@ type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
   typeof FullModeratedChannel
 >;
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  invariant(params.channel, "Channel is required");
+export async function action({ request }: ActionFunctionArgs) {
+  const webhookNotif = (await request.json()) as { type: string; data: Cast };
+
+  if (webhookNotif.type !== "cast.created") {
+    return json({ message: "Invalid webhook type" }, { status: 400 });
+  }
+
+  await requireValidSignature({
+    request,
+    payload: await request.text(),
+    sharedSecret: process.env.NEYNAR_WEBHOOK_SECRET!,
+    incomingSignature: request.headers.get("X-Neynar-Signature")!,
+  });
+
+  const channelName = webhookNotif.data.parent_url?.split("/").pop();
+
+  if (!channelName) {
+    console.error(
+      `Couldn't extract channel name: ${webhookNotif.data.parent_url}`
+    );
+    return json({ message: "Invalid parent_url" }, { status: 400 });
+  }
 
   const moderatedChannel = await db.moderatedChannel.findFirst({
-    where: { id: params.channel, active: true },
+    where: { id: channelName, active: true },
     include: {
       user: true,
       ruleSets: {
@@ -68,31 +89,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const channel = await getChannel({ name: params.channel }).catch(() => null);
-  if (!channel) {
-    return json({ message: "Channel not found" }, { status: 404 });
-  }
+  const cohost = await isCohost({
+    fid: +moderatedChannel.userId,
+    channel: channelName,
+  });
 
-  if (String(channel.lead?.fid) !== moderatedChannel.userId) {
-    return json(
-      {
-        message: `Only @${channel.lead?.username} can configure moderation for this channel. If the lead has changed, please contact support.`,
+  if (!cohost) {
+    console.log(
+      `User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`
+    );
+    await db.moderatedChannel.update({
+      where: {
+        id: channelName,
       },
+      data: {
+        active: false,
+      },
+    });
+
+    return json(
+      { message: "Creator of moderated channel is no longer a cohost" },
       { status: 403 }
     );
   }
 
-  const webhookNotif = (await request.json()) as { type: string; data: Cast };
-
-  if (webhookNotif.type !== "cast.created") {
-    return json({ message: "Invalid webhook type" }, { status: 400 });
+  const channel = await getChannel({ name: channelName }).catch(() => null);
+  if (!channel) {
+    return json({ message: "Channel not found" }, { status: 404 });
   }
 
-  const cast = webhookNotif.data;
   await validateCast({
     channel,
     moderatedChannel,
-    cast,
+    cast: webhookNotif.data,
   });
 
   return json({});

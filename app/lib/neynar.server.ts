@@ -1,11 +1,49 @@
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
+import * as crypto from "crypto";
+
 import { cache } from "./cache.server";
 import {
   FollowResponseUser,
   Reaction,
 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
 import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import axios from "axios";
+import { getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
+
+export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
+  const webhook = await axios.get(
+    `https://api.neynar.com/v2/farcaster/webhook?webhook_id=${process.env
+      .NEYNAR_WEBHOOK_ID!}`
+  );
+  const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
+    ?.parent_urls as string[] | undefined;
+
+  if (!webhooks) {
+    throw new Error("No current webhooks found", webhook.data);
+  }
+
+  if (webhooks.includes(channelUrl)) {
+    return;
+  }
+
+  webhooks.push(channelUrl);
+
+  return axios.put(`https://api.neynar.com/v2/farcaster/webhook/`, {
+    webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
+    name: "automod",
+    url: `${getSharedEnv().hostUrl}/api/webhooks/jtgi`,
+    description: "automod webhook",
+    subscription: {
+      "cast.created": {
+        author_fids: [],
+        root_parent_urls: [],
+        parent_urls: webhooks,
+        mentioned_fids: [],
+      },
+    },
+  });
+}
 
 export async function getChannel(props: { name: string }) {
   const cacheKey = `channel:${props.name}`;
@@ -42,6 +80,7 @@ export async function getUser(props: { fid: string }) {
 
   return response.users[0];
 }
+
 export async function pageReactionsDeep(props: { hash: string }) {
   const cacheKey = `reactions:${props.hash}`;
   const cached = cache.get<Array<Reaction>>(cacheKey);
