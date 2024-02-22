@@ -8,7 +8,7 @@ import {
   rule,
   user,
 } from "./validations.test";
-import { validateCast } from "~/routes/api.webhooks.$channel";
+import { validateCast } from "~/routes/api.webhooks.neynar";
 import { prisma } from "tests/setup";
 
 vi.mock("axios", () => {
