@@ -44,11 +44,12 @@ model Otp {
 }
 
 model User {
-  id    String  @id
-  name  String
-  email String? @unique
-  plan  String  @default("basic")
-  role  String  @default("admin")
+  id        String  @id
+  name      String
+  avatarUrl String?
+  email     String? @unique
+  plan      String  @default("basic")
+  role      String  @default("admin")
 
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

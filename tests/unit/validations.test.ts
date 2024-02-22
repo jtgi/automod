@@ -24,6 +24,7 @@ export function user(data?: Partial<User>): User {
     id: faker.string.uuid(),
     name: faker.person.firstName(),
     email: faker.internet.email(),
+    avatarUrl: faker.image.avatar(),
     role: "admin",
     plan: "basic",
     inviteCodeId: null,

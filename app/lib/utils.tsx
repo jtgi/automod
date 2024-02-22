@@ -1,4 +1,3 @@
-import { Frame } from "@prisma/client";
 import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
 import { CSSProperties, useEffect, useRef, useState } from "react";

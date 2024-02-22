@@ -77,7 +77,6 @@ export async function verifyFarcasterUser(
         id: args.fid,
         name: args.username || args.fid,
         avatarUrl: args.pfpUrl,
-        providerId: args.fid,
       },
     });
   }
