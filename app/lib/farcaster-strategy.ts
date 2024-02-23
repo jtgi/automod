@@ -82,6 +82,21 @@ export class FarcasterStrategy extends Strategy<
           fid: fid.toString(),
         },
       });
+    } else {
+      const order = await db.order.findFirst({
+        where: {
+          fid: fid.toString(),
+        },
+      });
+
+      if (!order) {
+        return await this.failure(
+          "No access",
+          request,
+          sessionStorage,
+          options
+        );
+      }
     }
 
     const user = await this.verify({

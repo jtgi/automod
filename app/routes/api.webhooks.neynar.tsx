@@ -159,8 +159,9 @@ export async function validateCast({
           },
         });
 
-        // note: we use >= because this cast will become
-        // a warn but is not yet in the db.
+        // note: we use >= because this cast that has
+        // violated the rules is not in the db at this
+        // point.
         if (violations.length >= moderatedChannel.banThreshold) {
           await ban({
             channel: channel.name || channel.id,
