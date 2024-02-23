@@ -553,7 +553,6 @@ describe("validateCast", () => {
       where: { channelId: mc.id },
     });
     expect(logs2).toHaveLength(3);
-    console.log(logs2);
     expect(logs2[2].action).toBe("ban");
     expect(logs2[2].reason).toBe(
       `User exceeded warn threshold of 1 and is banned.`

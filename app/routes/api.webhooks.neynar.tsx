@@ -159,13 +159,6 @@ export async function validateCast({
           },
         });
 
-        console.log(
-          "violations",
-          violations,
-          moderatedChannel.banThreshold,
-          moderatedChannel.id
-        );
-
         // note: we use >= because this cast will become
         // a warn but is not yet in the db.
         if (violations.length >= moderatedChannel.banThreshold) {
