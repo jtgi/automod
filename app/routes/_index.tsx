@@ -109,8 +109,8 @@ export default function Login() {
             </Alert>
           )}
 
-          {user && false ? (
-            <Button asChild className="no-underline">
+          {user ? (
+            <Button asChild size={"lg"} className="no-underline">
               <Link to="/~">Continue</Link>
             </Button>
           ) : (
