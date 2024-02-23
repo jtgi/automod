@@ -15,8 +15,10 @@ import {
   requireUserOwnsChannel,
 } from "~/lib/utils.server";
 import { Button } from "~/components/ui/button";
-import { Link } from "@remix-run/react";
+import { Form, Link, useFetcher } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
+import { TrashIcon } from "lucide-react";
+import { Switch } from "~/components/ui/switch";
 
 // prisma type with channel moderation logs
 
@@ -52,6 +54,8 @@ export default function Screen() {
   const { user, channel, moderationLogs, actionDefinitions, env } =
     useTypedLoaderData<typeof loader>();
 
+  const enableFetcher = useFetcher();
+
   return (
     <div>
       <p className="uppercase text-[8px] tracking-wider text-gray-500">
@@ -60,11 +64,33 @@ export default function Screen() {
 
       <div className="flex items-center justify-between">
         <h1>{channel.id}</h1>
-        <Button asChild variant={"secondary"}>
-          <Link className="no-underline" to={`/~/channels/${channel.id}/edit`}>
-            Edit Rules
-          </Link>
-        </Button>
+        <div className="flex items-center gap-7">
+          <Button asChild variant={"secondary"}>
+            <Link
+              className="no-underline"
+              to={`/~/channels/${channel.id}/edit`}
+            >
+              Edit Rules
+            </Link>
+          </Button>
+          <form
+            method="post"
+            action={`/api/channels/${channel.id}/toggleEnable`}
+          >
+            <div className="flex items-center gap-2">
+              <Switch
+                id="enabled"
+                defaultChecked={channel.active}
+                onClick={(e) =>
+                  enableFetcher.submit(e.currentTarget.form, { method: "post" })
+                }
+              />{" "}
+              <label htmlFor="enabled" className="text-sm">
+                Enabled
+              </label>
+            </div>
+          </form>
+        </div>
       </div>
 
       <div className="py-4">

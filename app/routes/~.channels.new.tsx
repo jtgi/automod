@@ -95,6 +95,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const newChannel = await db.moderatedChannel.create({
     data: {
       id: channelResult.data.id,
+      active: true,
       user: {
         connect: {
           id: user.id,
