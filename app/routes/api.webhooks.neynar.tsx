@@ -185,7 +185,7 @@ export async function validateCast({
           } else {
             await logModerationAction(
               moderatedChannel.id,
-              "noop",
+              "bypass",
               `User exceeded warn threshold of ${moderatedChannel.banThreshold} but is cohost.`,
               cast
             );
@@ -211,7 +211,7 @@ export async function validateCast({
         ) {
           await logModerationAction(
             moderatedChannel.id,
-            "noop",
+            "bypass",
             `User would be banned but is a cohost, doing nothing.`,
             cast
           );

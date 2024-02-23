@@ -166,6 +166,11 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
     description: "Hide the cast without notifying the user",
     args: {},
   },
+  bypass: {
+    friendlyName: "Bypass",
+    description: "Bypass the rule and let the cast be visible",
+    args: {},
+  },
   ban: {
     friendlyName: "Ban",
     description: "Ban 'em for good",
@@ -205,6 +210,7 @@ export const ruleNames = [
 ] as const;
 
 export const actionTypes = [
+  "bypass",
   "hideQuietly",
   "ban",
   "warnAndHide",

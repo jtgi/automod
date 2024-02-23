@@ -171,6 +171,7 @@ export function ChannelForm(props: {
   const fetcher = useFetcher();
   const methods = useForm<FormValues>({
     defaultValues: props.defaultValues,
+    shouldFocusError: false,
   });
 
   const {
