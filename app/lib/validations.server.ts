@@ -169,6 +169,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   bypass: {
     friendlyName: "Bypass",
     description: "Bypass the rule and let the cast be visible",
+    hidden: true,
     args: {},
   },
   ban: {
