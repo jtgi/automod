@@ -138,7 +138,6 @@ export default function FrameConfig() {
 
   return (
     <div className="space-y-4">
-      <h2>New Moderation</h2>
       <ChannelForm
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}

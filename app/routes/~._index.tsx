@@ -59,7 +59,7 @@ export default function FrameConfig() {
       {channels.length > 0 && (
         <>
           <div className="flex items-center justify-between">
-            <h2>Moderated Channels</h2>
+            <h2>Bots</h2>
             <Button asChild>
               <Link className="no-underline" to="/~/channels/new">
                 + New Bot
