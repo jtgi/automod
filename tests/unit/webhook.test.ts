@@ -467,6 +467,10 @@ describe("validateCast", () => {
     expect(logs).toHaveLength(0);
   });
 
+  it("should not ban cohost", async () => {
+    // todo
+  });
+
   it("ban threshold works", async () => {
     const mc = await prisma.moderatedChannel.create({
       data: {

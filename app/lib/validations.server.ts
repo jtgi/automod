@@ -274,6 +274,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
 
 export const actionFunctions: Record<ActionType, ActionFunction> = {
   hideQuietly: hideQuietly,
+  bypass: () => Promise.resolve(),
   ban: ban,
   warnAndHide: warnAndHide,
   coolDown: coolDown,
