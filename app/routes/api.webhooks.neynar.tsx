@@ -159,6 +159,7 @@ export async function validateCast({
           },
         });
 
+        console.log("violations", violations);
         if (
           violations[0] &&
           violations[0]._count._all >= moderatedChannel.banThreshold
