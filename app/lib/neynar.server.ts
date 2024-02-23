@@ -36,7 +36,7 @@ export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
     {
       webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
       name: "automod",
-      url: `${getSharedEnv().hostUrl}/api/webhooks/jtgi`,
+      url: `${getSharedEnv().hostUrl}/api/webhooks/neynar`,
       description: "automod webhook",
       subscription: {
         "cast.created": {
