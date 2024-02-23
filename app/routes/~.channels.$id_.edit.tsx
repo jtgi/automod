@@ -4,23 +4,19 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   errorResponse,
   getSharedEnv,
-  isChannelLead,
   requireUser,
   requireUserOwnsChannel,
 } from "~/lib/utils.server";
 import {
-  ActionSchema,
   ModeratedChannelSchema,
-  RuleSchema,
   actionDefinitions,
   ruleDefinitions,
   ruleNames,
 } from "~/lib/validations.server";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
-import { z } from "zod";
 import invariant from "tiny-invariant";
-import { ChannelForm, FormValues } from "./~.channels.new";
+import { ChannelForm } from "./~.channels.new";
 import { isCohost } from "~/lib/warpcast.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {

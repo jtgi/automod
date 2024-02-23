@@ -1,3 +1,4 @@
+import * as warpcast from "~/lib/warpcast.server";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import axios from "axios";
 import {
@@ -37,10 +38,7 @@ describe("validateCast", () => {
   });
 
   beforeEach(async () => {
-    (axios.post as any).mockClear();
-    (axios.put as any).mockClear();
-    (axios.get as any).mockClear();
-    (axios as any).mockClear();
+    vi.resetAllMocks();
 
     await prisma.user.create({
       data: u0,

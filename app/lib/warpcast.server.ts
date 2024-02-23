@@ -20,6 +20,10 @@ type HostResult = {
 };
 
 export async function isCohost(props: { fid: number; channel: string }) {
+  if (process.env.NODE_ENV === "test") {
+    return props.fid === 1;
+  }
+
   const rsp = await getChannelHosts(props);
   return rsp.result.hosts.some((host) => host.fid == props.fid);
 }
@@ -38,7 +42,7 @@ export async function getChannelHosts(props: {
     `https://client.warpcast.com/v2/get-channel-hosts?channelKey=${props.channel}`
   );
 
-  cache.set(cacheKey, result.data, 60 * 60);
+  cache.set(cacheKey, result.data, 60 * 60 * 5);
   return result.data;
 }
 
@@ -52,7 +56,7 @@ export async function coolDown({
   throw new Error("Not implemented");
 }
 
-export function hideQuietly({
+export async function hideQuietly({
   channel,
   cast,
 }: {
@@ -72,7 +76,13 @@ export function hideQuietly({
   );
 }
 
-export function ban({ channel, cast }: { channel: string; cast: Cast }) {
+export async function ban({ channel, cast }: { channel: string; cast: Cast }) {
+  const isCohostCheck = await isCohost({ fid: cast.author.fid, channel });
+
+  if (isCohostCheck) {
+    return Promise.resolve({} as AxiosResponse);
+  }
+
   const channelKey = channel;
   const fid = cast.author.fid;
   return axios.put(
@@ -88,7 +98,13 @@ export function ban({ channel, cast }: { channel: string; cast: Cast }) {
   );
 }
 
-export function unban({ channel, cast }: { channel: string; cast: Cast }) {
+export async function unban({
+  channel,
+  cast,
+}: {
+  channel: string;
+  cast: Cast;
+}) {
   const channelKey = channel;
   const fid = cast.author.fid;
   return axios.put(
@@ -104,7 +120,7 @@ export function unban({ channel, cast }: { channel: string; cast: Cast }) {
   );
 }
 
-export function warnAndHide({
+export async function warnAndHide({
   channel,
   cast,
 }: {
