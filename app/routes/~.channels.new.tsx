@@ -269,7 +269,7 @@ export function ChannelForm(props: {
           <fieldset disabled={isSubmitting} className="space-y-7">
             {fields.map((ruleSetField, ruleSetIndex) => (
               <Card key={ruleSetField.id}>
-                <CardHeader className="bg-slate-50 rounded-xl">
+                <CardHeader className="bg-slate-50 rounded-xl py-3">
                   <div className="flex items-center justify-between">
                     <CardTitle>Rule Set {ruleSetIndex + 1}</CardTitle>
                     <Button
@@ -472,7 +472,7 @@ function RuleSetEditor(props: {
       </div>
 
       <div className="py-12">
-        <hr />
+        <hr className=" border-slate-300" />
       </div>
 
       <div className="space-y-4">
