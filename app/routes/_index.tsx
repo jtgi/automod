@@ -5,6 +5,7 @@ import {
 } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useNavigate } from "@remix-run/react";
+import { ArrowUpRight } from "lucide-react";
 import { useCallback } from "react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
@@ -89,10 +90,18 @@ export default function Login() {
 
   return (
     <AuthKitProvider config={farcasterConfig}>
-      <div className="h-full w-full flex flex-col items-center justify-center min-h-screen">
+      <div
+        className="h-full w-full flex flex-col items-center justify-center min-h-screen"
+        style={{
+          backgroundImage:
+            "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
+        }}
+      >
         <div className="max-w-xl flex flex-col justify-center items-center">
-          <h1 className="text-6xl logo">automod</h1>
-          <h2 className="font-normal mb-8">enforce channel norms with bots</h2>
+          <h1 className="text-6xl logo text-white opacity-80">automod</h1>
+          <h2 className="font-normal mb-8 opacity-50 text-white">
+            enforce channel norms with bots
+          </h2>
 
           {error && (
             <Alert className="mb-8" variant="destructive">
@@ -100,13 +109,21 @@ export default function Login() {
             </Alert>
           )}
 
-          {user ? (
+          {user && false ? (
             <Button asChild className="no-underline">
               <Link to="/~">Continue</Link>
             </Button>
           ) : (
-            <div className="flex flex-row items-center justify-center pt-8">
-              <SignInButton onSuccess={handleSuccess} />
+            <div className="text-white opacity-60 text-sm">
+              Now in private beta.{" "}
+              <a
+                className="text-white opacity-90 hover:opacity-100 transition-all"
+                href="https://tally.so/r/woMkMb"
+                target="_blank"
+              >
+                Join the waitlist
+              </a>
+              <ArrowUpRight className="inline w-4 h-4" />
             </div>
           )}
         </div>
