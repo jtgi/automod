@@ -17,8 +17,9 @@ import {
 import { Button } from "~/components/ui/button";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
-import { TrashIcon } from "lucide-react";
+import { Bird, Loader, TrashIcon } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
+import { Alert } from "~/components/ui/alert";
 
 // prisma type with channel moderation logs
 
@@ -98,53 +99,62 @@ export default function Screen() {
       </div>
 
       <h2>Log</h2>
-      <div className="divide-y">
-        {moderationLogs.map((log) => (
-          <div className="flex flex-col sm:flex-row gap-2 py-2">
-            <p
-              className="text-xs w-[150px] text-gray-400"
-              title={log.createdAt.toISOString()}
-            >
-              {log.createdAt.toLocaleString()}
-            </p>
-            <div className="flex gap-2">
-              <a
-                className="no-underline"
-                target="_blank"
-                href={`https://warpcast.com/${log.affectedUsername}`}
+      {moderationLogs.length === 0 ? (
+        <Alert className="mt-2">
+          <div className="text-gray-700">
+            No moderation logs yet. Anytime your bot executes any action it'll
+            show here.
+          </div>
+        </Alert>
+      ) : (
+        <div className="divide-y">
+          {moderationLogs.map((log) => (
+            <div className="flex flex-col sm:flex-row gap-2 py-2">
+              <p
+                className="text-xs w-[150px] text-gray-400"
+                title={log.createdAt.toISOString()}
               >
-                <Avatar className="block w-11 h-11">
-                  <AvatarImage
-                    src={log.affectedUserAvatarUrl ?? undefined}
-                    alt={"@" + log.affectedUsername}
-                  />
-                  <AvatarFallback>
-                    {log.affectedUsername.slice(0, 2).toLocaleUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </a>
-              <div className="flex flex-col">
-                <p className="font-semibold">
-                  <a
-                    href={`https://warpcast.com/${log.affectedUsername}`}
-                    target="_blank"
-                  >
-                    @{log.affectedUsername}
-                  </a>
-                </p>
-                <p>
-                  {
-                    actionDefinitions[
-                      log.action as keyof typeof actionDefinitions
-                    ].friendlyName
-                  }
-                  , {log.reason}
-                </p>
+                {log.createdAt.toLocaleString()}
+              </p>
+              <div className="flex gap-2">
+                <a
+                  className="no-underline"
+                  target="_blank"
+                  href={`https://warpcast.com/${log.affectedUsername}`}
+                >
+                  <Avatar className="block w-11 h-11">
+                    <AvatarImage
+                      src={log.affectedUserAvatarUrl ?? undefined}
+                      alt={"@" + log.affectedUsername}
+                    />
+                    <AvatarFallback>
+                      {log.affectedUsername.slice(0, 2).toLocaleUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </a>
+                <div className="flex flex-col">
+                  <p className="font-semibold">
+                    <a
+                      href={`https://warpcast.com/${log.affectedUsername}`}
+                      target="_blank"
+                    >
+                      @{log.affectedUsername}
+                    </a>
+                  </p>
+                  <p>
+                    {
+                      actionDefinitions[
+                        log.action as keyof typeof actionDefinitions
+                      ].friendlyName
+                    }
+                    , {log.reason}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
