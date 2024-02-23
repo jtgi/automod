@@ -396,7 +396,7 @@ function RuleSetEditor(props: {
             return (
               <Card key={ruleField.id} className="w-full rounded-sm">
                 <CardHeader>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <CardTitle className=" font-normal">
                       <FieldLabel
                         label=""
