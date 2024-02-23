@@ -254,7 +254,7 @@ export function ChannelForm(props: {
             </FieldLabel>
 
             <FieldLabel
-              label="Ban Threshold"
+              label="Warns Before Ban"
               className="flex-col items-start"
               description="The number of warns before a user is banned. Example, if its set to 2, when the user breaks rules the 3rd time they are banned."
             >
