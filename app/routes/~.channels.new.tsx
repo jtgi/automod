@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -321,7 +321,7 @@ export function ChannelForm(props: {
               }
               className="add-ruleSet-button-class"
             >
-              Add Rule Set
+              <Plus className="w-4 h-4 mr-1" /> Rule Set
             </Button>
           </fieldset>
 
@@ -396,14 +396,11 @@ function RuleSetEditor(props: {
             return (
               <Card key={ruleField.id} className="w-full rounded-sm">
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle className=" font-normal">
+                  <div className="flex justify-between items-center gap-8">
+                    <CardTitle className="font-normal w-full">
                       <FieldLabel
                         label=""
                         className="flex-col items-start w-full"
-                        description={
-                          props.ruleDefinitions[ruleName].description
-                        }
                       >
                         <Controller
                           name={
@@ -434,13 +431,16 @@ function RuleSetEditor(props: {
                     </CardTitle>
                     <Button
                       type="button"
-                      className="rounded-full p-0 "
+                      className="rounded-full"
                       onClick={() => removeRule(ruleIndex)}
                       variant={"ghost"}
                     >
                       <X className="w-5 h-5" />
                     </Button>
                   </div>
+                  <p className="text-gray-500 text-xs">
+                    {props.ruleDefinitions[ruleName].description}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -467,7 +467,7 @@ function RuleSetEditor(props: {
             })
           }
         >
-          Add Rule
+          <Plus className="w-4 h-4 mr-1" /> Rule
         </Button>
       </div>
 
@@ -489,45 +489,44 @@ function RuleSetEditor(props: {
             );
 
             return (
-              <div
-                key={actionField.id}
-                className="flex items-start justify-between gap-8"
-              >
-                <p className="w-full">
-                  <Controller
-                    name={`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`}
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        defaultValue={actionField.type}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select an action" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(props.actionDefinitions)
-                            .filter((args) => !args[1].hidden)
-                            .map(([actionName, actionDef]) => (
-                              <SelectItem key={actionName} value={actionName}>
-                                {actionDef.friendlyName}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  <span className="text-gray-500 text-xs pl-3">
-                    {props.actionDefinitions[actionType].description}
-                  </span>
+              <div key={actionField.id}>
+                <div className="flex items-center justify-between gap-8">
+                  <p className="w-full">
+                    <Controller
+                      name={`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`}
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          defaultValue={actionField.type}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select an action" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(props.actionDefinitions)
+                              .filter((args) => !args[1].hidden)
+                              .map(([actionName, actionDef]) => (
+                                <SelectItem key={actionName} value={actionName}>
+                                  {actionDef.friendlyName}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={() => removeAction(actionIndex)}
+                    variant={"ghost"}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+                <p className="text-gray-500 text-xs mt-1">
+                  {props.actionDefinitions[actionType].description}
                 </p>
-                <Button
-                  type="button"
-                  onClick={() => removeAction(actionIndex)}
-                  variant={"ghost"}
-                >
-                  <X className="w-5 h-5" />
-                </Button>
               </div>
             );
           })}
@@ -536,7 +535,7 @@ function RuleSetEditor(props: {
             onClick={() => appendAction({ type: "hideQuietly" })}
             variant={"secondary"}
           >
-            Add Action
+            <Plus className="w-4 h-4 mr-1" /> Action
           </Button>
         </div>
       </div>
