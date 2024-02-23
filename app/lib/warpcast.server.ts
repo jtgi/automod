@@ -80,10 +80,8 @@ export async function ban({ channel, cast }: { channel: string; cast: Cast }) {
   const isCohostCheck = await isCohost({ fid: cast.author.fid, channel });
 
   if (isCohostCheck) {
-    console.log(`user ${cast.author.fid} is cohost, not banning`);
+    console.log(`user ${cast.author.fid} is cohost of ${channel}, not banning`);
     return Promise.resolve({} as AxiosResponse);
-  } else {
-    console.log(`user ${cast.author.fid} is not cohost, banning`);
   }
 
   const channelKey = channel;

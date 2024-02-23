@@ -163,19 +163,33 @@ export async function validateCast({
         // violated the rules is not in the db at this
         // point.
         if (violations.length >= moderatedChannel.banThreshold) {
-          await ban({
+          const isCo = await isCohost({
+            fid: cast.author.fid,
             channel: channel.name || channel.id,
-            cast,
           });
 
-          await logModerationAction(
-            moderatedChannel.id,
-            "ban",
-            `User exceeded warn threshold of ${moderatedChannel.banThreshold} and is banned.`,
-            cast
-          );
+          if (!isCo) {
+            await ban({
+              channel: channel.name || channel.id,
+              cast,
+            });
 
-          return json({ message: "User banned" });
+            await logModerationAction(
+              moderatedChannel.id,
+              "ban",
+              `User exceeded warn threshold of ${moderatedChannel.banThreshold} and is banned.`,
+              cast
+            );
+
+            return json({ message: "User banned" });
+          } else {
+            await logModerationAction(
+              moderatedChannel.id,
+              "noop",
+              `User exceeded warn threshold of ${moderatedChannel.banThreshold} but is cohost.`,
+              cast
+            );
+          }
         }
       }
 
@@ -187,6 +201,22 @@ export async function validateCast({
             throw e;
           }
         );
+
+        if (
+          action.type === "ban" &&
+          (await isCohost({
+            fid: cast.author.fid,
+            channel: channel.name || channel.id,
+          }))
+        ) {
+          await logModerationAction(
+            moderatedChannel.id,
+            "noop",
+            `User would be banned but is a cohost, doing nothing.`,
+            cast
+          );
+          continue;
+        }
 
         await logModerationAction(
           moderatedChannel.id,
