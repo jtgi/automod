@@ -4,9 +4,9 @@
     "display": "standalone",
     "scope": "/",
     "start_url": "/",
-    "name": "glass",
-    "short_name": "glass",
-    "description": "Create exclusive content with Farcaster Frames",
+    "name": "automod",
+    "short_name": "automod",
+    "description": "Enforce channel norms with bots",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",

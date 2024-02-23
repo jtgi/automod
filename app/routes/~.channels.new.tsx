@@ -400,7 +400,7 @@ function RuleSetEditor(props: {
                   <div className="flex justify-between">
                     <CardTitle className=" font-normal">
                       <FieldLabel
-                        label="Type"
+                        label=""
                         className="flex-col items-start w-full"
                         description={
                           props.ruleDefinitions[ruleName].description

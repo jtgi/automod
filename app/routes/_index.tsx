@@ -98,9 +98,11 @@ export default function Login() {
         }}
       >
         <div className="max-w-xl flex flex-col justify-center items-center">
-          <h1 className="text-6xl logo text-white opacity-80">automod</h1>
+          <Link to="/~" className="no-underline">
+            <h1 className="text-6xl logo text-white opacity-80">automod</h1>
+          </Link>
           <h2 className="font-normal mb-8 opacity-50 text-white">
-            enforce channel norms with bots
+            Enforce channel norms with bots
           </h2>
 
           {error && (
