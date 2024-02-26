@@ -49,7 +49,7 @@ model User {
   avatarUrl String?
   email     String? @unique
   plan      String  @default("basic")
-  role      String  @default("admin")
+  role      String  @default("user")
 
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

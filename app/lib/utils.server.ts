@@ -21,6 +21,17 @@ export function requireUser({ request }: { request: Request }) {
   });
 }
 
+export async function requireAdmin({ request }: { request: Request }) {
+  const user = await authenticator.isAuthenticated(request, {
+    failureRedirect: `/`,
+  });
+
+  // sup jtgi
+  if (user.id !== "5179") {
+    throw redirect(`/`, { status: 403 });
+  }
+}
+
 export async function requireValidSignature(props: {
   request: Request;
   payload: string;
