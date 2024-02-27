@@ -86,12 +86,6 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  console.log(
-    "Creating new moderated channel",
-    channelResult.data,
-    channelExists
-  );
-
   const newChannel = await db.moderatedChannel.create({
     data: {
       id: channelResult.data.id,
