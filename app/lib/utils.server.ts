@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import * as Sentry from "@sentry/remix";
 import * as crypto from "crypto";
 import { authenticator, commitSession, getSession } from "./auth.server";
 import { generateFrameSvg } from "./utils";
@@ -16,9 +17,13 @@ export async function convertSvgToPngBase64(svgString: string) {
 }
 
 export function requireUser({ request }: { request: Request }) {
-  return authenticator.isAuthenticated(request, {
+  const isAuth = await authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,
   });
+
+  if (isAuth) {
+    Sentry.setUser({ id: isAuth.name });
+  }
 }
 
 export async function requireAdmin({ request }: { request: Request }) {

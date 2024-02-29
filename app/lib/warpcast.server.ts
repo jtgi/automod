@@ -1,6 +1,5 @@
 import axios, { AxiosResponse } from "axios";
-import { Action, ActionFunction } from "./validations.server";
-import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { cache } from "./cache.server";
 
 const token = process.env.WARPCAST_TOKEN!;
