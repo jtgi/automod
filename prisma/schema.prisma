@@ -57,6 +57,7 @@ model User {
   invite            InviteCode?        @relation(fields: [inviteCodeId], references: [id])
   inviteCodeId      String?
   otps              Otp[]
+  cooldowns         Cooldown[]
 }
 
 model ModeratedChannel {
@@ -69,6 +70,7 @@ model ModeratedChannel {
   banThreshold   Int?
   ruleSets       RuleSet[]
   moderationLogs ModerationLog[]
+  cooldowns      Cooldown[]
 }
 
 model RuleSet {
@@ -95,4 +97,16 @@ model ModerationLog {
   affectedUserAvatarUrl String?
   channel               ModeratedChannel @relation(fields: [channelId], references: [id])
   channelId             String
+}
+
+model Cooldown {
+  id             String           @id @default(cuid())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  active         Boolean          @default(true)
+  affectedUser   User             @relation(fields: [affectedUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  affectedUserId String
+  channel        ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channelId      String
+  expiresAt      DateTime?
 }

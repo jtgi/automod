@@ -151,11 +151,19 @@ export type ActionDefinition = {
   hidden?: boolean;
   args: Record<
     string,
-    {
-      type: string;
-      friendlyName: string;
-      description: string;
-    }
+    | {
+        type: "number" | "string" | "boolean";
+        friendlyName: string;
+        description: string;
+        required?: boolean;
+      }
+    | {
+        type: "radio" | "select";
+        friendlyName: string;
+        description: string;
+        options: Array<{ value: string; label: string }>;
+        required?: boolean;
+      }
   >;
 };
 
@@ -187,13 +195,12 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   coolDown: {
     friendlyName: "Cool Down",
     description: "Hide the user's casts for a period of time",
-    hidden: true,
     args: {
-      // duration: {
-      //   type: "number",
-      //   friendlyName: "Minutes",
-      //   description: "The duration of the cool down in minutes",
-      // },
+      duration: {
+        type: "number",
+        friendlyName: "Duration (hours)",
+        description: "The duration of the cool down in hours",
+      },
     },
   },
 } as const;
@@ -242,10 +249,21 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
 });
+// export const ActionSchema = z.object({
+//   type: z.enum(actionTypes),
+//   args: z.record(z.any()),
+// });
 
-export const ActionSchema = z.object({
-  type: z.enum(actionTypes),
-});
+const ActionSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("bypass") }),
+  z.object({ type: z.literal("hideQuietly") }),
+  z.object({ type: z.literal("ban") }),
+  z.object({ type: z.literal("warnAndHide") }),
+  z.object({
+    type: z.literal("coolDown"),
+    args: z.object({ duration: z.coerce.number() }),
+  }),
+]);
 
 export type Action = z.infer<typeof ActionSchema>;
 

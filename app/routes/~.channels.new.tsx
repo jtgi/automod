@@ -28,6 +28,7 @@ import {
 } from "~/components/ui/select";
 import {
   Action,
+  ActionDefinition,
   ModeratedChannelSchema,
   Rule,
   RuleDefinition,
@@ -441,7 +442,6 @@ function RuleSetEditor(props: {
                   <div className="space-y-6">
                     <RuleArgs
                       ruleDefinition={props.ruleDefinitions[ruleName]}
-                      ruleName={ruleName}
                       ruleIndex={ruleIndex}
                       ruleSetIndex={ruleSetIndex}
                     />
@@ -483,34 +483,58 @@ function RuleSetEditor(props: {
               `ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`
             );
 
+            const action = props.actionDefinitions[actionType];
+
             return (
               <div key={actionField.id}>
-                <div className="flex items-center justify-between gap-8">
-                  <p className="w-full">
-                    <Controller
-                      name={`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`}
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          defaultValue={actionField.type}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select an action" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(props.actionDefinitions)
-                              .filter((args) => !args[1].hidden)
-                              .map(([actionName, actionDef]) => (
-                                <SelectItem key={actionName} value={actionName}>
-                                  {actionDef.friendlyName}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </p>
+                <div className="flex items-start justify-between gap-8">
+                  <div className="w-full space-y-4">
+                    <div>
+                      <p className="w-full">
+                        <Controller
+                          name={`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`}
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              defaultValue={actionField.type}
+                              onValueChange={field.onChange}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select an action" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(props.actionDefinitions)
+                                  .filter((args) => !args[1].hidden)
+                                  .map(([actionName, actionDef]) => (
+                                    <SelectItem
+                                      key={actionName}
+                                      value={actionName}
+                                    >
+                                      {actionDef.friendlyName}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        {props.actionDefinitions[actionType].description}
+                      </p>
+                    </div>
+                    {action && Object.entries(action.args).length > 0 && (
+                      <div>
+                        <ActionArgs
+                          actionDefinition={action}
+                          actionIndex={actionIndex}
+                          ruleSetIndex={ruleSetIndex}
+                        />
+                        <div className="py-4">
+                          <hr />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <Button
                     type="button"
                     onClick={() => removeAction(actionIndex)}
@@ -519,9 +543,6 @@ function RuleSetEditor(props: {
                     <X className="w-5 h-5" />
                   </Button>
                 </div>
-                <p className="text-gray-500 text-xs mt-1">
-                  {props.actionDefinitions[actionType].description}
-                </p>
               </div>
             );
           })}
@@ -585,7 +606,6 @@ function RuleSetEditor(props: {
 
 function RuleArgs(props: {
   ruleDefinition: RuleDefinition;
-  ruleName: RuleName;
   ruleIndex: number;
   ruleSetIndex: number;
 }) {
@@ -646,6 +666,80 @@ function RuleArgs(props: {
             render={({ field: { onChange, name, value } }) => (
               <Checkbox
                 id={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}
+                name={name}
+                onCheckedChange={onChange}
+                checked={value}
+              />
+            )}
+          />
+        </FieldLabel>
+      );
+    }
+  });
+}
+
+function ActionArgs(props: {
+  actionDefinition: ActionDefinition;
+  actionIndex: number;
+  ruleSetIndex: number;
+}) {
+  const { register, control } = useFormContext<FormValues>();
+  const actionDef = props.actionDefinition;
+
+  return Object.entries(actionDef.args).map(([argName, argDef]) => {
+    if (argDef.type === "number") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <Input
+            type="number"
+            required={argDef.required}
+            {...register(
+              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`
+            )}
+          />
+        </FieldLabel>
+      );
+    }
+    if (argDef.type === "string") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <Input
+            required={argDef.required}
+            {...register(
+              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`
+            )}
+          />
+        </FieldLabel>
+      );
+    }
+    if (argDef.type === "boolean") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          className="gap-2"
+          labelProps={{
+            htmlFor: `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`,
+          }}
+          // description={argDef.description}
+          position="right"
+        >
+          <Controller
+            control={control}
+            name={`ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`}
+            render={({ field: { onChange, name, value } }) => (
+              <Checkbox
+                id={`ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`}
                 name={name}
                 onCheckedChange={onChange}
                 checked={value}
