@@ -16,14 +16,16 @@ export async function convertSvgToPngBase64(svgString: string) {
   return `data:image/png;base64,${base64PNG}`;
 }
 
-export function requireUser({ request }: { request: Request }) {
-  const isAuth = await authenticator.isAuthenticated(request, {
+export async function requireUser({ request }: { request: Request }) {
+  const user = await authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,
   });
 
-  if (isAuth) {
-    Sentry.setUser({ id: isAuth.name });
+  if (user) {
+    Sentry.setUser({ id: user.name });
   }
+
+  return user;
 }
 
 export async function requireAdmin({ request }: { request: Request }) {
