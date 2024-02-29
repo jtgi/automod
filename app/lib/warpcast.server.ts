@@ -67,12 +67,12 @@ export async function cooldown({
     },
     update: {
       active: true,
-      expiresAt: new Date(Date.now() + duration * 60 * 1000),
+      expiresAt: new Date(Date.now() + duration * 60 * 60 * 1000),
     },
     create: {
       affectedUserId: String(cast.author.fid),
       channelId: channel,
-      expiresAt: new Date(Date.now() + duration * 60 * 1000),
+      expiresAt: new Date(Date.now() + duration * 60 * 60 * 1000),
     },
   });
 }
