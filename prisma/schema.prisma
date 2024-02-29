@@ -92,6 +92,7 @@ model ModerationLog {
   action                String
   reason                String
   castHash              String?
+  actor                 String           @default("system")
   affectedUserFid       String
   affectedUsername      String
   affectedUserAvatarUrl String?
@@ -109,4 +110,6 @@ model Cooldown {
   channel        ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId      String
   expiresAt      DateTime?
+
+  @@unique([affectedUserId, channelId])
 }

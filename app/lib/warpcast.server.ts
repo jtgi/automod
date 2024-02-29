@@ -58,8 +58,18 @@ export async function cooldown({
 }) {
   const { duration } = (action as any).args;
 
-  return db.cooldown.create({
-    data: {
+  return db.cooldown.upsert({
+    where: {
+      affectedUserId_channelId: {
+        affectedUserId: String(cast.author.fid),
+        channelId: channel,
+      },
+    },
+    update: {
+      active: true,
+      expiresAt: new Date(Date.now() + duration * 60 * 1000),
+    },
+    create: {
       affectedUserId: String(cast.author.fid),
       channelId: channel,
       expiresAt: new Date(Date.now() + duration * 60 * 1000),
@@ -76,8 +86,18 @@ export async function mute({
   cast: Cast;
   action: Action;
 }) {
-  return db.cooldown.create({
-    data: {
+  return db.cooldown.upsert({
+    where: {
+      affectedUserId_channelId: {
+        affectedUserId: String(cast.author.fid),
+        channelId: channel,
+      },
+    },
+    update: {
+      active: true,
+      expiresAt: null,
+    },
+    create: {
       affectedUserId: String(cast.author.fid),
       channelId: channel,
       expiresAt: null,

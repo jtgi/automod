@@ -53,58 +53,111 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-// export async function action({ request, params }: ActionFunctionArgs) {
-//   invariant(params.id, "id is required");
+export async function action({ request, params }: ActionFunctionArgs) {
+  invariant(params.id, "id is required");
 
-//   const user = await requireUser({ request });
-//   const channel = await requireUserOwnsChannel({
-//     userId: user.id,
-//     channelId: params.id,
-//   });
+  const user = await requireUser({ request });
+  const channel = await requireUserOwnsChannel({
+    userId: user.id,
+    channelId: params.id,
+  });
 
-//   const formData = await request.formData();
-//   const rawData = Object.fromEntries(formData.entries());
-//   const result = z
-//     .discriminatedUnion("intent", [
-//       z.object({
-//         intent: z.literal("end-cooldown"),
-//         affectedUserFid: z.string(),
-//       }),
-//       z.object({
-//         intent: z.literal("unmute"),
-//         affectedUserFid: z.string(),
-//       }),
-//     ])
-//     .safeParse(rawData);
+  const formData = await request.formData();
+  const rawData = Object.fromEntries(formData.entries());
+  const result = z
+    .object({
+      logId: z.string(),
+      intent: z.enum(["end-cooldown", "unmute"]),
+    })
+    .safeParse(rawData);
 
-//   if (!result.success) {
-//     return typedjson(
-//       {
-//         message: "Invalid data",
-//       },
-//       { status: 422 }
-//     );
-//   }
+  if (!result.success) {
+    return typedjson(
+      {
+        message: "Invalid data",
+      },
+      { status: 422 }
+    );
+  }
 
-//   if (result.data.intent === "end-cooldown") {
-//     await db.moderationLog.create({
-//       data: {
-//         action: "cooldown-ended",
-//         affectedUserFid: result.data.affectedUserFid,
-//         channelId: channel.id,
-//         reason: `Cooldown ended by @${user.name}`,
-//       },
-//     });
-//   } else if (result.data.intent === "unmute") {
-//   } else {
-//     return typedjson(
-//       {
-//         message: "Invalid intent",
-//       },
-//       { status: 422 }
-//     );
-//   }
-// }
+  const log = await db.moderationLog.findUnique({
+    where: {
+      id: result.data.logId,
+    },
+  });
+
+  if (!log) {
+    return typedjson(
+      {
+        message: "Log not found",
+      },
+      { status: 404 }
+    );
+  }
+
+  if (result.data.intent === "end-cooldown") {
+    db.$transaction([
+      db.cooldown.update({
+        where: {
+          affectedUserId_channelId: {
+            affectedUserId: log.affectedUserFid,
+            channelId: channel.id,
+          },
+        },
+        data: {
+          active: false,
+        },
+      }),
+      db.moderationLog.create({
+        data: {
+          action: "cooldownEnded",
+          affectedUserFid: log.affectedUserFid,
+          affectedUsername: log.affectedUsername,
+          affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+          actor: user.id,
+          channelId: channel.id,
+          reason: `Cooldown ended by @${user.name}`,
+        },
+      }),
+    ]);
+  } else if (result.data.intent === "unmute") {
+    await db.$transaction([
+      db.cooldown.update({
+        where: {
+          affectedUserId_channelId: {
+            affectedUserId: log.affectedUserFid,
+            channelId: channel.id,
+          },
+        },
+        data: {
+          active: false,
+        },
+      }),
+      db.moderationLog.create({
+        data: {
+          action: "unmuted",
+          affectedUserFid: log.affectedUserFid,
+          affectedUsername: log.affectedUsername,
+          affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+          actor: user.id,
+          channelId: channel.id,
+          reason: `Unmuted by @${user.name}`,
+        },
+      }),
+    ]);
+  } else {
+    return typedjson(
+      {
+        message: "Invalid intent",
+      },
+      { status: 422 }
+    );
+  }
+
+  return typedjson({
+    message: "success",
+  });
+}
 
 export default function Screen() {
   const { user, channel, moderationLogs, actionDefinitions, env } =
@@ -206,7 +259,7 @@ export default function Screen() {
                   </p>
                 </div>
 
-                {/* {["cooldown", "mute"].includes(log.action) && (
+                {["cooldown", "mute"].includes(log.action) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <MoreVerticalIcon className="w-5 h-5" />
@@ -214,11 +267,7 @@ export default function Screen() {
                     <DropdownMenuContent>
                       {log.action === "cooldown" && (
                         <Form method="post">
-                          <input
-                            type="hidden"
-                            name="affectedUserFid"
-                            value={log.affectedUserFid}
-                          />
+                          <input type="hidden" name="logId" value={log.id} />
                           <DropdownMenuItem>
                             <button
                               name="intent"
@@ -232,11 +281,7 @@ export default function Screen() {
                       )}
                       {log.action === "mute" && (
                         <Form method="post">
-                          <input
-                            type="hidden"
-                            name="affectedUserFid"
-                            value={log.affectedUserFid}
-                          />
+                          <input type="hidden" name="logId" value={log.id} />
                           <DropdownMenuItem>
                             <button
                               name="intent"
@@ -248,7 +293,7 @@ export default function Screen() {
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )} */}
+                )}
               </div>
             </div>
           ))}

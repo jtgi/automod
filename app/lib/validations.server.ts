@@ -203,8 +203,20 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
       "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
+  unmuted: {
+    friendlyName: "Unmuted",
+    description: "Unmute the user",
+    hidden: true,
+    args: {},
+  },
+  cooldownEnded: {
+    friendlyName: "End Cooldown",
+    description: "End the user's cooldown period",
+    hidden: true,
+    args: {},
+  },
   cooldown: {
-    friendlyName: "Cool Down",
+    friendlyName: "Cooldown",
     description:
       "New casts from this user will be automatically hidden for the duration specified.",
     args: {
@@ -237,6 +249,8 @@ export const actionTypes = [
   "mute",
   "warnAndHide",
   "cooldown",
+  "cooldownEnded",
+  "unmuted",
 ] as const;
 
 export type RuleName = (typeof ruleNames)[number];

@@ -143,6 +143,7 @@ export async function validateCast({
     where: {
       affectedUserId: String(cast.author.fid),
       channelId: moderatedChannel.id,
+      active: true,
       OR: [
         {
           expiresAt: {
