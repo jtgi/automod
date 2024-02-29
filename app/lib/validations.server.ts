@@ -173,8 +173,8 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
     args: {},
   },
   ban: {
-    friendlyName: "Ban",
-    description: "Ban 'em for good",
+    friendlyName: "Permanent Ban",
+    description: "Permanently ban them. This cannot be undone at the moment.",
     args: {},
   },
   warnAndHide: {
@@ -183,6 +183,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
       "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
+  // todo: softBan,
   coolDown: {
     friendlyName: "Cool Down",
     description: "Hide the user's casts for a period of time",
