@@ -8,7 +8,7 @@ Sentry.init({
   tracesSampleRate: 0,
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 0.1,
-
+  enabled: process.env.NODE_ENV === "production",
   integrations: [
     Sentry.browserTracingIntegration({
       useEffect,

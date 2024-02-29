@@ -21,7 +21,7 @@ export async function requireUser({ request }: { request: Request }) {
     failureRedirect: `/login`,
   });
 
-  if (user) {
+  if (user && process.env.NODE_ENV === "production") {
     Sentry.setUser({ id: user.name });
   }
 
