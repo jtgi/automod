@@ -124,8 +124,9 @@ export function rule(overrides?: Partial<Rule>): Rule {
 export function action(overrides?: Partial<Action>): Action {
   return {
     type: "warnAndHide",
+    args: {},
     ...overrides,
-  };
+  } as any;
 }
 
 describe("containsText", () => {

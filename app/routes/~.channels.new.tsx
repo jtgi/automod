@@ -701,7 +701,7 @@ function ActionArgs(props: {
             type="number"
             required={argDef.required}
             {...register(
-              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`
+              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}` as any
             )}
           />
         </FieldLabel>
@@ -718,7 +718,7 @@ function ActionArgs(props: {
           <Input
             required={argDef.required}
             {...register(
-              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`
+              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}` as any
             )}
           />
         </FieldLabel>
@@ -738,7 +738,9 @@ function ActionArgs(props: {
         >
           <Controller
             control={control}
-            name={`ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`}
+            name={
+              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}` as any
+            }
             render={({ field: { onChange, name, value } }) => (
               <Checkbox
                 id={`ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`}
