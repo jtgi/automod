@@ -14,6 +14,8 @@ import {
   Scripts,
   ScrollRestoration,
   isRouteErrorResponse,
+  json,
+  useLoaderData,
   useRouteError,
 } from "@remix-run/react";
 import { Toaster } from "./components/ui/sonner";
@@ -27,6 +29,7 @@ import {
 } from "./components/ui/card";
 import { Alert } from "./components/ui/alert";
 import { Button } from "./components/ui/button";
+import { getSharedEnv } from "./lib/utils.server";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -61,7 +64,15 @@ export const links: LinksFunction = () => [
   },
 ];
 
+export function loader() {
+  return json({
+    env: getSharedEnv(),
+  });
+}
+
 function App() {
+  const { env } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en">
       <head>

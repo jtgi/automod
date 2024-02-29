@@ -100,6 +100,7 @@ export async function generateSystemFrame(message: string) {
 export function getSharedEnv() {
   return {
     infuraProjectId: process.env.INFURA_PROJECT_ID!,
+    postHogApiKey: process.env.POSTHOG_API_KEY!,
     hostUrl:
       process.env.NODE_ENV === "production"
         ? process.env.PROD_URL!
