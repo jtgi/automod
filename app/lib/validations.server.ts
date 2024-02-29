@@ -321,6 +321,8 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   hideQuietly: hideQuietly,
   mute: mute,
   bypass: () => Promise.resolve(),
+  cooldownEnded: () => Promise.resolve(),
+  unmuted: () => Promise.resolve(),
   ban: ban,
   warnAndHide: warnAndHide,
   cooldown: cooldown,
