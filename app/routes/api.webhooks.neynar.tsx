@@ -168,14 +168,14 @@ export async function validateCast({
       await logModerationAction(
         moderatedChannel.id,
         "hideQuietly",
-        `Cast was hidden because user is in cooldown until ${cooldown.expiresAt.toISOString()}`,
+        `User is in cooldown until ${cooldown.expiresAt.toISOString()}`,
         cast
       );
     } else {
       await logModerationAction(
         moderatedChannel.id,
         "hideQuietly",
-        `Cast was hidden because user is muted`,
+        `User is currently muted`,
         cast
       );
     }
@@ -356,10 +356,6 @@ function evaluateRule(
     } {
   const check = ruleFunctions[rule.name];
   const error = check(cast, rule);
-
-  if (process.env.NODE_ENV === "development") {
-    console.log(rule.name, error);
-  }
 
   if (error) {
     return {

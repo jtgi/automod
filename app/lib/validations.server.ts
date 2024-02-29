@@ -205,7 +205,8 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   },
   cooldown: {
     friendlyName: "Cool Down",
-    description: "Hide the user's casts for a period of time",
+    description:
+      "New casts from this user will be automatically hidden for the duration specified.",
     args: {
       duration: {
         type: "number",
@@ -285,7 +286,7 @@ export const RuleSetSchema = z.object({
 
 export const ModeratedChannelSchema = z.object({
   id: z.string(),
-  banThreshold: z.coerce.number().optional(),
+  banThreshold: z.coerce.number().nullable(),
   ruleSets: z.array(RuleSetSchema).min(1),
 });
 

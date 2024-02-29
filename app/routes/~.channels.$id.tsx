@@ -1,12 +1,15 @@
-import { Prisma } from "@prisma/client";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-
 import {
-  typedjson,
-  useTypedActionData,
-  useTypedLoaderData,
-} from "remix-typedjson";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import {
@@ -17,11 +20,10 @@ import {
 import { Button } from "~/components/ui/button";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
-import { Bird, Loader, TrashIcon } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { Alert } from "~/components/ui/alert";
-
-// prisma type with channel moderation logs
+import { MoreVerticalIcon } from "lucide-react";
+import { z } from "zod";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -50,6 +52,59 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     env: getSharedEnv(),
   });
 }
+
+// export async function action({ request, params }: ActionFunctionArgs) {
+//   invariant(params.id, "id is required");
+
+//   const user = await requireUser({ request });
+//   const channel = await requireUserOwnsChannel({
+//     userId: user.id,
+//     channelId: params.id,
+//   });
+
+//   const formData = await request.formData();
+//   const rawData = Object.fromEntries(formData.entries());
+//   const result = z
+//     .discriminatedUnion("intent", [
+//       z.object({
+//         intent: z.literal("end-cooldown"),
+//         affectedUserFid: z.string(),
+//       }),
+//       z.object({
+//         intent: z.literal("unmute"),
+//         affectedUserFid: z.string(),
+//       }),
+//     ])
+//     .safeParse(rawData);
+
+//   if (!result.success) {
+//     return typedjson(
+//       {
+//         message: "Invalid data",
+//       },
+//       { status: 422 }
+//     );
+//   }
+
+//   if (result.data.intent === "end-cooldown") {
+//     await db.moderationLog.create({
+//       data: {
+//         action: "cooldown-ended",
+//         affectedUserFid: result.data.affectedUserFid,
+//         channelId: channel.id,
+//         reason: `Cooldown ended by @${user.name}`,
+//       },
+//     });
+//   } else if (result.data.intent === "unmute") {
+//   } else {
+//     return typedjson(
+//       {
+//         message: "Invalid intent",
+//       },
+//       { status: 422 }
+//     );
+//   }
+// }
 
 export default function Screen() {
   const { user, channel, moderationLogs, actionDefinitions, env } =
@@ -109,14 +164,14 @@ export default function Screen() {
       ) : (
         <div className="divide-y">
           {moderationLogs.map((log) => (
-            <div className="flex flex-col sm:flex-row gap-2 py-2">
+            <div key={log.id} className="flex flex-col sm:flex-row gap-2 py-2">
               <p
-                className="text-xs w-[150px] text-gray-400"
+                className="text-xs w-[150px] text-gray-400 shrink-0 sm:shrink-1"
                 title={log.createdAt.toISOString()}
               >
                 {log.createdAt.toLocaleString()}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full">
                 <a
                   className="no-underline"
                   target="_blank"
@@ -132,7 +187,7 @@ export default function Screen() {
                     </AvatarFallback>
                   </Avatar>
                 </a>
-                <div className="flex flex-col">
+                <div className="flex flex-col w-full">
                   <p className="font-semibold">
                     <a
                       href={`https://warpcast.com/${log.affectedUsername}`}
@@ -147,9 +202,53 @@ export default function Screen() {
                         log.action as keyof typeof actionDefinitions
                       ].friendlyName
                     }
-                    , {log.reason}
+                    , {parseAndLocalizeDates(log.reason)}
                   </p>
                 </div>
+
+                {/* {["cooldown", "mute"].includes(log.action) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <MoreVerticalIcon className="w-5 h-5" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {log.action === "cooldown" && (
+                        <Form method="post">
+                          <input
+                            type="hidden"
+                            name="affectedUserFid"
+                            value={log.affectedUserFid}
+                          />
+                          <DropdownMenuItem>
+                            <button
+                              name="intent"
+                              value="end-cooldown"
+                              className="w-full h-full cursor-default"
+                            >
+                              End Cooldown
+                            </button>
+                          </DropdownMenuItem>
+                        </Form>
+                      )}
+                      {log.action === "mute" && (
+                        <Form method="post">
+                          <input
+                            type="hidden"
+                            name="affectedUserFid"
+                            value={log.affectedUserFid}
+                          />
+                          <DropdownMenuItem>
+                            <button
+                              name="intent"
+                              value="unmute"
+                              className="w-full h-full cursor-default"
+                            ></button>
+                          </DropdownMenuItem>
+                        </Form>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )} */}
               </div>
             </div>
           ))}
@@ -157,4 +256,17 @@ export default function Screen() {
       )}
     </div>
   );
+}
+
+function parseAndLocalizeDates(text: string): string {
+  const datePattern = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g;
+
+  let match;
+  while ((match = datePattern.exec(text)) !== null) {
+    const date = new Date(match[0]);
+    const localTimeString = date.toLocaleString();
+    text = text.replace(match[0], localTimeString);
+  }
+
+  return text;
 }
