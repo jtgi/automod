@@ -96,19 +96,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (result.data.intent === "end-cooldown") {
-    db.$transaction([
-      db.cooldown.update({
-        where: {
-          affectedUserId_channelId: {
-            affectedUserId: log.affectedUserFid,
-            channelId: channel.id,
-          },
+    const updated = await db.cooldown.update({
+      where: {
+        affectedUserId_channelId: {
+          affectedUserId: log.affectedUserFid,
+          channelId: channel.id,
         },
-        data: {
-          active: false,
-        },
-      }),
-      db.moderationLog.create({
+      },
+      data: {
+        active: false,
+      },
+    });
+
+    if (updated) {
+      await db.moderationLog.create({
         data: {
           action: "cooldownEnded",
           affectedUserFid: log.affectedUserFid,
@@ -118,22 +119,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
           channelId: channel.id,
           reason: `Cooldown ended by @${user.name}`,
         },
-      }),
-    ]);
+      });
+    }
   } else if (result.data.intent === "unmute") {
-    await db.$transaction([
-      db.cooldown.update({
-        where: {
-          affectedUserId_channelId: {
-            affectedUserId: log.affectedUserFid,
-            channelId: channel.id,
-          },
+    const updated = await db.cooldown.update({
+      where: {
+        affectedUserId_channelId: {
+          affectedUserId: log.affectedUserFid,
+          channelId: channel.id,
         },
-        data: {
-          active: false,
-        },
-      }),
-      db.moderationLog.create({
+      },
+      data: {
+        active: false,
+      },
+    });
+
+    if (updated) {
+      await db.moderationLog.create({
         data: {
           action: "unmuted",
           affectedUserFid: log.affectedUserFid,
@@ -143,8 +145,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           channelId: channel.id,
           reason: `Unmuted by @${user.name}`,
         },
-      }),
-    ]);
+      });
+    }
   } else {
     return typedjson(
       {
