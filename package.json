@@ -4,7 +4,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "pnpm exec prisma generate && remix build",
+    "build": "pnpm exec prisma generate && remix build --sourcemap && sentry-upload-sourcemaps --org double-play --project auto-mod",
     "db:reset": "prisma db push --force-reset && prisma db seed",
     "dev": "remix dev --manual",
     "test": "DATABASE_URL='file:./test.db' vitest",
@@ -31,6 +31,7 @@
     "@remix-run/node": "^2.5.0",
     "@remix-run/react": "^2.5.0",
     "@remix-run/serve": "^2.5.0",
+    "@sentry/remix": "^7.103.0",
     "@standard-crypto/farcaster-js-hub-rest": "^1.2.1",
     "axios": "^1.6.7",
     "class-variance-authority": "^0.7.0",
