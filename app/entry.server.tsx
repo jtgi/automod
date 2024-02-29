@@ -7,7 +7,7 @@ import { RemixServer } from "@remix-run/react";
 import * as isbotModule from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
-export function handleError(error, { request }) {
+export function handleError(error: unknown, { request }: { request: Request }) {
   Sentry.captureRemixServerException(error, "remix.server", request);
 }
 
