@@ -1,10 +1,8 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import * as crypto from "crypto";
-import { ModeratedChannel, Prisma } from "@prisma/client";
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
-import invariant from "tiny-invariant";
+import { Prisma } from "@prisma/client";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
-import { getChannel, getUser } from "~/lib/neynar.server";
+import { getChannel } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 import {
   Action,
@@ -12,7 +10,7 @@ import {
   actionFunctions,
   ruleFunctions,
 } from "~/lib/validations.server";
-import { ban, hideQuietly, isCohost, warnAndHide } from "~/lib/warpcast.server";
+import { ban, hideQuietly, isCohost } from "~/lib/warpcast.server";
 
 export const userPlans = {
   basic: {
@@ -141,6 +139,50 @@ export async function validateCast({
   moderatedChannel: FullModeratedChannel;
   cast: Cast;
 }) {
+  const cooldown = await db.cooldown.findFirst({
+    where: {
+      affectedUserId: String(cast.author.fid),
+      channelId: moderatedChannel.id,
+      OR: [
+        {
+          expiresAt: {
+            gte: new Date(),
+          },
+        },
+        {
+          // if null then its a soft-ban
+          expiresAt: null,
+        },
+      ],
+    },
+  });
+
+  if (cooldown) {
+    await hideQuietly({
+      channel: channel.name || channel.id,
+      cast,
+      action: { type: "hideQuietly" },
+    });
+
+    if (cooldown.expiresAt) {
+      await logModerationAction(
+        moderatedChannel.id,
+        "hideQuietly",
+        `Cast was hidden because user is in cooldown until ${cooldown.expiresAt.toISOString()}`,
+        cast
+      );
+    } else {
+      await logModerationAction(
+        moderatedChannel.id,
+        "hideQuietly",
+        `Cast was hidden because user is muted`,
+        cast
+      );
+    }
+
+    return;
+  }
+
   for (const ruleSet of moderatedChannel.ruleSets) {
     const rule: Rule = JSON.parse(ruleSet.rule);
     const actions: Action[] = JSON.parse(ruleSet.actions);
@@ -172,6 +214,7 @@ export async function validateCast({
             await ban({
               channel: channel.name || channel.id,
               cast,
+              action: { type: "ban" },
             });
 
             await logModerationAction(
@@ -195,12 +238,14 @@ export async function validateCast({
 
       for (const action of actions) {
         const actionFn = actionFunctions[action.type];
-        await actionFn({ channel: channel.name || channel.id, cast }).catch(
-          (e) => {
-            console.error(e.response?.data);
-            throw e;
-          }
-        );
+        await actionFn({
+          channel: channel.name || channel.id,
+          cast,
+          action,
+        }).catch((e) => {
+          console.error(e.response?.data);
+          throw e;
+        });
 
         if (
           action.type === "ban" &&

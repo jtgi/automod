@@ -1,6 +1,12 @@
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { z } from "zod";
-import { ban, coolDown, hideQuietly, warnAndHide } from "./warpcast.server";
+import {
+  ban,
+  cooldown,
+  hideQuietly,
+  mute,
+  warnAndHide,
+} from "./warpcast.server";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -169,6 +175,12 @@ export type ActionDefinition = {
 
 // TODO: Action Args!
 export const actionDefinitions: Record<ActionType, ActionDefinition> = {
+  mute: {
+    friendlyName: "Mute",
+    description:
+      "All this user's casts will be silently hidden from the channel until you unmute.",
+    args: {},
+  },
   hideQuietly: {
     friendlyName: "Hide Quietly",
     description: "Hide the cast without notifying the user",
@@ -191,8 +203,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
       "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
-  // todo: softBan,
-  coolDown: {
+  cooldown: {
     friendlyName: "Cool Down",
     description: "Hide the user's casts for a period of time",
     args: {
@@ -222,8 +233,9 @@ export const actionTypes = [
   "bypass",
   "hideQuietly",
   "ban",
+  "mute",
   "warnAndHide",
-  "coolDown",
+  "cooldown",
 ] as const;
 
 export type RuleName = (typeof ruleNames)[number];
@@ -233,6 +245,7 @@ export type CheckFunction = (cast: Cast, rule: Rule) => string | undefined;
 export type ActionFunction<T = any> = (args: {
   channel: string;
   cast: Cast;
+  action: Action;
 }) => Promise<T>;
 
 const BaseRuleSchema = z.object({
@@ -249,18 +262,15 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
 });
-// export const ActionSchema = z.object({
-//   type: z.enum(actionTypes),
-//   args: z.record(z.any()),
-// });
 
 const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
   z.object({ type: z.literal("hideQuietly") }),
   z.object({ type: z.literal("ban") }),
   z.object({ type: z.literal("warnAndHide") }),
+  z.object({ type: z.literal("mute") }),
   z.object({
-    type: z.literal("coolDown"),
+    type: z.literal("cooldown"),
     args: z.object({ duration: z.coerce.number() }),
   }),
 ]);
@@ -294,10 +304,11 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
 
 export const actionFunctions: Record<ActionType, ActionFunction> = {
   hideQuietly: hideQuietly,
+  mute: mute,
   bypass: () => Promise.resolve(),
   ban: ban,
   warnAndHide: warnAndHide,
-  coolDown: coolDown,
+  cooldown: cooldown,
 } as const;
 
 // Rule: contains text, option to ignore case

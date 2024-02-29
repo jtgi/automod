@@ -471,6 +471,148 @@ describe("validateCast", () => {
     // todo
   });
 
+  it("should put user in cooldown", async () => {
+    const mc = await prisma.moderatedChannel.create({
+      data: {
+        id: "jtgi",
+        userId: u0.id,
+        banThreshold: 3,
+        ruleSets: {
+          create: [
+            {
+              rule: JSON.stringify(
+                rule({
+                  name: "containsText",
+                  type: "CONDITION",
+                  args: {
+                    searchText: "spam",
+                    caseSensitive: true,
+                  },
+                })
+              ),
+              actions: JSON.stringify([
+                action({ type: "cooldown", args: { duration: 1 } }),
+              ]),
+            },
+          ],
+        },
+      },
+      include: { user: true, ruleSets: { where: { active: true } } },
+    });
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "spam",
+        hash: "gm",
+        author: neynarUser({
+          fid: 5179,
+          username: "jtgi",
+          pfp_url: "https://google.com",
+        }),
+      }),
+    });
+
+    const logs = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs).toHaveLength(1);
+    expect(logs[0].action).toBe("cooldown");
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "text that doenst break rules",
+        hash: "gm",
+        author: neynarUser({
+          fid: 5179,
+          username: "jtgi",
+          pfp_url: "https://google.com",
+        }),
+      }),
+    });
+
+    const logs2 = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs2).toHaveLength(2);
+    expect(logs2[1].action).toBe("hideQuietly");
+  });
+
+  it("should mute the user", async () => {
+    const mc = await prisma.moderatedChannel.create({
+      data: {
+        id: "jtgi",
+        userId: u0.id,
+        banThreshold: 3,
+        ruleSets: {
+          create: [
+            {
+              rule: JSON.stringify(
+                rule({
+                  name: "containsText",
+                  type: "CONDITION",
+                  args: {
+                    searchText: "spam",
+                    caseSensitive: true,
+                  },
+                })
+              ),
+              actions: JSON.stringify([action({ type: "mute" })]),
+            },
+          ],
+        },
+      },
+      include: { user: true, ruleSets: { where: { active: true } } },
+    });
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "spam",
+        hash: "gm",
+        author: neynarUser({
+          fid: 5179,
+          username: "jtgi",
+          pfp_url: "https://google.com",
+        }),
+      }),
+    });
+
+    const logs = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs).toHaveLength(1);
+    expect(logs[0].action).toBe("mute");
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "text that doenst break rules",
+        hash: "gm",
+        author: neynarUser({
+          fid: 5179,
+          username: "jtgi",
+          pfp_url: "https://google.com",
+        }),
+      }),
+    });
+
+    const logs2 = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs2).toHaveLength(2);
+    expect(logs2[1].action).toBe("hideQuietly");
+  });
+
   it("ban threshold works", async () => {
     const mc = await prisma.moderatedChannel.create({
       data: {

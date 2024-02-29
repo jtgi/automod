@@ -518,9 +518,11 @@ function RuleSetEditor(props: {
                           )}
                         />
                       </p>
-                      <p className="text-gray-500 text-xs mt-1">
-                        {props.actionDefinitions[actionType].description}
-                      </p>
+                      {action && (
+                        <p className="text-gray-500 text-xs mt-1">
+                          {action.description}
+                        </p>
+                      )}
                     </div>
                     {action && Object.entries(action.args).length > 0 && (
                       <div>

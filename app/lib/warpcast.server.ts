@@ -1,6 +1,8 @@
 import axios, { AxiosResponse } from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { cache } from "./cache.server";
+import { db } from "./db.server";
+import { Action } from "./validations.server";
 
 const token = process.env.WARPCAST_TOKEN!;
 
@@ -45,22 +47,52 @@ export async function getChannelHosts(props: {
   return result.data;
 }
 
-export async function coolDown({
+export async function cooldown({
   channel,
   cast,
+  action,
 }: {
   channel: string;
   cast: Cast;
+  action: Action;
 }) {
-  throw new Error("Not implemented");
+  const { duration } = (action as any).args;
+
+  return db.cooldown.create({
+    data: {
+      affectedUserId: String(cast.author.fid),
+      channelId: channel,
+      expiresAt: new Date(Date.now() + duration * 60 * 1000),
+    },
+  });
+}
+
+export async function mute({
+  channel,
+  cast,
+  action,
+}: {
+  channel: string;
+  cast: Cast;
+  action: Action;
+}) {
+  return db.cooldown.create({
+    data: {
+      affectedUserId: String(cast.author.fid),
+      channelId: channel,
+      expiresAt: null,
+    },
+  });
 }
 
 export async function hideQuietly({
   channel,
   cast,
+  action,
 }: {
   channel: string;
   cast: Cast;
+  action: Action;
 }) {
   return axios.put(
     `https://client.warpcast.com/v2/debug-cast-embeds`,
@@ -75,7 +107,15 @@ export async function hideQuietly({
   );
 }
 
-export async function ban({ channel, cast }: { channel: string; cast: Cast }) {
+export async function ban({
+  channel,
+  cast,
+  action,
+}: {
+  channel: string;
+  cast: Cast;
+  action: Action;
+}) {
   const isCohostCheck = await isCohost({ fid: cast.author.fid, channel });
 
   if (isCohostCheck) {
@@ -98,34 +138,14 @@ export async function ban({ channel, cast }: { channel: string; cast: Cast }) {
   );
 }
 
-export async function unban({
-  channel,
-  cast,
-}: {
-  channel: string;
-  cast: Cast;
-}) {
-  const channelKey = channel;
-  const fid = cast.author.fid;
-  return axios.put(
-    `https://client.warpcast.com/v1/user-channel-ban`,
-    {
-      channelKey,
-      fid,
-      banned: false,
-    },
-    {
-      headers: headers(),
-    }
-  );
-}
-
 export async function warnAndHide({
   channel,
   cast,
+  action,
 }: {
   channel: string;
   cast: Cast;
+  action: Action;
 }) {
   return axios.put(
     `https://client.warpcast.com/v2/debug-cast-embeds`,
