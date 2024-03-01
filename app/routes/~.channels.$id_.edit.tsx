@@ -3,6 +3,7 @@ import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import {
   errorResponse,
+  formatZodError,
   getSharedEnv,
   requireUser,
   requireUserOwnsChannel,
@@ -48,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.error(JSON.stringify(ch.error, null, 2));
     return errorResponse({
       request,
-      message: "Invalid data.",
+      message: formatZodError(ch.error),
     });
   }
 

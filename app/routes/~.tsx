@@ -12,12 +12,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
   const session = await getSession(request.headers.get("Cookie"));
   const message = session.get("message") ?? undefined;
+  const flashCacheBust = new Date();
   const error = session.get("error") ?? undefined;
 
   return typedjson(
     {
       user,
       message,
+      flashCacheBust,
       error,
       env: getSharedEnv(),
     },
@@ -30,7 +32,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-  const { env, message, error } = useTypedLoaderData<typeof loader>();
+  const { env, message, error, flashCacheBust } =
+    useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
     if (message) {
@@ -40,7 +43,7 @@ export default function Index() {
     if (error) {
       toast.error(error);
     }
-  }, [message, error]);
+  }, [message, error, flashCacheBust]);
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,

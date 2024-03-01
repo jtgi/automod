@@ -1,4 +1,5 @@
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import isSafeRegex from "safe-regex";
 import { z } from "zod";
 import {
   ban,
@@ -54,6 +55,20 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       },
     },
   },
+
+  textMatchesPattern: {
+    friendlyName: "Text Matches Pattern (Regex)",
+    description: "Check if the text matches a specific pattern",
+    args: {
+      pattern: {
+        type: "string",
+        friendlyName: "Pattern",
+        description:
+          "The regular expression to match against. No leading or trailing slashes.",
+      },
+    },
+  },
+
   containsTooManyMentions: {
     friendlyName: "Contains Too Many Mentions",
     description: "Check if the text contains too many mentions",
@@ -233,6 +248,7 @@ export const ruleNames = [
   "and",
   "or",
   "containsText",
+  "textMatchesPattern",
   "containsTooManyMentions",
   "containsLinks",
   "userProfileContainsText",
@@ -276,7 +292,13 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
-});
+}).refine((data) => {
+  if (data.name === "textMatchesPattern" && !isSafeRegex(data.args.pattern)) {
+    return false;
+  } else {
+    return true;
+  }
+}, "That regex is too powerful. Please simplify it.");
 
 const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
@@ -307,6 +329,7 @@ export const ModeratedChannelSchema = z.object({
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
   and: () => undefined,
   or: () => undefined, // TODO
+  textMatchesPattern: textMatchesPattern,
   containsText: containsText,
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
@@ -337,6 +360,15 @@ export function containsText(cast: Cast, rule: Rule) {
 
   if (text.includes(search)) {
     return `Text contains the text: ${searchText}`;
+  }
+}
+
+export function textMatchesPattern(cast: Cast, rule: Rule) {
+  const { pattern } = rule.args;
+  const regex = new RegExp(pattern, "u");
+
+  if (regex.test(cast.text)) {
+    return `Text matches pattern: ${pattern}`;
   }
 }
 

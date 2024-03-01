@@ -9,6 +9,7 @@ import { getChannel } from "./neynar.server";
 import { redirect } from "remix-typedjson";
 import { json } from "@remix-run/node";
 import { db } from "./db.server";
+import { ZodIssue, ZodError } from "zod";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -248,4 +249,24 @@ export async function errorResponse(props: {
     },
     { status: 400, headers: { "Set-Cookie": await commitSession(session) } }
   );
+}
+
+export function formatZodIssue(issue: ZodIssue): string {
+  const { path, message } = issue;
+  const pathString = path.join(".");
+
+  return `${pathString}: ${message}`;
+}
+
+// Format the Zod error message with only the current error
+export function formatZodError(error: ZodError): string {
+  const { issues } = error;
+
+  if (issues.length) {
+    const currentIssue = issues[0];
+
+    return formatZodIssue(currentIssue);
+  }
+
+  return "";
 }
