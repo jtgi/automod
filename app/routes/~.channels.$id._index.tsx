@@ -177,7 +177,7 @@ export default function Screen() {
       ) : (
         <div className="divide-y">
           {moderationLogs.map((log) => (
-            <div key={log.id} className="flex flex-col sm:flex-row gap-2 py-2">
+            <div key={log.id} className="flex flex-col md:flex-row gap-2 py-2">
               <p
                 className="text-xs w-[150px] text-gray-400 shrink-0 sm:shrink-1"
                 title={log.createdAt.toISOString()}
