@@ -82,10 +82,14 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (!moderatedChannel) {
+    console.error(`Channel ${channelName} is not moderated`);
     return json({ message: "Channel is not moderated" }, { status: 404 });
   }
 
   if (moderatedChannel.user.plan === "expired") {
+    console.error(
+      `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
+    );
     return json(
       { message: "User's plan is expired, moderation disabled" },
       { status: 403 }
@@ -99,6 +103,9 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (alreadyProcessed) {
+    console.log(
+      `Cast ${webhookNotif.data.hash.substring(0, 10)} already processed`
+    );
     return json({ message: "Already processed" });
   }
 
@@ -128,6 +135,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const channel = await getChannel({ name: channelName }).catch(() => null);
   if (!channel) {
+    console.error(
+      `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
+    );
     return json({ message: "Channel not found" }, { status: 404 });
   }
 
