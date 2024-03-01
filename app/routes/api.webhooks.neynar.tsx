@@ -92,6 +92,16 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const alreadyProcessed = await db.moderationLog.findFirst({
+    where: {
+      castHash: webhookNotif.data.hash,
+    },
+  });
+
+  if (alreadyProcessed) {
+    return json({ message: "Already processed" });
+  }
+
   const cohost = await isCohost({
     fid: +moderatedChannel.userId,
     channel: channelName,
