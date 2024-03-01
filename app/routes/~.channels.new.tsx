@@ -570,9 +570,8 @@ function RuleSetEditor(props: {
           render={(controllerProps) => (
             <RadioGroup
               name={`ruleSets.${ruleSetIndex}.logicType`}
-              defaultValue="and"
               onValueChange={controllerProps.field.onChange}
-              {...controllerProps}
+              defaultValue={controllerProps.field.value}
             >
               <FieldLabel
                 label="All rules match"
