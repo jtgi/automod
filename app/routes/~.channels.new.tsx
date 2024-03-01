@@ -232,7 +232,7 @@ export function ChannelForm(props: {
   };
 
   return (
-    <div className="flex">
+    <div>
       <FormProvider {...methods}>
         <form
           id="channel-form"
@@ -269,7 +269,9 @@ export function ChannelForm(props: {
               <Card key={ruleSetField.id}>
                 <CardHeader className="bg-slate-50 rounded-xl py-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle>Rule Set {ruleSetIndex + 1}</CardTitle>
+                    <CardTitle className="text-foreground">
+                      Rule Set {ruleSetIndex + 1}
+                    </CardTitle>
                     <Button
                       type="button"
                       variant={"ghost"}
@@ -397,7 +399,7 @@ function RuleSetEditor(props: {
               <Card key={ruleField.id} className="w-full rounded-sm">
                 <CardHeader>
                   <div className="flex justify-between items-center gap-8">
-                    <CardTitle className="font-normal w-full">
+                    <CardTitle className="font-normal w-full text-foreground">
                       <FieldLabel
                         label=""
                         className="flex-col items-start w-full"
