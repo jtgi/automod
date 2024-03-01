@@ -47,6 +47,7 @@ import { useFetcher, useSubmit } from "@remix-run/react";
 import { db } from "~/lib/db.server";
 import { isCohost } from "~/lib/warpcast.server";
 import { registerWebhook } from "~/lib/neynar.server";
+import { commitSession, getSession } from "~/lib/auth.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -113,7 +114,14 @@ export async function action({ request }: ActionFunctionArgs) {
     channelUrl: `https://warpcast.com/~/channel/${newChannel.id}`,
   });
 
-  return redirect(`/~/channels/${newChannel.id}`);
+  const session = await getSession(request.headers.get("Cookie"));
+  session.flash("newChannel", "yup");
+
+  return redirect(`/~/channels/${newChannel.id}`, {
+    headers: {
+      "Set-Cookie": await commitSession(session),
+    },
+  });
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -1,19 +1,20 @@
 /* eslint-disable react/no-unescaped-entities */
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, NavLink, Outlet, useFetcher } from "@remix-run/react";
-import {
-  ArrowLeft,
-  Power,
-  PowerCircle,
-  PowerOff,
-  Zap,
-  ZapOff,
-} from "lucide-react";
+import { Link, Outlet, useFetcher } from "@remix-run/react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { SidebarNav } from "~/components/sub-nav";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
+import { getSession } from "~/lib/auth.server";
 import { requireUser, requireUserOwnsChannel } from "~/lib/utils.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -25,14 +26,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     channelId: params.id,
   });
 
+  const url = new URL(request.url);
+  const session = await getSession(request.headers.get("Cookie"));
+  const isNewChannel =
+    session.get("newChannel") !== undefined ||
+    url.searchParams.get("newChannel") !== null;
+
   return typedjson({
     user,
     channel,
+    isNewChannel,
   });
 }
 
 export default function ChannelRoot() {
-  const { user, channel } = useTypedLoaderData<typeof loader>();
+  const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
 
   const enableFetcher = useFetcher();
 
@@ -93,6 +101,42 @@ export default function ChannelRoot() {
           <Outlet />
         </div>
       </div>
+
+      <Dialog defaultOpen={!!isNewChannel}>
+        <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Success! One last step...</DialogTitle>
+            <DialogDescription>
+              <div className="flex flex-col gap-4">
+                <div>
+                  Open up{" "}
+                  <a
+                    href={`https://warpcast.com/~/channel/${channel.id}`}
+                    target="_blank"
+                  >
+                    /{channel.id}
+                  </a>{" "}
+                  and add{" "}
+                  <a href="https://warpcast.com/automod" target="_blank">
+                    @automod
+                  </a>{" "}
+                  as a cohost to enable moderation.
+                </div>
+                <Button asChild>
+                  <a
+                    className="no-underline"
+                    href={`https://warpcast.com/~/channel/${channel.id}`}
+                    target="_blank"
+                  >
+                    Open /{channel.id}{" "}
+                    <ArrowUpRight className="inline ml-1 w-3 h-3" />
+                  </a>
+                </Button>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
