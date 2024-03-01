@@ -176,7 +176,7 @@ export async function validateCast({
 
   if (cooldown) {
     await hideQuietly({
-      channel: channel.name || channel.id,
+      channel: moderatedChannel.id,
       cast,
       action: { type: "hideQuietly" },
     });
@@ -228,12 +228,12 @@ export async function validateCast({
         if (violations.length >= moderatedChannel.banThreshold) {
           const isCo = await isCohost({
             fid: cast.author.fid,
-            channel: channel.name || channel.id,
+            channel: channel.id,
           });
 
           if (!isCo) {
             await ban({
-              channel: channel.name || channel.id,
+              channel: channel.id,
               cast,
               action: { type: "ban" },
             });
@@ -260,7 +260,7 @@ export async function validateCast({
       for (const action of actions) {
         const actionFn = actionFunctions[action.type];
         await actionFn({
-          channel: channel.name || channel.id,
+          channel: channel.id,
           cast,
           action,
         }).catch((e) => {
@@ -272,7 +272,7 @@ export async function validateCast({
           action.type === "ban" &&
           (await isCohost({
             fid: cast.author.fid,
-            channel: channel.name || channel.id,
+            channel: channel.id,
           }))
         ) {
           await logModerationAction(
