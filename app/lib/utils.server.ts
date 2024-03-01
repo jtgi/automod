@@ -10,6 +10,7 @@ import { redirect } from "remix-typedjson";
 import { json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
+import { getChannelHosts, isCohost } from "./warpcast.server";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -86,13 +87,50 @@ export async function requireUserOwnsChannel(props: {
   return channel;
 }
 
+export async function requireUserIsChannelLead(props: {
+  userId: string;
+  channelId: string;
+}) {
+  const result = await isChannelLead(props.userId, props.channelId);
+
+  if (!result.isLead || !result.channel) {
+    throw redirect(`/`, { status: 403 });
+  }
+
+  return result.channel;
+}
+
+export async function requireUserIsCohost(props: {
+  fid: number;
+  channelId: string;
+}) {
+  const results = await getChannelHosts({
+    channel: props.channelId,
+  });
+
+  const cohost = results.result.hosts.find((h) => h.fid === props.fid);
+
+  if (!cohost) {
+    throw redirect(`/`, { status: 403 });
+  }
+
+  return cohost;
+}
+
 export async function isChannelLead(userId: string, channelId: string) {
   const channel = await getChannel({ name: channelId }).catch(() => {
     return null;
   });
 
+  if (!channel) {
+    return {
+      isLead: false,
+      channel: null,
+    };
+  }
+
   return {
-    isLead: channel?.lead && channel.lead.fid === +userId,
+    isLead: channel.lead?.fid === +userId,
     channel,
   };
 }

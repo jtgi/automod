@@ -57,28 +57,6 @@ model User {
   invite            InviteCode?        @relation(fields: [inviteCodeId], references: [id])
   inviteCodeId      String?
   otps              Otp[]
-  TeamUser          TeamUser[]
-}
-
-model Team {
-  id      String     @id
-  name    String
-  members TeamUser[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model TeamUser {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  teamId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  role   String @default("member")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model ModeratedChannel {
@@ -92,6 +70,20 @@ model ModeratedChannel {
   ruleSets       RuleSet[]
   moderationLogs ModerationLog[]
   cooldowns      Cooldown[]
+  comods         Comods[]
+}
+
+model Comods {
+  id        String           @id @default(cuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  fid       String
+  username  String
+  avatarUrl String?
+  channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channelId String
+
+  @@unique([fid, channelId])
 }
 
 model RuleSet {

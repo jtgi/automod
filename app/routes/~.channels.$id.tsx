@@ -82,6 +82,10 @@ export default function ChannelRoot() {
             items={[
               { to: `/~/channels/${channel.id}`, title: "Logs" },
               { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
+              // {
+              //   to: `/~/channels/${channel.id}/collaborators`,
+              //   title: "Collaborators",
+              // },
             ]}
           />
         </div>
