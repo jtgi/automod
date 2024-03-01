@@ -218,8 +218,6 @@ export function ChannelForm(props: {
       }
     }
 
-    console.log({ data });
-
     fetcher.submit(
       {
         ...data,
