@@ -25,9 +25,9 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
           key={item.to}
           to={item.to}
           end
-          className={({ isActive }) =>
+          className={({ isActive, isPending }) =>
             cn(
-              isActive
+              isActive || isPending
                 ? " bg-orange-50 hover:bg-orange-50"
                 : "hover:bg-transparent hover:underline",
               "no-underline justify-start px-3 py-2 rounded-lg text-foreground font-medium text-sm"

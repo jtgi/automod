@@ -56,10 +56,9 @@ export default function ChannelRoot() {
           >
             <div className="flex items-center">
               <label htmlFor="enabled" className="text-sm p-3">
-                Moderation
+                Enabled
               </label>
               <Switch
-                className=" scale-75"
                 id="enabled"
                 defaultChecked={channel.active}
                 onClick={(e) =>
