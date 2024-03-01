@@ -316,6 +316,7 @@ export type Action = z.infer<typeof ActionSchema>;
 
 export const RuleSetSchema = z.object({
   id: z.string().optional(),
+  target: z.enum(["all", "root", "reply"]).default("all"),
   ruleParsed: RuleSchema,
   actionsParsed: z.array(ActionSchema).min(1),
 });

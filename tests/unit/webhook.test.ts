@@ -467,8 +467,96 @@ describe("validateCast", () => {
     expect(logs).toHaveLength(0);
   });
 
-  it("should not ban cohost", async () => {
-    // todo
+  it("should only check root casts", async () => {
+    const mc = await prisma.moderatedChannel.create({
+      data: {
+        id: "jtgi",
+        userId: u0.id,
+        banThreshold: 3,
+        ruleSets: {
+          create: [
+            {
+              rule: JSON.stringify(
+                rule({
+                  name: "containsText",
+                  type: "CONDITION",
+                  args: {
+                    searchText: "spam",
+                    caseSensitive: true,
+                  },
+                })
+              ),
+              target: "root",
+              actions: JSON.stringify([action({ type: "warnAndHide" })]),
+            },
+          ],
+        },
+      },
+      include: { user: true, ruleSets: { where: { active: true } } },
+    });
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "spam",
+        hash: "gm",
+        // This is a reply to another cast
+        parent_hash: "parent",
+      }),
+    });
+
+    const logs = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs).toHaveLength(0);
+  });
+
+  it("should only check reply casts", async () => {
+    const mc = await prisma.moderatedChannel.create({
+      data: {
+        id: "jtgi",
+        userId: u0.id,
+        banThreshold: 3,
+        ruleSets: {
+          create: [
+            {
+              rule: JSON.stringify(
+                rule({
+                  name: "containsText",
+                  type: "CONDITION",
+                  args: {
+                    searchText: "spam",
+                    caseSensitive: true,
+                  },
+                })
+              ),
+              target: "reply",
+              actions: JSON.stringify([action({ type: "warnAndHide" })]),
+            },
+          ],
+        },
+      },
+      include: { user: true, ruleSets: { where: { active: true } } },
+    });
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "spam",
+        hash: "gm",
+        // This is a root level cast
+        parent_hash: null,
+      }),
+    });
+
+    const logs = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs).toHaveLength(0);
   });
 
   it("should put user in cooldown", async () => {

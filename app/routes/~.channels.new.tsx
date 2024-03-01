@@ -15,6 +15,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
 import {
   errorResponse,
+  formatZodError,
   getSharedEnv,
   isChannelLead,
   requireUser,
@@ -69,8 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(channelResult.error);
     return errorResponse({
       request,
-      message:
-        "Invalid rule configuration. Must have at least one rule and action for each rule set.",
+      message: formatZodError(channelResult.error),
     });
   }
 
@@ -100,6 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ruleSets: {
         create: channelResult.data.ruleSets.map((ruleSet) => {
           return {
+            target: ruleSet.target,
             rule: JSON.stringify(ruleSet.ruleParsed),
             actions: JSON.stringify(ruleSet.actionsParsed),
           };
@@ -151,6 +152,7 @@ export type FormValues = {
   ruleSets: Array<{
     id?: string;
     active: boolean;
+    target: string;
     logicType: "and" | "or";
     ruleParsed: Array<Rule>;
     actionsParsed: Array<Action>;
@@ -215,6 +217,8 @@ export function ChannelForm(props: {
         });
       }
     }
+
+    console.log({ data });
 
     fetcher.submit(
       {
@@ -310,6 +314,7 @@ export function ChannelForm(props: {
                 append({
                   id: "",
                   active: true,
+                  target: "all" as const,
                   ruleParsed: [],
                   actionsParsed: [],
                   logicType: "and",
@@ -383,6 +388,7 @@ function RuleSetEditor(props: {
             channel.
           </p>
         </div>
+
         <div className="space-y-4">
           {ruleFields.map((ruleField, ruleIndex) => {
             const ruleName = props.watch(
@@ -562,7 +568,7 @@ function RuleSetEditor(props: {
         <hr />
       </div>
 
-      <div className="space-y-4 pb-8">
+      <div className="space-y-4">
         <p className=" font-medium">Apply actions when...</p>
         <Controller
           name={`ruleSets.${ruleSetIndex}.logicType`}
@@ -595,6 +601,64 @@ function RuleSetEditor(props: {
                 <RadioGroupItem
                   value="or"
                   id={`ruleSets.${ruleSetIndex}.logicType.or`}
+                />
+              </FieldLabel>
+            </RadioGroup>
+          )}
+        />
+      </div>
+
+      <div className="py-12">
+        <hr />
+      </div>
+
+      <div className="space-y-4 pb-8">
+        <p className="font-medium">What casts should be checked?</p>
+        <Controller
+          name={`ruleSets.${ruleSetIndex}.target`}
+          control={control}
+          render={(controllerProps) => (
+            <RadioGroup
+              name={`ruleSets.${ruleSetIndex}.target`}
+              onValueChange={controllerProps.field.onChange}
+              defaultValue={controllerProps.field.value}
+            >
+              <FieldLabel
+                label="All"
+                position="right"
+                labelProps={{
+                  htmlFor: `ruleSets.${ruleSetIndex}.target.all`,
+                }}
+              >
+                <RadioGroupItem
+                  value="all"
+                  id={`ruleSets.${ruleSetIndex}.target.all`}
+                />
+              </FieldLabel>
+              <FieldLabel
+                label="Root Level"
+                description=" - Only casts at the root level of the channel."
+                position="right"
+                labelProps={{
+                  htmlFor: `ruleSets.${ruleSetIndex}.target.root`,
+                }}
+              >
+                <RadioGroupItem
+                  value="root"
+                  id={`ruleSets.${ruleSetIndex}.target.root`}
+                />
+              </FieldLabel>
+              <FieldLabel
+                label="Replies"
+                description=" - Only replies to other casts."
+                position="right"
+                labelProps={{
+                  htmlFor: `ruleSets.${ruleSetIndex}.target.replies`,
+                }}
+              >
+                <RadioGroupItem
+                  value="reply"
+                  id={`ruleSets.${ruleSetIndex}.target.replies`}
                 />
               </FieldLabel>
             </RadioGroup>

@@ -78,6 +78,7 @@ model RuleSet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   active    Boolean  @default(true)
+  target    String   @default("all")
   rule      String // Stores JSON string of rules
   actions   String // Stores JSON string of actions
 

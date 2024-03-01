@@ -121,6 +121,10 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel not found" }, { status: 404 });
   }
 
+  if (process.env.NODE_ENV === "development") {
+    console.log(JSON.stringify(webhookNotif.data, null, 2));
+  }
+
   await validateCast({
     channel,
     moderatedChannel,
@@ -185,6 +189,10 @@ export async function validateCast({
   }
 
   for (const ruleSet of moderatedChannel.ruleSets) {
+    if (!isRuleTargetApplicable(ruleSet.target, cast)) {
+      continue;
+    }
+
     const rule: Rule = JSON.parse(ruleSet.rule);
     const actions: Action[] = JSON.parse(ruleSet.actions);
 
@@ -366,5 +374,18 @@ function evaluateRule(
     };
   } else {
     return { didViolateRule: false };
+  }
+}
+
+function isRuleTargetApplicable(target: string, cast: Cast) {
+  switch (target) {
+    case "all":
+      return true;
+    case "root":
+      return cast.parent_hash == null;
+    case "reply":
+      return cast.parent_hash !== null;
+    default:
+      return true;
   }
 }

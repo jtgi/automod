@@ -63,6 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         deleteMany: {},
         create: ch.data.ruleSets.map((ruleSet) => {
           return {
+            target: ruleSet.target,
             rule: JSON.stringify(ruleSet.ruleParsed),
             actions: JSON.stringify(ruleSet.actionsParsed),
           };
