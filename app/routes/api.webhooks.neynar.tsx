@@ -114,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const cohost = await isCohost({
     fid: +moderatedChannel.userId,
-    channel: channelName,
+    channel: moderatedChannel.id,
   });
 
   if (!cohost) {
@@ -123,7 +123,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
     await db.moderatedChannel.update({
       where: {
-        id: channelName,
+        id: moderatedChannel.id,
       },
       data: {
         active: false,
@@ -136,7 +136,9 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const channel = await getChannel({ name: channelName }).catch(() => null);
+  const channel = await getChannel({ name: moderatedChannel.id }).catch(
+    () => null
+  );
   if (!channel) {
     console.error(
       `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
