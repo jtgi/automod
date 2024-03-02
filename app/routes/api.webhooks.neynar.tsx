@@ -226,51 +226,55 @@ export async function validateCast({
     const ruleEvaluation = evaluateRules(cast, rule);
 
     if (ruleEvaluation.didViolateRule) {
-      if (moderatedChannel.banThreshold) {
-        const violations = await db.moderationLog.groupBy({
-          by: ["channelId", "castHash"],
-          where: {
-            affectedUserFid: String(cast.author.fid),
-          },
-          _count: {
-            _all: true,
-          },
-        });
+      /**
+       * Temporarily disabling ban threshold until I can
+       * think more about it
+       */
+      // if (moderatedChannel.banThreshold) {
+      //   const violations = await db.moderationLog.groupBy({
+      //     by: ["channelId", "castHash"],
+      //     where: {
+      //       affectedUserFid: String(cast.author.fid),
+      //     },
+      //     _count: {
+      //       _all: true,
+      //     },
+      //   });
 
-        // note: we use >= because this cast that has
-        // violated the rules is not in the db at this
-        // point.
-        if (violations.length >= moderatedChannel.banThreshold) {
-          const isCo = await isCohost({
-            fid: cast.author.fid,
-            channel: channel.id,
-          });
+      //   // note: use >= because this cast that has
+      //   // violated the rules is not in the db at this
+      //   // point.
+      //   if (violations.length >= moderatedChannel.banThreshold) {
+      //     const isCo = await isCohost({
+      //       fid: cast.author.fid,
+      //       channel: channel.id,
+      //     });
 
-          if (!isCo) {
-            await ban({
-              channel: channel.id,
-              cast,
-              action: { type: "ban" },
-            });
+      //     if (!isCo) {
+      //       await ban({
+      //         channel: channel.id,
+      //         cast,
+      //         action: { type: "ban" },
+      //       });
 
-            await logModerationAction(
-              moderatedChannel.id,
-              "ban",
-              `User exceeded warn threshold of ${moderatedChannel.banThreshold} and is banned.`,
-              cast
-            );
+      //       await logModerationAction(
+      //         moderatedChannel.id,
+      //         "ban",
+      //         `User exceeded warn threshold of ${moderatedChannel.banThreshold} and is banned.`,
+      //         cast
+      //       );
 
-            return json({ message: "User banned" });
-          } else {
-            await logModerationAction(
-              moderatedChannel.id,
-              "bypass",
-              `User exceeded warn threshold of ${moderatedChannel.banThreshold} but is cohost.`,
-              cast
-            );
-          }
-        }
-      }
+      //       return json({ message: "User banned" });
+      //     } else {
+      //       await logModerationAction(
+      //         moderatedChannel.id,
+      //         "bypass",
+      //         `User exceeded warn threshold of ${moderatedChannel.banThreshold} but is cohost.`,
+      //         cast
+      //       );
+      //     }
+      //   }
+      // }
 
       for (const action of actions) {
         const actionFn = actionFunctions[action.type];

@@ -264,7 +264,7 @@ export function ChannelForm(props: {
               />
             </FieldLabel>
 
-            <FieldLabel
+            {/* <FieldLabel
               label="Warns Before Permanently Banned"
               className="flex-col items-start"
               description="The number of warns before a user is permanently banned. Banning is not reversable. Example, if its set to 2, when the user breaks rules the 3rd time they are banned."
@@ -274,7 +274,7 @@ export function ChannelForm(props: {
                 placeholder="∞"
                 {...register("banThreshold")}
               />
-            </FieldLabel>
+            </FieldLabel> */}
           </fieldset>
 
           <fieldset disabled={isSubmitting} className="space-y-7">
