@@ -4,7 +4,7 @@ import { Link, Outlet, useFetcher } from "@remix-run/react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
-import { SidebarNav } from "~/components/sub-nav";
+import { SidebarNav, SidebarNavProps } from "~/components/sub-nav";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -15,13 +15,13 @@ import {
 } from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
 import { getSession } from "~/lib/auth.server";
-import { requireUser, requireUserOwnsChannel } from "~/lib/utils.server";
+import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserOwnsChannel({
+  const channel = await requireUserCanModerateChannel({
     userId: user.id,
     channelId: params.id,
   });
@@ -87,14 +87,18 @@ export default function ChannelRoot() {
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
         <div className="shrink-0 sm:min-w-[200px]">
           <SidebarNav
-            items={[
-              { to: `/~/channels/${channel.id}`, title: "Logs" },
-              { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
-              // {
-              //   to: `/~/channels/${channel.id}/collaborators`,
-              //   title: "Collaborators",
-              // },
-            ]}
+            items={
+              [
+                { to: `/~/channels/${channel.id}`, title: "Logs" },
+                { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
+                channel.userId === user.id
+                  ? {
+                      to: `/~/channels/${channel.id}/collaborators`,
+                      title: "Collaborators",
+                    }
+                  : undefined,
+              ].filter(Boolean) as SidebarNavProps["items"]
+            }
           />
         </div>
         <div className="pt-2">

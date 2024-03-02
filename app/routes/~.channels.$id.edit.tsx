@@ -6,7 +6,7 @@ import {
   formatZodError,
   getSharedEnv,
   requireUser,
-  requireUserOwnsChannel,
+  requireUserCanModerateChannel,
 } from "~/lib/utils.server";
 import {
   ModeratedChannelSchema,
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const modChannel = await requireUserOwnsChannel({
+  const modChannel = await requireUserCanModerateChannel({
     userId: user.id,
     channelId: params.id,
   });
@@ -86,7 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserOwnsChannel({
+  const channel = await requireUserCanModerateChannel({
     userId: user.id,
     channelId: params.id,
   });

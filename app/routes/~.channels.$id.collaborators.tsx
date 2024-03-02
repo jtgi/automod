@@ -1,23 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, NavLink, Outlet, useFetcher } from "@remix-run/react";
-import {
-  ArrowLeft,
-  Power,
-  PowerCircle,
-  PowerOff,
-  Zap,
-  ZapOff,
-} from "lucide-react";
+import { Form } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
-import { z } from "zod";
-import { SidebarNav } from "~/components/sub-nav";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import { FieldLabel } from "~/components/ui/fields";
-import { Input } from "~/components/ui/input";
-import { Switch } from "~/components/ui/switch";
+import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import {
   requireUserIsChannelLead,
@@ -57,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserIsChannelLead({
+  const channel = await requireUserOwnsChannel({
     userId: user.id,
     channelId: params.id,
   });
@@ -76,6 +64,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
   });
 
+  const session = await getSession(request.headers.get("Cookie"));
+
   if (currentStatus) {
     await db.comods.delete({
       where: {
@@ -84,6 +74,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         fid: cohostId,
       },
     });
+
+    session.flash(
+      "message",
+      `Removed @${currentStatus.username} as a collaborator`
+    );
   } else {
     const cohost = await requireUserIsCohost({
       fid: +cohostId,
@@ -98,9 +93,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
         avatarUrl: cohost.pfp.url,
       },
     });
+
+    session.flash("message", `Added @${cohost.username} as a collaborator`);
   }
 
-  return typedjson({ message: "success" });
+  return typedjson(
+    { message: "success" },
+    {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    }
+  );
 }
 
 export default function Screen() {
@@ -121,7 +125,9 @@ export default function Screen() {
         avatarUrl: h.pfp.url,
         hasAccess: false,
       })),
-  ].sort((a, b) => a.username.localeCompare(b.username));
+  ]
+    .filter((h) => h.username !== "automod")
+    .sort((a, b) => a.username.localeCompare(b.username));
 
   return (
     <div>

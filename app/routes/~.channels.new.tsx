@@ -53,15 +53,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
   const data = await request.json();
 
-  const isHost = await isCohost({
-    fid: +user.id,
-    channel: data.id,
+  const { isLead, lead } = await isChannelLead({
+    userId: user.id,
+    channelId: data.id,
   });
 
-  if (!isHost) {
+  if (!isLead) {
     return errorResponse({
       request,
-      message: "Only cohosts can configure moderation.",
+      message: `Only the channel lead${
+        lead ? ` (@${lead.username})` : ""
+      } can setup a bot`,
     });
   }
 

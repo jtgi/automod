@@ -1,6 +1,5 @@
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
-import isSafeRegex from "safe-regex";
 import { z } from "zod";
 import {
   ban,
@@ -308,7 +307,7 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
     }
   },
   (value) => ({
-    message: `The pattern "${value.name}" is too powerful. Backreferences and lookahead assertions are not supported. Please simplify it.`,
+    message: `The pattern "${value.name}" is no good. It should be javascript compatible. Backreferences and lookahead assertions are not supported.`,
   })
 );
 

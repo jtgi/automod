@@ -10,9 +10,11 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -20,21 +22,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const channels = await db.moderatedChannel.findMany({
     where: {
-      userId: user.id,
+      OR: [
+        {
+          comods: {
+            some: {
+              fid: user.id,
+            },
+          },
+        },
+        {
+          userId: user.id,
+        },
+      ],
     },
     include: {
       ruleSets: true,
+      comods: true,
     },
   });
 
   return typedjson({
+    user,
     channels,
     env: getSharedEnv(),
   });
 }
 
 export default function FrameConfig() {
-  const { channels, env } = useTypedLoaderData<typeof loader>();
+  const { channels, user, env } = useTypedLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4">
@@ -81,6 +96,11 @@ export default function FrameConfig() {
                       {channel.ruleSets.length === 1 ? "rule" : "rules"}
                     </CardDescription>
                   </CardHeader>
+                  {channel.comods.some((h) => h.fid === user.id) && (
+                    <CardFooter>
+                      <Badge variant={"outline"}>Collaborator</Badge>
+                    </CardFooter>
+                  )}
                 </Card>
               </Link>
             ))}

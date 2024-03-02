@@ -4,8 +4,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
@@ -15,12 +13,10 @@ import { db } from "~/lib/db.server";
 import {
   getSharedEnv,
   requireUser,
-  requireUserOwnsChannel,
+  requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Button } from "~/components/ui/button";
-import { Form, Link, useFetcher } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
-import { Switch } from "~/components/ui/switch";
 import { Alert } from "~/components/ui/alert";
 import { MoreVerticalIcon } from "lucide-react";
 import { z } from "zod";
@@ -29,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserOwnsChannel({
+  const channel = await requireUserCanModerateChannel({
     userId: user.id,
     channelId: params.id,
   });
@@ -57,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserOwnsChannel({
+  const channel = await requireUserCanModerateChannel({
     userId: user.id,
     channelId: params.id,
   });

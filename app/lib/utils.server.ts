@@ -91,13 +91,54 @@ export async function requireUserIsChannelLead(props: {
   userId: string;
   channelId: string;
 }) {
-  const result = await isChannelLead(props.userId, props.channelId);
+  const result = await isChannelLead({
+    userId: props.userId,
+    channelId: props.channelId,
+  });
 
   if (!result.isLead || !result.channel) {
     throw redirect(`/`, { status: 403 });
   }
 
   return result.channel;
+}
+
+/**
+ *
+ * Can moderate if they created the channel (lead) or are a
+ * a comod. This is a local check, not remotely.
+ */
+export async function requireUserCanModerateChannel(props: {
+  userId: string;
+  channelId: string;
+}) {
+  const channel = await db.moderatedChannel.findUnique({
+    where: {
+      id: props.channelId,
+      OR: [
+        {
+          comods: {
+            some: {
+              fid: props.userId,
+            },
+          },
+        },
+        {
+          userId: props.userId,
+        },
+      ],
+    },
+    include: {
+      ruleSets: true,
+      comods: true,
+    },
+  });
+
+  if (!channel) {
+    throw redirect(`/`, { status: 403 });
+  }
+
+  return channel;
 }
 
 export async function requireUserIsCohost(props: {
@@ -117,20 +158,51 @@ export async function requireUserIsCohost(props: {
   return cohost;
 }
 
-export async function isChannelLead(userId: string, channelId: string) {
-  const channel = await getChannel({ name: channelId }).catch(() => {
+export async function isChannelLead(props: {
+  userId: string;
+  channelId: string;
+}) {
+  const channel = await getChannel({ name: props.channelId }).catch(() => {
     return null;
   });
 
   if (!channel) {
     return {
+      lead: null,
       isLead: false,
       channel: null,
     };
   }
 
+  if (!channel.lead) {
+    const cohosts = await getChannelHosts({ channel: props.channelId });
+
+    if (cohosts.result.hosts.length === 0) {
+      return {
+        isLead: false,
+        channel,
+      };
+    }
+
+    const firstCohost = cohosts.result.hosts[0];
+    return {
+      lead: {
+        fid: firstCohost.fid,
+        username: firstCohost.username,
+        avatarUrl: firstCohost.pfp.url,
+      },
+      isLead: firstCohost.fid === +props.userId,
+      channel,
+    };
+  }
+
   return {
-    isLead: channel.lead?.fid === +userId,
+    lead: {
+      fid: channel.lead.fid,
+      username: channel.lead.username,
+      avatarUrl: channel.lead.pfp_url,
+    },
+    isLead: channel.lead?.fid === +props.userId,
     channel,
   };
 }
