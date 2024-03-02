@@ -46,7 +46,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useFetcher, useSubmit } from "@remix-run/react";
 import { db } from "~/lib/db.server";
 import { isCohost } from "~/lib/warpcast.server";
-import { registerWebhook } from "~/lib/neynar.server";
+import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -88,6 +88,8 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  const neynarChannel = await getChannel({ name: channelResult.data.id });
+
   const newChannel = await db.moderatedChannel.create({
     data: {
       id: channelResult.data.id,
@@ -111,7 +113,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   await registerWebhook({
-    channelUrl: `https://warpcast.com/~/channel/${newChannel.id}`,
+    rootParentUrl: neynarChannel.url,
   });
 
   const session = await getSession(request.headers.get("Cookie"));

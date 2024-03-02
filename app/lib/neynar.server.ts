@@ -11,7 +11,11 @@ import axios from "axios";
 import { getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
 
-export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
+export async function registerWebhook({
+  rootParentUrl,
+}: {
+  rootParentUrl: string;
+}) {
   const webhook = await axios.get(
     `https://api.neynar.com/v2/farcaster/webhook?webhook_id=${process.env
       .NEYNAR_WEBHOOK_ID!}`,
@@ -25,11 +29,11 @@ export async function registerWebhook({ channelUrl }: { channelUrl: string }) {
     (webhook.data.webhook?.subscription?.filters?.["cast.created"]
       ?.root_parent_urls as string[]) || [];
 
-  if (webhooks.includes(channelUrl)) {
+  if (webhooks.includes(rootParentUrl)) {
     return;
   }
 
-  webhooks.push(channelUrl);
+  webhooks.push(rootParentUrl);
 
   return axios.put(
     `https://api.neynar.com/v2/farcaster/webhook/`,
