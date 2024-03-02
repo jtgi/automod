@@ -65,7 +65,7 @@ model ModeratedChannel {
   updatedAt      DateTime        @updatedAt
   active         Boolean         @default(true)
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  parentUrl      String?
+  url            String?
   userId         String
   banThreshold   Int?
   ruleSets       RuleSet[]

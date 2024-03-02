@@ -94,6 +94,7 @@ export function cast(overrides?: Partial<Cast>): Cast {
     parent_hash: null,
     parent_url: faker.internet.url(),
     parent_author: {
+      // @ts-ignore
       fid: "518",
     },
     author: neynarUser(),

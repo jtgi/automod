@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
     data: {
       id: channelResult.data.id,
       active: true,
-      parentUrl: neynarChannel.url,
+      url: neynarChannel.url,
       user: {
         connect: {
           id: user.id,
@@ -366,6 +366,7 @@ function RuleSetEditor(props: {
   ruleDefinitions: typeof ruleDefinitions;
   rulesNames: readonly RuleName[];
   ruleSetIndex: number;
+  // @ts-ignore
   control: Control<FormValues, any, FormValues>;
   register: UseFormRegister<FormValues>;
   watch: UseFormWatch<FormValues>;
@@ -513,6 +514,7 @@ function RuleSetEditor(props: {
                           control={control}
                           render={({ field }) => (
                             <Select
+                              // @ts-ignore
                               defaultValue={actionField.type}
                               onValueChange={field.onChange}
                             >
