@@ -38,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     where: {
       channelId: channel.id,
     },
-    take: 25,
+    take: 100,
     orderBy: {
       createdAt: "desc",
     },

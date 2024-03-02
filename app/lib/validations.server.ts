@@ -292,13 +292,18 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
-}).refine((data) => {
-  if (data.name === "textMatchesPattern" && !isSafeRegex(data.args.pattern)) {
-    return false;
-  } else {
-    return true;
-  }
-}, "That regex is too powerful. Please simplify it.");
+}).refine(
+  (data) => {
+    if (data.name === "textMatchesPattern" && !isSafeRegex(data.args.pattern)) {
+      return false;
+    } else {
+      return true;
+    }
+  },
+  (value) => ({
+    message: `The regex "${value.name}" is too powerful. Please simplify it.`,
+  })
+);
 
 const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
