@@ -1,4 +1,5 @@
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import RE2 from "re2";
 import isSafeRegex from "safe-regex";
 import { z } from "zod";
 import {
@@ -294,14 +295,20 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
 }).refine(
   (data) => {
-    if (data.name === "textMatchesPattern" && !isSafeRegex(data.args.pattern)) {
-      return false;
+    if (data.name === "textMatchesPattern") {
+      try {
+        new RE2(data.args.pattern);
+      } catch (e) {
+        return false;
+      }
+
+      return true;
     } else {
       return true;
     }
   },
   (value) => ({
-    message: `The regex "${value.name}" is too powerful. Please simplify it.`,
+    message: `The pattern "${value.name}" is too powerful. Backreferences and lookahead assertions are not supported. Please simplify it.`,
   })
 );
 
@@ -370,10 +377,11 @@ export function containsText(cast: Cast, rule: Rule) {
 }
 
 export function textMatchesPattern(cast: Cast, rule: Rule) {
-  const { pattern } = rule.args;
-  const regex = new RegExp(pattern, "u");
+  const { pattern, caseInsensitive } = rule.args;
 
-  if (regex.test(cast.text)) {
+  const re2 = new RE2(pattern);
+
+  if (re2.test(cast.text)) {
     return `Text matches pattern: ${pattern}`;
   }
 }
