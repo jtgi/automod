@@ -94,6 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
     data: {
       id: channelResult.data.id,
       active: true,
+      parentUrl: neynarChannel.url,
       user: {
         connect: {
           id: user.id,

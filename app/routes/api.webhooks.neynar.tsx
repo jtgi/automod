@@ -70,7 +70,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const moderatedChannel = await db.moderatedChannel.findFirst({
-    where: { id: channelName, active: true },
+    where: {
+      OR: [
+        { id: channelName },
+        { parentUrl: webhookNotif.data.root_parent_url },
+      ],
+      active: true,
+    },
     include: {
       user: true,
       ruleSets: {
