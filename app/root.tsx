@@ -4,7 +4,7 @@ import { cssBundleHref } from "@remix-run/css-bundle";
 import rootStyles from "~/root.css";
 
 import farcasterStylesUrl from "@farcaster/auth-kit/styles.css";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import {
   Link,
   Links,
@@ -30,6 +30,9 @@ import {
 import { Alert } from "./components/ui/alert";
 import { Button } from "./components/ui/button";
 import { getSharedEnv } from "./lib/utils.server";
+import { authenticator } from "./lib/auth.server";
+import { usePosthog } from "./lib/posthog";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -64,14 +67,19 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function loader() {
-  return json({
+export async function loader({ request }: LoaderFunctionArgs) {
+  const user = await authenticator.isAuthenticated(request);
+
+  return typedjson({
     env: getSharedEnv(),
+    user,
   });
 }
 
 function App() {
-  const { env } = useLoaderData<typeof loader>();
+  const { env, user } = useTypedLoaderData<typeof loader>();
+
+  usePosthog({ user });
 
   return (
     <html lang="en">
