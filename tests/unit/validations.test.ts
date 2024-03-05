@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { assert, it, expect, describe, test } from "vitest";
 import { faker } from "@faker-js/faker";
 import { User } from "@prisma/client";
 import {
   Channel as NeynarChannel,
   User as NeynarUser,
+  Cast,
+  UserProfile,
 } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import {
   Action,
@@ -17,7 +20,6 @@ import {
   userIsNotActive,
   userProfileContainsText,
 } from "~/lib/validations.server";
-import { Cast, UserProfile } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export function user(data?: Partial<User>): User {
   return {
@@ -143,6 +145,15 @@ describe("containsText", () => {
     expect(containsText(c, r)).toBe(`Text contains the text: Example`);
   });
 
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({ text: "Example Text" });
+    const r = rule({
+      invert: true,
+      args: { searchText: "example", caseSensitive: false },
+    });
+    expect(containsText(c, r)).toBeUndefined();
+  });
+
   it("should return undefined if text is not found", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "notfound", caseSensitive: false } });
@@ -164,6 +175,12 @@ describe("containsTooManyMentions", () => {
     const r = rule({ args: { maxMentions: 3 } });
     expect(containsTooManyMentions(c, r)).toBeUndefined();
   });
+
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({ text: "@user1 @user2 @user3" });
+    const r = rule({ args: { maxMentions: 2 }, invert: true });
+    expect(containsTooManyMentions(c, r)).toBeUndefined();
+  });
 });
 
 describe("containsLinks", () => {
@@ -183,6 +200,12 @@ describe("containsLinks", () => {
 
     const r2 = rule({ args: { maxLinks: 1 } });
     expect(containsLinks(c, r2)).toBe("Too many links. Max: 1");
+  });
+
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({ text: "Check out this link https://example.com" });
+    const r = rule({ args: { maxLinks: 0 }, invert: true });
+    expect(containsLinks(c, r)).toBeUndefined();
   });
 
   it("should return undefined if no links are found", () => {
@@ -214,6 +237,16 @@ describe("userProfileContainsText", () => {
     );
   });
 
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({
+      author: { profile: { bio: { text: "just a writer." } } },
+    } as any);
+    const r = rule({
+      args: { searchText: "developer", caseSensitive: false, invert: true },
+    });
+    expect(userProfileContainsText(c, r)).toBeUndefined();
+  });
+
   it("should return undefined if text is not found in user profile bio", () => {
     const c = cast({
       author: { profile: { bio: { text: "Developer and writer." } } },
@@ -238,6 +271,14 @@ describe("userDisplayNameContainsText", () => {
     expect(userDisplayNameContainsText(c, r)).toBe(
       "User display name contains text: JohnDoe"
     );
+  });
+
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({ author: { display_name: "john" } as any });
+    const r = rule({
+      args: { searchText: "sean", caseSensitive: false, invert: true },
+    });
+    expect(userDisplayNameContainsText(c, r)).toBeUndefined();
   });
 
   it("should return undefined if text is not found in user display name", () => {
@@ -272,6 +313,12 @@ describe("userIsNotActive", () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({});
     expect(userIsNotActive(c, r)).toBeUndefined();
+  });
+
+  it('should invert the rule if "invert" is set', () => {
+    const c = cast({ author: { active_status: "active" } as any });
+    const r = rule({ invert: true });
+    expect(userIsNotActive(c, r)).toBe("User is active");
   });
 
   it("should return a message if user is not active", () => {

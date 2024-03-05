@@ -145,7 +145,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userFollowerCount: {
     friendlyName: "User Follower Count",
     hidden: false,
-    invertable: true,
+    invertable: false,
     description: "Check if the user's follower count is within a range",
     args: {
       min: {
