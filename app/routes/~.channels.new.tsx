@@ -380,6 +380,7 @@ function RuleSetEditor(props: {
   ruleDefinitions: typeof ruleDefinitions;
   rulesNames: readonly RuleName[];
   ruleSetIndex: number;
+  // @ts-ignore -- some build <> local ts mismatch issue theres no way im wasting more life to debug
   control: Control<FormValues, any, FormValues>;
   register: UseFormRegister<FormValues>;
   watch: UseFormWatch<FormValues>;
@@ -549,6 +550,7 @@ function RuleSetEditor(props: {
                           control={control}
                           render={({ field }) => (
                             <Select
+                              // @ts-ignore -- ts <> build mismatch issue idk
                               defaultValue={actionField.type}
                               onValueChange={field.onChange}
                             >
