@@ -1,5 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
-import { Plus, X } from "lucide-react";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "~/components/ui/hover-card";
+
+import { InfoIcon, Plus, X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -43,11 +50,12 @@ import { FieldLabel } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { useFetcher, useSubmit } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { db } from "~/lib/db.server";
-import { isCohost } from "~/lib/warpcast.server";
 import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
+import { Switch } from "~/components/ui/switch";
+import { QuestionMarkCircledIcon } from "@radix-ui/react-icons";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -75,6 +83,10 @@ export async function action({ request }: ActionFunctionArgs) {
       request,
       message: formatZodError(channelResult.error),
     });
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(channelResult.data);
   }
 
   const channelExists = await db.moderatedChannel.findFirst({
@@ -142,7 +154,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { user, env, ruleNames, ruleDefinitions, actionDefinitions } =
+  const { ruleNames, ruleDefinitions, actionDefinitions } =
     useTypedLoaderData<typeof loader>();
 
   return (
@@ -199,7 +211,7 @@ export function ChannelForm(props: {
 
   const onSubmit = (data: FormValues) => {
     const newRuleSets = [];
-    for (let ruleSet of data.ruleSets) {
+    for (const ruleSet of data.ruleSets) {
       if (ruleSet.logicType === "and") {
         const rule: Rule = {
           name: "and",
@@ -368,12 +380,11 @@ function RuleSetEditor(props: {
   ruleDefinitions: typeof ruleDefinitions;
   rulesNames: readonly RuleName[];
   ruleSetIndex: number;
-  // @ts-ignore
   control: Control<FormValues, any, FormValues>;
   register: UseFormRegister<FormValues>;
   watch: UseFormWatch<FormValues>;
 }) {
-  const { rulesNames, ruleSetIndex, control } = props;
+  const { ruleSetIndex, control } = props;
   const {
     fields: ruleFields,
     remove: removeRule,
@@ -465,6 +476,28 @@ function RuleSetEditor(props: {
                       ruleIndex={ruleIndex}
                       ruleSetIndex={ruleSetIndex}
                     />
+                    {props.ruleDefinitions[ruleName].invertable && (
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                        <div className="flex flex-col">
+                          <label className=" font-medium text-gray-700 text-sm flex items-center gap-1">
+                            <p>Invert</p>
+                          </label>
+                          <p className="text-xs text-gray-500">
+                            Check for the opposite condition
+                          </p>
+                        </div>
+                        <Controller
+                          name={`ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.invert`}
+                          control={control}
+                          render={({ field }) => (
+                            <Switch
+                              onCheckedChange={field.onChange}
+                              checked={field.value}
+                            />
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -516,7 +549,6 @@ function RuleSetEditor(props: {
                           control={control}
                           render={({ field }) => (
                             <Select
-                              // @ts-ignore
                               defaultValue={actionField.type}
                               onValueChange={field.onChange}
                             >

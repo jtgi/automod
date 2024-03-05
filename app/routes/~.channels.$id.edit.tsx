@@ -53,6 +53,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  if (process.env.NODE_ENV === "development") {
+    console.log(JSON.stringify(ch.data, null, 2));
+  }
+
   const updatedChannel = await db.moderatedChannel.update({
     where: {
       id: modChannel.id,

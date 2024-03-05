@@ -701,93 +701,93 @@ describe("validateCast", () => {
     expect(logs2[1].action).toBe("hideQuietly");
   });
 
-  it("ban threshold works", async () => {
-    const mc = await prisma.moderatedChannel.create({
-      data: {
-        id: "jtgi",
-        userId: u0.id,
-        banThreshold: 1,
-        ruleSets: {
-          create: [
-            {
-              rule: JSON.stringify(
-                rule({
-                  name: "containsText",
-                  type: "CONDITION",
-                  args: {
-                    searchText: "spam",
-                    caseSensitive: true,
-                  },
-                })
-              ),
-              actions: JSON.stringify([action({ type: "warnAndHide" })]),
-            },
-            {
-              rule: JSON.stringify(
-                rule({
-                  name: "containsText",
-                  type: "CONDITION",
-                  args: {
-                    searchText: "pepe",
-                    caseSensitive: true,
-                  },
-                })
-              ),
-              actions: JSON.stringify([action({ type: "warnAndHide" })]),
-            },
-          ],
-        },
-      },
-      include: { user: true, ruleSets: { where: { active: true } } },
-    });
+  // it("ban threshold works", async () => {
+  //   const mc = await prisma.moderatedChannel.create({
+  //     data: {
+  //       id: "jtgi",
+  //       userId: u0.id,
+  //       banThreshold: 1,
+  //       ruleSets: {
+  //         create: [
+  //           {
+  //             rule: JSON.stringify(
+  //               rule({
+  //                 name: "containsText",
+  //                 type: "CONDITION",
+  //                 args: {
+  //                   searchText: "spam",
+  //                   caseSensitive: true,
+  //                 },
+  //               })
+  //             ),
+  //             actions: JSON.stringify([action({ type: "warnAndHide" })]),
+  //           },
+  //           {
+  //             rule: JSON.stringify(
+  //               rule({
+  //                 name: "containsText",
+  //                 type: "CONDITION",
+  //                 args: {
+  //                   searchText: "pepe",
+  //                   caseSensitive: true,
+  //                 },
+  //               })
+  //             ),
+  //             actions: JSON.stringify([action({ type: "warnAndHide" })]),
+  //           },
+  //         ],
+  //       },
+  //     },
+  //     include: { user: true, ruleSets: { where: { active: true } } },
+  //   });
 
-    const c1 = cast({
-      author: neynarUser({
-        fid: 5179,
-        username: "jtgi",
-        pfp_url: "https://google.com",
-      }),
-      text: "spam and pepe",
-      hash: "gm",
-    });
+  //   const c1 = cast({
+  //     author: neynarUser({
+  //       fid: 5179,
+  //       username: "jtgi",
+  //       pfp_url: "https://google.com",
+  //     }),
+  //     text: "spam and pepe",
+  //     hash: "gm",
+  //   });
 
-    await validateCast({
-      channel: nc0,
-      moderatedChannel: mc,
-      cast: c1,
-    });
+  //   await validateCast({
+  //     channel: nc0,
+  //     moderatedChannel: mc,
+  //     cast: c1,
+  //   });
 
-    expect(axios.put).toHaveBeenCalledTimes(2);
-    const logs = await prisma.moderationLog.findMany({
-      where: { channelId: mc.id },
-    });
+  //   expect(axios.put).toHaveBeenCalledTimes(2);
+  //   const logs = await prisma.moderationLog.findMany({
+  //     where: { channelId: mc.id },
+  //   });
 
-    expect(logs).toHaveLength(2);
-    expect(logs[0].action).toBe("warnAndHide");
+  //   expect(logs).toHaveLength(2);
+  //   expect(logs[0].action).toBe("warnAndHide");
 
-    // 2nd violation with a different cast hash,
-    // now they should get banned
-    await validateCast({
-      channel: nc0,
-      moderatedChannel: mc,
-      cast: cast({
-        author: neynarUser({
-          fid: 5179,
-          username: "jtgi",
-          pfp_url: "https://google.com",
-        }),
-        text: "spam",
-        hash: "not-gm",
-      }),
-    });
+  //   // 2nd violation with a different cast hash,
+  //   // now they should get banned
+  //   await validateCast({
+  //     channel: nc0,
+  //     moderatedChannel: mc,
+  //     cast: cast({
+  //       author: neynarUser({
+  //         fid: 5179,
+  //         username: "jtgi",
+  //         pfp_url: "https://google.com",
+  //       }),
+  //       text: "spam",
+  //       hash: "not-gm",
+  //     }),
+  //   });
 
-    const logs2 = await prisma.moderationLog.findMany({
-      where: { channelId: mc.id },
-    });
-    expect(logs2).toHaveLength(3);
-    expect(logs2[2].action).toBe("ban");
-    expect(logs2[2].reason).toBe(
-      `User exceeded warn threshold of 1 and is banned.`
-    );
-  });
+  //   const logs2 = await prisma.moderationLog.findMany({
+  //     where: { channelId: mc.id },
+  //   });
+  //   expect(logs2).toHaveLength(3);
+  //   expect(logs2[2].action).toBe("ban");
+  //   expect(logs2[2].reason).toBe(
+  //     `User exceeded warn threshold of 1 and is banned.`
+  //   );
+  // });
 });

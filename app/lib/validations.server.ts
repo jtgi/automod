@@ -12,7 +12,8 @@ import {
 export type RuleDefinition = {
   friendlyName: string;
   description: string;
-  hidden?: boolean;
+  hidden: boolean;
+  invertable: boolean;
   args: Record<
     string,
     {
@@ -29,12 +30,14 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     friendlyName: "And",
     description: "Combine multiple rules together",
     hidden: true,
+    invertable: false,
     args: {},
   },
 
   or: {
     friendlyName: "Or",
     hidden: true,
+    invertable: false,
     description: "Combine multiple rules together",
     args: {},
   },
@@ -42,6 +45,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   containsText: {
     friendlyName: "Contains Text",
     description: "Check if the text contains a specific string",
+    hidden: false,
+    invertable: true,
     args: {
       searchText: {
         type: "string",
@@ -59,6 +64,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   textMatchesPattern: {
     friendlyName: "Text Matches Pattern (Regex)",
     description: "Check if the text matches a specific pattern",
+    hidden: false,
+    invertable: true,
     args: {
       pattern: {
         type: "string",
@@ -70,8 +77,10 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   containsTooManyMentions: {
-    friendlyName: "Contains Too Many Mentions",
-    description: "Check if the text contains too many mentions",
+    friendlyName: "Contains Mentions",
+    description: "Check if the text contains a certain amount of mentions",
+    invertable: true,
+    hidden: false,
     args: {
       maxMentions: {
         type: "number",
@@ -84,6 +93,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   containsLinks: {
     friendlyName: "Contains Links",
     description: "Check if the text contains any links",
+    hidden: false,
+    invertable: true,
     args: {
       maxLinks: {
         type: "number",
@@ -95,6 +106,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userProfileContainsText: {
     friendlyName: "User Profile Contains Text",
     description: "Check if the user's profile contains a specific string",
+    hidden: false,
+
+    invertable: true,
     args: {
       searchText: {
         type: "string",
@@ -111,6 +125,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userDisplayNameContainsText: {
     friendlyName: "User Display Name Contains Text",
     description: "Check if the user's display name contains a specific string",
+    hidden: false,
+
+    invertable: true,
     args: {
       searchText: {
         type: "string",
@@ -127,6 +144,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFollowerCount: {
     friendlyName: "User Follower Count",
+    hidden: false,
+    invertable: true,
     description: "Check if the user's follower count is within a range",
     args: {
       min: {
@@ -144,13 +163,17 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userIsNotActive: {
     friendlyName: "User Is Not Active",
-    description: "Check if the user is active",
+    hidden: false,
+    invertable: true,
+    description: "Require the user is active",
     args: {},
   },
 
   userFidInRange: {
     friendlyName: "User FID In Range",
     description: "Check if the user's FID is within a range",
+    hidden: false,
+    invertable: false,
     args: {
       minFid: {
         type: "number",
@@ -284,6 +307,7 @@ const BaseRuleSchema = z.object({
   type: z.union([z.literal("CONDITION"), z.literal("LOGICAL")]),
   args: z.record(z.any()),
   operation: z.union([z.literal("AND"), z.literal("OR")]).optional(),
+  invert: z.boolean().optional(),
 });
 
 export type Rule = z.infer<typeof BaseRuleSchema> & {
@@ -370,18 +394,24 @@ export function containsText(cast: Cast, rule: Rule) {
   const text = caseSensitive ? cast.text : cast.text.toLowerCase();
   const search = caseSensitive ? searchText : searchText.toLowerCase();
 
-  if (text.includes(search)) {
+  if (!rule.invert && text.includes(search)) {
     return `Text contains the text: ${searchText}`;
+  } else if (rule.invert && !text.includes(search)) {
+    return `Text does not contain the text: ${searchText}`;
   }
 }
 
 export function textMatchesPattern(cast: Cast, rule: Rule) {
-  const { pattern, caseInsensitive } = rule.args;
+  const { pattern } = rule.args;
 
   const re2 = new RE2(pattern);
 
-  if (re2.test(cast.text)) {
+  const isMatch = re2.test(cast.text);
+
+  if (isMatch && !rule.invert) {
     return `Text matches pattern: ${pattern}`;
+  } else if (!isMatch && rule.invert) {
+    return `Text does not match pattern: ${pattern}`;
   }
 }
 
@@ -391,8 +421,10 @@ export function containsTooManyMentions(cast: Cast, rule: Rule) {
 
   const mentions = cast.text.match(/@\w+/g) || [];
 
-  if (mentions.length > maxMentions) {
+  if (!rule.invert && mentions.length > maxMentions) {
     return `Too many mentions: ${mentions}. Max: ${maxMentions}`;
+  } else if (rule.invert && mentions.length <= maxMentions) {
+    return `Too few mentions: ${mentions}. Min: ${maxMentions}`;
   }
 }
 
@@ -401,8 +433,10 @@ export function containsLinks(cast: Cast, rule: Rule) {
   const regex = /https?:\/\/\S+/gi;
   const matches = cast.text.match(regex) || [];
 
-  if (matches.length > maxLinks) {
+  if (!rule.invert && matches.length > maxLinks) {
     return `Too many links. Max: ${maxLinks}`;
+  } else if (rule.invert && matches.length <= maxLinks) {
+    return `Too few links. Min: ${maxLinks}`;
   }
 }
 
@@ -414,8 +448,10 @@ export function userProfileContainsText(cast: Cast, rule: Rule) {
         .includes(searchText.toLowerCase())
     : cast.author.profile.bio.text.includes(searchText);
 
-  if (containsText) {
+  if (!rule.invert && containsText) {
     return `User profile contains the specified text: ${searchText}`;
+  } else if (rule.invert && !containsText) {
+    return `User profile does not contain the specified text: ${searchText}`;
   }
 }
 
@@ -425,8 +461,10 @@ export function userDisplayNameContainsText(cast: Cast, rule: Rule) {
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.display_name.includes(searchText);
 
-  if (containsText) {
+  if (!rule.invert && containsText) {
     return `User display name contains text: ${searchText}`;
+  } else if (rule.invert && !containsText) {
+    return `User display name does not contain text: ${searchText}`;
   }
 }
 
@@ -447,9 +485,11 @@ export function userFollowerCount(cast: Cast, rule: Rule) {
 }
 
 // Rule: user active_status must be active
-export function userIsNotActive(cast: Cast, _rule: Rule) {
-  if (cast.author.active_status !== "active") {
+export function userIsNotActive(cast: Cast, rule: Rule) {
+  if (!rule.invert && cast.author.active_status !== "active") {
     return `User is not active`;
+  } else if (rule.invert && cast.author.active_status === "active") {
+    return `User is active`;
   }
 }
 
