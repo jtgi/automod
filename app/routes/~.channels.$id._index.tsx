@@ -248,7 +248,9 @@ export default function Screen() {
                   )}
                 </div>
 
-                {["cooldown", "mute", "hideQuietly"].includes(log.action) && (
+                {["cooldown", "mute", "hideQuietly", "warnAndHide"].includes(
+                  log.action
+                ) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <MoreVerticalIcon className="w-5 h-5" />
@@ -282,7 +284,8 @@ export default function Screen() {
                           </DropdownMenuItem>
                         </Form>
                       )}
-                      {log.action === "hideQuietly" && (
+                      {(log.action === "hideQuietly" ||
+                        log.action === "warnAndHide") && (
                         <Form method="post">
                           <input type="hidden" name="logId" value={log.id} />
                           <DropdownMenuItem>
