@@ -15,10 +15,10 @@ import {
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Form } from "@remix-run/react";
+import { Form, Link } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
-import { MoreVerticalIcon } from "lucide-react";
+import { ArrowUpRight, MoreVerticalIcon } from "lucide-react";
 import { z } from "zod";
 import { unhide } from "~/lib/warpcast.server";
 
@@ -64,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = z
     .object({
       logId: z.string(),
-      intent: z.enum(["end-cooldown", "unmute"]),
+      intent: z.enum(["end-cooldown", "unmute", "unhide"]),
     })
     .safeParse(rawData);
 
@@ -150,7 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await unhide({ castHash: log.castHash });
     await db.moderationLog.create({
       data: {
-        action: "unhidden",
+        action: "unhide",
         affectedUserFid: log.affectedUserFid,
         affectedUsername: log.affectedUsername,
         affectedUserAvatarUrl: log.affectedUserAvatarUrl,
@@ -231,6 +231,21 @@ export default function Screen() {
                     }
                     , {parseAndLocalizeDates(log.reason)}
                   </p>
+                  {log.castHash && (
+                    <p>
+                      <a
+                        className="text-[8px] no-underline hover:underline uppercase tracking-wide"
+                        href={`https://warpcast.com/${
+                          log.affectedUsername
+                        }/${log.castHash.substring(0, 10)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View Cast
+                      </a>
+                      <ArrowUpRight className="inline w-2 h-2 mt-[2px] text-primary" />
+                    </p>
+                  )}
                 </div>
 
                 {["cooldown", "mute", "hideQuietly"].includes(log.action) && (
@@ -246,7 +261,7 @@ export default function Screen() {
                             <button
                               name="intent"
                               value="end-cooldown"
-                              className="w-full h-full cursor-default"
+                              className="w-full h-full cursor-default text-left"
                             >
                               End Cooldown
                             </button>
@@ -260,8 +275,10 @@ export default function Screen() {
                             <button
                               name="intent"
                               value="unmute"
-                              className="w-full h-full cursor-default"
-                            ></button>
+                              className="w-full h-full cursor-default text-left"
+                            >
+                              Unmute
+                            </button>
                           </DropdownMenuItem>
                         </Form>
                       )}
@@ -272,8 +289,10 @@ export default function Screen() {
                             <button
                               name="intent"
                               value="unhide"
-                              className="w-full h-full cursor-default"
-                            ></button>
+                              className="w-full h-full cursor-default text-left"
+                            >
+                              Unhide
+                            </button>
                           </DropdownMenuItem>
                         </Form>
                       )}

@@ -253,6 +253,12 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
     hidden: true,
     args: {},
   },
+  unhide: {
+    friendlyName: "Unhide",
+    description: "Unhide the cast",
+    hidden: true,
+    args: {},
+  },
   cooldown: {
     friendlyName: "Cooldown",
     description:
@@ -289,6 +295,7 @@ export const actionTypes = [
   "warnAndHide",
   "cooldown",
   "cooldownEnded",
+  "unhide",
   "unmuted",
 ] as const;
 
@@ -382,6 +389,7 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   bypass: () => Promise.resolve(),
   cooldownEnded: () => Promise.resolve(),
   unmuted: () => Promise.resolve(),
+  unhide: () => Promise.resolve(),
   ban: ban,
   warnAndHide: warnAndHide,
   cooldown: cooldown,
