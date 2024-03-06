@@ -71,7 +71,7 @@ export function neynarUser(overrides?: Partial<NeynarUser>): NeynarUser {
     verifications: [faker.finance.ethereumAddress()],
     active_status: "active",
     ...overrides,
-  };
+  } as NeynarUser;
 }
 
 export function neynarChannel(
