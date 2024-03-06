@@ -147,7 +147,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (process.env.NODE_ENV === "development") {
-    console.log(JSON.stringify(webhookNotif.data, null, 2));
+    console.log("data", JSON.stringify(webhookNotif.data, null, 2));
   } else {
     console.log({ channel: channel.id, castHash: webhookNotif.data.hash });
   }

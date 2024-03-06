@@ -56,7 +56,7 @@ export async function requireValidSignature(props: {
 
   if (!isValid) {
     console.error(`Invalid signature`, props.incomingSignature, props.payload);
-    throw redirect(`/`, { status: 403 });
+    throw json({}, { status: 403 });
   }
 }
 
