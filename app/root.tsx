@@ -4,7 +4,11 @@ import { cssBundleHref } from "@remix-run/css-bundle";
 import rootStyles from "~/root.css";
 
 import farcasterStylesUrl from "@farcaster/auth-kit/styles.css";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import type {
+  LinksFunction,
+  LoaderFunctionArgs,
+  MetaFunction,
+} from "@remix-run/node";
 import {
   Link,
   Links,
@@ -75,6 +79,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     user,
   });
 }
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "automod | channel moderation on autopilot" },
+    {
+      property: "og:title",
+      content: "automod | channel moderation on autopilot",
+    },
+    {
+      name: "description",
+      content:
+        "Fight farcaster channel spam and enforce channel norms with bots. Takes seconds to setup. No code required.",
+    },
+  ];
+};
 
 function App() {
   const { env, user } = useTypedLoaderData<typeof loader>();
