@@ -20,6 +20,7 @@ import { actionDefinitions } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import { MoreVerticalIcon } from "lucide-react";
 import { z } from "zod";
+import { unhide } from "~/lib/warpcast.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -143,6 +144,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
         },
       });
     }
+  } else if (result.data.intent === "unhide") {
+    invariant(log.castHash, "castHash is required");
+
+    await unhide({ castHash: log.castHash });
+    await db.moderationLog.create({
+      data: {
+        action: "unhidden",
+        affectedUserFid: log.affectedUserFid,
+        affectedUsername: log.affectedUsername,
+        affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+        actor: user.id,
+        channelId: channel.id,
+        reason: `Unhidden by @${user.name}`,
+      },
+    });
   } else {
     return typedjson(
       {
@@ -158,7 +174,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { user, channel, moderationLogs, actionDefinitions, env } =
+  const { moderationLogs, actionDefinitions } =
     useTypedLoaderData<typeof loader>();
 
   return (
@@ -185,6 +201,7 @@ export default function Screen() {
                   className="no-underline"
                   target="_blank"
                   href={`https://warpcast.com/${log.affectedUsername}`}
+                  rel="noreferrer"
                 >
                   <Avatar className="block w-11 h-11">
                     <AvatarImage
@@ -201,6 +218,7 @@ export default function Screen() {
                     <a
                       href={`https://warpcast.com/${log.affectedUsername}`}
                       target="_blank"
+                      rel="noreferrer"
                     >
                       @{log.affectedUsername}
                     </a>
@@ -215,7 +233,7 @@ export default function Screen() {
                   </p>
                 </div>
 
-                {["cooldown", "mute"].includes(log.action) && (
+                {["cooldown", "mute", "hideQuietly"].includes(log.action) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <MoreVerticalIcon className="w-5 h-5" />
@@ -242,6 +260,18 @@ export default function Screen() {
                             <button
                               name="intent"
                               value="unmute"
+                              className="w-full h-full cursor-default"
+                            ></button>
+                          </DropdownMenuItem>
+                        </Form>
+                      )}
+                      {log.action === "hideQuietly" && (
+                        <Form method="post">
+                          <input type="hidden" name="logId" value={log.id} />
+                          <DropdownMenuItem>
+                            <button
+                              name="intent"
+                              value="unhide"
                               className="w-full h-full cursor-default"
                             ></button>
                           </DropdownMenuItem>

@@ -127,6 +127,20 @@ export async function hideQuietly({
   );
 }
 
+export async function unhide({ castHash }: { castHash: string }) {
+  return axios.put(
+    `https://client.warpcast.com/v2/debug-cast-embeds`,
+    {
+      castHash,
+      downvote: false,
+      isWarning: false,
+    },
+    {
+      headers: headers(),
+    }
+  );
+}
+
 export async function ban({
   channel,
   cast,
