@@ -219,6 +219,7 @@ export function getSharedEnv() {
   return {
     infuraProjectId: process.env.INFURA_PROJECT_ID!,
     postHogApiKey: process.env.POSTHOG_API_KEY!,
+    nodeEnv: process.env.NODE_ENV!,
     hostUrl:
       process.env.NODE_ENV === "production"
         ? process.env.PROD_URL!

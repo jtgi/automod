@@ -98,7 +98,7 @@ export const meta: MetaFunction = () => {
 function App() {
   const { env, user } = useTypedLoaderData<typeof loader>();
 
-  usePosthog({ user });
+  usePosthog({ user, enabled: env.nodeEnv === "production" });
 
   return (
     <html lang="en">

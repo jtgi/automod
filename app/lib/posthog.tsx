@@ -3,11 +3,15 @@ import { useEffect } from "react";
 import { User } from "@prisma/client";
 import { posthog } from "posthog-js";
 
-export function usePosthog(props: { user: User | null }) {
+export function usePosthog(props: { user: User | null; enabled: boolean }) {
   const location = useLocation();
   const [clientSetup, setClientSetup] = useState(false);
 
   useEffect(() => {
+    if (!props.enabled) {
+      return;
+    }
+
     if (!clientSetup) {
       posthog.init("phc_xSfqRtKRSoH5A9kPcNkI7J2HNakfQ5KRhFiwVujq8WL", {
         api_host: "https://app.posthog.com",
@@ -21,9 +25,11 @@ export function usePosthog(props: { user: User | null }) {
         name: props.user.name,
       });
     }
-  }, [props.user]);
+  }, [enabled, props.user]);
 
   useEffect(() => {
-    posthog.capture("$pageview");
-  }, [location]);
+    if (enabled) {
+      posthog.capture("$pageview");
+    }
+  }, [enabled, location]);
 }
