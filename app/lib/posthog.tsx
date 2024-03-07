@@ -25,11 +25,11 @@ export function usePosthog(props: { user: User | null; enabled: boolean }) {
         name: props.user.name,
       });
     }
-  }, [enabled, props.user]);
+  }, [props.enabled, props.user]);
 
   useEffect(() => {
     if (enabled) {
       posthog.capture("$pageview");
     }
-  }, [enabled, location]);
+  }, [props.enabled, location]);
 }
