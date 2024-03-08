@@ -175,7 +175,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     friendlyName: "User Is Cohost",
     description: "Check if the user is a cohost",
     hidden: false,
-    invertable: false,
+    invertable: true,
     args: {},
   },
 
@@ -517,16 +517,18 @@ export function userFollowerCount(props: CheckFunctionArgs) {
   }
 }
 
-export function userIsCohost(args: CheckFunctionArgs) {
-  const { channel } = args;
+export async function userIsCohost(args: CheckFunctionArgs) {
+  const { channel, rule } = args;
 
-  const isUserCohost = isCohost({
+  const isUserCohost = await isCohost({
     fid: args.cast.author.fid,
     channel: channel.id,
   });
 
-  if (!isUserCohost) {
+  if (rule.invert && !isUserCohost) {
     return `User is not a cohost`;
+  } else if (!rule.invert && isUserCohost) {
+    return `User is a cohost`;
   }
 }
 
