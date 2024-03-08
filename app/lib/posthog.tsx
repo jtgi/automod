@@ -1,5 +1,5 @@
 import { useLocation } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { User } from "@prisma/client";
 import { posthog } from "posthog-js";
 
@@ -28,7 +28,7 @@ export function usePosthog(props: { user: User | null; enabled: boolean }) {
   }, [props.enabled, props.user]);
 
   useEffect(() => {
-    if (enabled) {
+    if (props.enabled) {
       posthog.capture("$pageview");
     }
   }, [props.enabled, location]);

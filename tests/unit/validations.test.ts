@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { assert, it, expect, describe, test } from "vitest";
 import { faker } from "@faker-js/faker";
-import { User } from "@prisma/client";
+import { ModeratedChannel, User } from "@prisma/client";
 import {
   Channel as NeynarChannel,
   User as NeynarUser,
@@ -20,6 +20,22 @@ import {
   userIsNotActive,
   userProfileContainsText,
 } from "~/lib/validations.server";
+
+export function moderatedChannel(
+  data?: Partial<ModeratedChannel>
+): ModeratedChannel {
+  return {
+    id: faker.string.uuid(),
+    imageUrl: faker.internet.userName(),
+    active: true,
+    url: faker.internet.url(),
+    userId: faker.string.uuid(),
+    banThreshold: null,
+    createdAt: faker.date.past(),
+    updatedAt: faker.date.recent(),
+    ...data,
+  };
+}
 
 export function user(data?: Partial<User>): User {
   return {
@@ -132,17 +148,28 @@ export function action(overrides?: Partial<Action>): Action {
   } as any;
 }
 
+const m = moderatedChannel({
+  id: "gm",
+  userId: "1",
+  imageUrl: "https://example.com/image.jpg",
+  url: "https://example.com/channel",
+});
+
 describe("containsText", () => {
   it("should detect text correctly without case sensitivity", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "example", caseSensitive: false } });
-    expect(containsText(c, r)).toBe(`Text contains the text: example`);
+    expect(containsText({ channel: m, cast: c, rule: r })).toBe(
+      `Text contains the text: example`
+    );
   });
 
   it("should detect text correctly with case sensitivity", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "Example", caseSensitive: true } });
-    expect(containsText(c, r)).toBe(`Text contains the text: Example`);
+    expect(containsText({ channel: m, cast: c, rule: r })).toBe(
+      `Text contains the text: Example`
+    );
   });
 
   it("should invert the check if the rule is inverted", () => {
@@ -151,13 +178,13 @@ describe("containsText", () => {
       invert: true,
       args: { searchText: "example", caseSensitive: false },
     });
-    expect(containsText(c, r)).toBeUndefined();
+    expect(containsText({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should return undefined if text is not found", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "notfound", caseSensitive: false } });
-    expect(containsText(c, r)).toBeUndefined();
+    expect(containsText({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -165,7 +192,7 @@ describe("containsTooManyMentions", () => {
   it("should return a message if there are too many mentions", () => {
     const c = cast({ text: "@user1 @user2 @user3" });
     const r = rule({ args: { maxMentions: 2 } });
-    expect(containsTooManyMentions(c, r)).toBe(
+    expect(containsTooManyMentions({ channel: m, cast: c, rule: r })).toBe(
       "Too many mentions: @user1,@user2,@user3. Max: 2"
     );
   });
@@ -173,13 +200,17 @@ describe("containsTooManyMentions", () => {
   it("should return undefined if the mentions are within limit", () => {
     const c = cast({ text: "@user1 @user2" });
     const r = rule({ args: { maxMentions: 3 } });
-    expect(containsTooManyMentions(c, r)).toBeUndefined();
+    expect(
+      containsTooManyMentions({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 
   it("should invert the check if the rule is inverted", () => {
     const c = cast({ text: "@user1 @user2 @user3" });
     const r = rule({ args: { maxMentions: 2 }, invert: true });
-    expect(containsTooManyMentions(c, r)).toBeUndefined();
+    expect(
+      containsTooManyMentions({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 });
 
@@ -187,7 +218,9 @@ describe("containsLinks", () => {
   it("should detect links in the text", () => {
     const c = cast({ text: "Check out this link https://example.com" });
     const r = rule({});
-    expect(containsLinks(c, r)).toBe("Too many links. Max: 0");
+    expect(containsLinks({ channel: m, cast: c, rule: r })).toBe(
+      "Too many links. Max: 0"
+    );
   });
 
   it("should detect links based on a threshold", () => {
@@ -196,22 +229,24 @@ describe("containsLinks", () => {
     });
 
     const r1 = rule({ args: { maxLinks: 2 } });
-    expect(containsLinks(c, r1)).toBeUndefined();
+    expect(containsLinks({ channel: m, cast: c, rule: r1 })).toBeUndefined();
 
     const r2 = rule({ args: { maxLinks: 1 } });
-    expect(containsLinks(c, r2)).toBe("Too many links. Max: 1");
+    expect(containsLinks({ channel: m, cast: c, rule: r2 })).toBe(
+      "Too many links. Max: 1"
+    );
   });
 
   it("should invert the check if the rule is inverted", () => {
     const c = cast({ text: "Check out this link https://example.com" });
     const r = rule({ args: { maxLinks: 0 }, invert: true });
-    expect(containsLinks(c, r)).toBeUndefined();
+    expect(containsLinks({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should return undefined if no links are found", () => {
     const c = cast({ text: "No links here" });
     const r = rule({});
-    expect(containsLinks(c, r)).toBeUndefined();
+    expect(containsLinks({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -222,7 +257,7 @@ describe("userProfileContainsText", () => {
     });
 
     const r = rule({ args: { searchText: "developer", caseSensitive: false } });
-    expect(userProfileContainsText(c, r)).toBe(
+    expect(userProfileContainsText({ channel: m, cast: c, rule: r })).toBe(
       "User profile contains the specified text: developer"
     );
   });
@@ -232,7 +267,7 @@ describe("userProfileContainsText", () => {
       author: { profile: { bio: { text: "Developer and writer." } } },
     } as any);
     const r = rule({ args: { searchText: "Developer", caseSensitive: true } });
-    expect(userProfileContainsText(c, r)).toBe(
+    expect(userProfileContainsText({ channel: m, cast: c, rule: r })).toBe(
       "User profile contains the specified text: Developer"
     );
   });
@@ -244,7 +279,9 @@ describe("userProfileContainsText", () => {
     const r = rule({
       args: { searchText: "developer", caseSensitive: false, invert: true },
     });
-    expect(userProfileContainsText(c, r)).toBeUndefined();
+    expect(
+      userProfileContainsText({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 
   it("should return undefined if text is not found in user profile bio", () => {
@@ -252,7 +289,9 @@ describe("userProfileContainsText", () => {
       author: { profile: { bio: { text: "Developer and writer." } } },
     } as any);
     const r = rule({ args: { searchText: "artist", caseSensitive: false } });
-    expect(userProfileContainsText(c, r)).toBeUndefined();
+    expect(
+      userProfileContainsText({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 });
 
@@ -260,7 +299,7 @@ describe("userDisplayNameContainsText", () => {
   it("should detect text in user display name without case sensitivity", () => {
     const c = cast({ author: { display_name: "JohnDoe" } as any });
     const r = rule({ args: { searchText: "johndoe", caseSensitive: false } });
-    expect(userDisplayNameContainsText(c, r)).toBe(
+    expect(userDisplayNameContainsText({ channel: m, cast: c, rule: r })).toBe(
       "User display name contains text: johndoe"
     );
   });
@@ -268,7 +307,7 @@ describe("userDisplayNameContainsText", () => {
   it("should detect text in user display name with case sensitivity", () => {
     const c = cast({ author: { display_name: "JohnDoe" } as any });
     const r = rule({ args: { searchText: "JohnDoe", caseSensitive: true } });
-    expect(userDisplayNameContainsText(c, r)).toBe(
+    expect(userDisplayNameContainsText({ channel: m, cast: c, rule: r })).toBe(
       "User display name contains text: JohnDoe"
     );
   });
@@ -278,13 +317,17 @@ describe("userDisplayNameContainsText", () => {
     const r = rule({
       args: { searchText: "sean", caseSensitive: false, invert: true },
     });
-    expect(userDisplayNameContainsText(c, r)).toBeUndefined();
+    expect(
+      userDisplayNameContainsText({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 
   it("should return undefined if text is not found in user display name", () => {
     const c = cast({ author: { display_name: "JohnDoe" } as any });
     const r = rule({ args: { searchText: "JaneDoe", caseSensitive: false } });
-    expect(userDisplayNameContainsText(c, r)).toBeUndefined();
+    expect(
+      userDisplayNameContainsText({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 });
 
@@ -292,19 +335,23 @@ describe("userFollowerCount", () => {
   it("should return message if follower count is less than minimum", () => {
     const c = cast({ author: { follower_count: 50 } as any });
     const r = rule({ args: { min: 100 } });
-    expect(userFollowerCount(c, r)).toBe("Follower count less than 100");
+    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBe(
+      "Follower count less than 100"
+    );
   });
 
   it("should return message if follower count is greater than maximum", () => {
     const c = cast({ author: { follower_count: 500 } as any });
     const r = rule({ args: { max: 300 } });
-    expect(userFollowerCount(c, r)).toBe("Follower count greater than 300");
+    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBe(
+      "Follower count greater than 300"
+    );
   });
 
   it("should return undefined if follower count is within the specified range", () => {
     const c = cast({ author: { follower_count: 200 } as any });
     const r = rule({ args: { min: 100, max: 300 } });
-    expect(userFollowerCount(c, r)).toBeUndefined();
+    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -312,19 +359,23 @@ describe("userIsNotActive", () => {
   it("should return undefined if user is active", () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({});
-    expect(userIsNotActive(c, r)).toBeUndefined();
+    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it('should invert the rule if "invert" is set', () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({ invert: true });
-    expect(userIsNotActive(c, r)).toBe("User is active");
+    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe(
+      "User is active"
+    );
   });
 
   it("should return a message if user is not active", () => {
     const c = cast({ author: { active_status: "inactive" } as any });
     const r = rule({});
-    expect(userIsNotActive(c, r)).toBe("User is not active");
+    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe(
+      "User is not active"
+    );
   });
 });
 
@@ -332,18 +383,22 @@ describe("userFidInRange", () => {
   it("should return message if FID is less than minimum", () => {
     const c = cast({ author: { fid: 500 } as any });
     const r = rule({ args: { minFid: 1000 } });
-    expect(userFidInRange(c, r)).toBe("FID 500 is less than 1000");
+    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBe(
+      "FID 500 is less than 1000"
+    );
   });
 
   it("should return message if FID is greater than maximum", () => {
     const c = cast({ author: { fid: 2000 } as any });
     const r = rule({ args: { maxFid: 1500 } });
-    expect(userFidInRange(c, r)).toBe("FID 2000 is greater than 1500");
+    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBe(
+      "FID 2000 is greater than 1500"
+    );
   });
 
   it("should return undefined if FID is within the specified range", () => {
     const c = cast({ author: { fid: 1200 } as any });
     const r = rule({ args: { minFid: 1000, maxFid: 1500 } });
-    expect(userFidInRange(c, r)).toBeUndefined();
+    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });

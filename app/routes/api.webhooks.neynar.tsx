@@ -1,5 +1,5 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import { Prisma } from "@prisma/client";
+import { ModeratedChannel, Prisma } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
 import { getChannel } from "~/lib/neynar.server";
@@ -223,7 +223,7 @@ export async function validateCast({
     const rule: Rule = JSON.parse(ruleSet.rule);
     const actions: Action[] = JSON.parse(ruleSet.actions);
 
-    const ruleEvaluation = evaluateRules(cast, rule);
+    const ruleEvaluation = evaluateRules(moderatedChannel, cast, rule);
 
     if (ruleEvaluation.didViolateRule) {
       /**
@@ -334,6 +334,7 @@ async function logModerationAction(
 }
 
 function evaluateRules(
+  moderatedChannel: ModeratedChannel,
   cast: Cast,
   rule: Rule
 ):
@@ -346,11 +347,11 @@ function evaluateRules(
       didViolateRule: false;
     } {
   if (rule.type === "CONDITION") {
-    return evaluateRule(cast, rule);
+    return evaluateRule(moderatedChannel, cast, rule);
   } else if (rule.type === "LOGICAL" && rule.conditions) {
     if (rule.operation === "AND") {
       const evaluations = rule.conditions.map((subRule) =>
-        evaluateRules(cast, subRule)
+        evaluateRules(moderatedChannel, cast, subRule)
       );
       if (evaluations.every((e) => e.didViolateRule)) {
         return {
@@ -367,7 +368,7 @@ function evaluateRules(
       }
     } else if (rule.operation === "OR") {
       const results = rule.conditions.map((subRule) =>
-        evaluateRules(cast, subRule)
+        evaluateRules(moderatedChannel, cast, subRule)
       );
 
       const violation = results.find((r) => r.didViolateRule);
@@ -383,6 +384,7 @@ function evaluateRules(
 }
 
 function evaluateRule(
+  channel: ModeratedChannel,
   cast: Cast,
   rule: Rule
 ):
@@ -395,7 +397,7 @@ function evaluateRule(
       didViolateRule: false;
     } {
   const check = ruleFunctions[rule.name];
-  const error = check(cast, rule);
+  const error = check({ channel, cast, rule });
 
   if (error) {
     return {

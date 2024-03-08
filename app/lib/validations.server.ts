@@ -5,9 +5,11 @@ import {
   ban,
   cooldown,
   hideQuietly,
+  isCohost,
   mute,
   warnAndHide,
 } from "./warpcast.server";
+import { ModeratedChannel } from "@prisma/client";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -169,6 +171,14 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
+  userIsCohost: {
+    friendlyName: "User Is Cohost",
+    description: "Check if the user is a cohost",
+    hidden: false,
+    invertable: false,
+    args: {},
+  },
+
   userFidInRange: {
     friendlyName: "User FID In Range",
     description: "Check if the user's FID is within a range",
@@ -285,6 +295,7 @@ export const ruleNames = [
   "userFollowerCount",
   "userIsNotActive",
   "userFidInRange",
+  "userIsCohost",
 ] as const;
 
 export const actionTypes = [
@@ -302,7 +313,13 @@ export const actionTypes = [
 export type RuleName = (typeof ruleNames)[number];
 export type ActionType = (typeof actionTypes)[number];
 
-export type CheckFunction = (cast: Cast, rule: Rule) => string | undefined;
+export type CheckFunctionArgs = {
+  channel: ModeratedChannel;
+  cast: Cast;
+  rule: Rule;
+};
+
+export type CheckFunction = (props: CheckFunctionArgs) => string | undefined;
 export type ActionFunction<T = any> = (args: {
   channel: string;
   cast: Cast;
@@ -377,6 +394,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
   userProfileContainsText: userProfileContainsText,
+  userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
   userIsNotActive: userIsNotActive,
@@ -396,7 +414,8 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
 } as const;
 
 // Rule: contains text, option to ignore case
-export function containsText(cast: Cast, rule: Rule) {
+export function containsText(props: CheckFunctionArgs) {
+  const { cast, rule } = props;
   const { searchText, caseSensitive } = rule.args;
 
   const text = caseSensitive ? cast.text : cast.text.toLowerCase();
@@ -409,7 +428,8 @@ export function containsText(cast: Cast, rule: Rule) {
   }
 }
 
-export function textMatchesPattern(cast: Cast, rule: Rule) {
+export function textMatchesPattern(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   const { pattern } = rule.args;
 
   const re2 = new RE2(pattern);
@@ -424,7 +444,8 @@ export function textMatchesPattern(cast: Cast, rule: Rule) {
 }
 
 // Rule: contains too many mentions (@...)
-export function containsTooManyMentions(cast: Cast, rule: Rule) {
+export function containsTooManyMentions(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   const { maxMentions } = rule.args;
 
   const mentions = cast.text.match(/@\w+/g) || [];
@@ -436,7 +457,8 @@ export function containsTooManyMentions(cast: Cast, rule: Rule) {
   }
 }
 
-export function containsLinks(cast: Cast, rule: Rule) {
+export function containsLinks(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   const maxLinks = rule.args.maxLinks || 0;
   const regex = /https?:\/\/\S+/gi;
   const matches = cast.text.match(regex) || [];
@@ -448,7 +470,8 @@ export function containsLinks(cast: Cast, rule: Rule) {
   }
 }
 
-export function userProfileContainsText(cast: Cast, rule: Rule) {
+export function userProfileContainsText(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   const { searchText, caseSensitive } = rule.args;
   const containsText = !caseSensitive
     ? cast.author.profile.bio.text
@@ -463,7 +486,8 @@ export function userProfileContainsText(cast: Cast, rule: Rule) {
   }
 }
 
-export function userDisplayNameContainsText(cast: Cast, rule: Rule) {
+export function userDisplayNameContainsText(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   const { searchText, caseSensitive } = rule.args;
   const containsText = !caseSensitive
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
@@ -476,7 +500,8 @@ export function userDisplayNameContainsText(cast: Cast, rule: Rule) {
   }
 }
 
-export function userFollowerCount(cast: Cast, rule: Rule) {
+export function userFollowerCount(props: CheckFunctionArgs) {
+  const { cast, rule } = props;
   const { min, max } = rule.args as { min?: number; max?: number };
 
   if (min) {
@@ -492,8 +517,22 @@ export function userFollowerCount(cast: Cast, rule: Rule) {
   }
 }
 
+export function userIsCohost(args: CheckFunctionArgs) {
+  const { channel } = args;
+
+  const isUserCohost = isCohost({
+    fid: args.cast.author.fid,
+    channel: channel.id,
+  });
+
+  if (!isUserCohost) {
+    return `User is not a cohost`;
+  }
+}
+
 // Rule: user active_status must be active
-export function userIsNotActive(cast: Cast, rule: Rule) {
+export function userIsNotActive(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   if (!rule.invert && cast.author.active_status !== "active") {
     return `User is not active`;
   } else if (rule.invert && cast.author.active_status === "active") {
@@ -502,7 +541,8 @@ export function userIsNotActive(cast: Cast, rule: Rule) {
 }
 
 // Rule: user fid must be in range
-export function userFidInRange(cast: Cast, rule: Rule) {
+export function userFidInRange(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
   const { minFid, maxFid } = rule.args as { minFid?: number; maxFid?: number };
 
   if (minFid) {
