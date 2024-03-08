@@ -10,7 +10,7 @@ import {
   actionFunctions,
   ruleFunctions,
 } from "~/lib/validations.server";
-import { ban, hideQuietly, isCohost } from "~/lib/warpcast.server";
+import { hideQuietly, isCohost } from "~/lib/warpcast.server";
 
 export const userPlans = {
   basic: {
@@ -223,7 +223,7 @@ export async function validateCast({
     const rule: Rule = JSON.parse(ruleSet.rule);
     const actions: Action[] = JSON.parse(ruleSet.actions);
 
-    const ruleEvaluation = evaluateRules(moderatedChannel, cast, rule);
+    const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
 
     if (ruleEvaluation.didViolateRule) {
       /**
@@ -333,11 +333,11 @@ async function logModerationAction(
   });
 }
 
-function evaluateRules(
+async function evaluateRules(
   moderatedChannel: ModeratedChannel,
   cast: Cast,
   rule: Rule
-):
+): Promise<
   | {
       didViolateRule: true;
       failedRule: Rule;
@@ -345,13 +345,16 @@ function evaluateRules(
     }
   | {
       didViolateRule: false;
-    } {
+    }
+> {
   if (rule.type === "CONDITION") {
     return evaluateRule(moderatedChannel, cast, rule);
   } else if (rule.type === "LOGICAL" && rule.conditions) {
     if (rule.operation === "AND") {
-      const evaluations = rule.conditions.map((subRule) =>
-        evaluateRules(moderatedChannel, cast, subRule)
+      const evaluations = await Promise.all(
+        rule.conditions.map((subRule) =>
+          evaluateRules(moderatedChannel, cast, subRule)
+        )
       );
       if (evaluations.every((e) => e.didViolateRule)) {
         return {
@@ -367,8 +370,10 @@ function evaluateRules(
         return { didViolateRule: false };
       }
     } else if (rule.operation === "OR") {
-      const results = rule.conditions.map((subRule) =>
-        evaluateRules(moderatedChannel, cast, subRule)
+      const results = await Promise.all(
+        rule.conditions.map((subRule) =>
+          evaluateRules(moderatedChannel, cast, subRule)
+        )
       );
 
       const violation = results.find((r) => r.didViolateRule);
@@ -383,11 +388,11 @@ function evaluateRules(
   return { didViolateRule: false };
 }
 
-function evaluateRule(
+async function evaluateRule(
   channel: ModeratedChannel,
   cast: Cast,
   rule: Rule
-):
+): Promise<
   | {
       didViolateRule: true;
       failedRule: Rule;
@@ -395,9 +400,10 @@ function evaluateRule(
     }
   | {
       didViolateRule: false;
-    } {
+    }
+> {
   const check = ruleFunctions[rule.name];
-  const error = check({ channel, cast, rule });
+  const error = await check({ channel, cast, rule });
 
   if (error) {
     return {

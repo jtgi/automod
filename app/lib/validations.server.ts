@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
@@ -319,7 +320,9 @@ export type CheckFunctionArgs = {
   rule: Rule;
 };
 
-export type CheckFunction = (props: CheckFunctionArgs) => string | undefined;
+export type CheckFunction = (
+  props: CheckFunctionArgs
+) => (string | undefined) | Promise<string | undefined>;
 export type ActionFunction<T = any> = (args: {
   channel: string;
   cast: Cast;
