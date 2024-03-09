@@ -4,14 +4,18 @@ import fs from "node:fs";
 
 async function main() {
   const ntoken = process.env.NEYNAR_API_KEY;
-  const wtoken = process.env.WARP_TOKEN;
+  const wtoken = process.env.WARPCAST_TOKEN;
   const channel = process.env.CHANNEL;
-  const limit = process.env.LIMIT;
+  let limit = parseInt(process.env.LIMIT);
+  limit = isNaN(limit) ? Number.MAX_SAFE_INTEGER : limit;
 
   const warpcasts = [];
   let latestMainCastTimestamp = undefined;
 
+  console.log("fetching casts from warpcast...");
+
   while (warpcasts.length < limit) {
+    console.log("fetching new page...");
     const res1 = await axios.post(
       "https://client.warpcast.com/v2/feed-items",
       {
@@ -29,8 +33,11 @@ async function main() {
     );
 
     const items = res1.data.result.items;
-    latestMainCastTimestamp = res1.data.result.latestMainCastTimestamp;
+    if (!latestMainCastTimestamp) {
+      latestMainCastTimestamp = res1.data.result.latestMainCastTimestamp;
+    }
     if (items.length === 0) {
+      console.log("no more items", items, res1.data, res1.headers);
       break;
     }
 
@@ -39,8 +46,11 @@ async function main() {
     }
   }
 
+  console.log("fetching casts from neynar...");
+
   const neynarCasts = [];
   while (neynarCasts.length < limit) {
+    console.log(`fetching new page...`);
     const res2 = await axios.get(
       `https://api.neynar.com/v2/farcaster/feed/channels?channel_ids=${channel}&with_recasts=true&with_replies=false&limit=100`,
       {

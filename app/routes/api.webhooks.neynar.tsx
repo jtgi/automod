@@ -99,6 +99,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  if (moderatedChannel.ruleSets.length === 0) {
+    console.log(`Channel ${moderatedChannel.id} has no rules. Doing nothing.`);
+    return json({ message: "Channel has no rules" }, { status: 200 });
+  }
+
   const alreadyProcessed = await db.moderationLog.findFirst({
     where: {
       castHash: webhookNotif.data.hash,

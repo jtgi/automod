@@ -386,7 +386,7 @@ export const RuleSetSchema = z.object({
 export const ModeratedChannelSchema = z.object({
   id: z.string(),
   banThreshold: z.coerce.number().nullable(),
-  ruleSets: z.array(RuleSetSchema).min(1),
+  ruleSets: z.array(RuleSetSchema),
 });
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
