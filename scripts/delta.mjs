@@ -36,13 +36,14 @@ async function main() {
     if (!latestMainCastTimestamp) {
       latestMainCastTimestamp = res1.data.result.latestMainCastTimestamp;
     }
-    if (items.length === 0) {
-      console.log("no more items", items, res1.data, res1.headers);
-      break;
-    }
 
     for (const item of items) {
       warpcasts.push(item);
+    }
+
+    if (items.length === 0) {
+      console.log("no more items");
+      break;
     }
   }
 
@@ -52,7 +53,7 @@ async function main() {
   while (neynarCasts.length < limit) {
     console.log(`fetching new page...`);
     const res2 = await axios.get(
-      `https://api.neynar.com/v2/farcaster/feed/channels?channel_ids=${channel}&with_recasts=true&with_replies=false&limit=100`,
+      `https://api.neynar.com/v2/farcaster/feed/channels?channel_ids=${channel}&with_replies=false&limit=100`,
       {
         headers: {
           api_key: ntoken,

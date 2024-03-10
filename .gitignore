@@ -10,3 +10,4 @@ node_modules
 docs.txt
 # Sentry Config File
 .sentryclirc
+scripts/*.json

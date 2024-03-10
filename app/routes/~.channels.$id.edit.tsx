@@ -17,8 +17,8 @@ import {
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
-import { ChannelForm } from "./~.channels.new";
 import { isCohost } from "~/lib/warpcast.server";
+import { ChannelForm } from "~/components/channel-form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -106,7 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { user, env, channel, ruleNames, ruleDefinitions, actionDefinitions } =
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions } =
     useTypedLoaderData<typeof loader>();
 
   const patchedRuleSets = channel.ruleSets.map((ruleSet) => {
