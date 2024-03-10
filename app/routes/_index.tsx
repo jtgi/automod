@@ -5,7 +5,7 @@ import {
 } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useNavigate } from "@remix-run/react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { useCallback } from "react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
@@ -61,32 +61,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Login() {
-  const { user, env, error, invite } = useTypedLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const { user, env, error } = useTypedLoaderData<typeof loader>();
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,
     domain: new URL(env.hostUrl).host.split(":")[0],
     siweUri: `${env.hostUrl}/login`,
   };
-
-  const handleSuccess = useCallback((res: StatusAPIResponse) => {
-    invariant(res.message, "message is required");
-    invariant(res.signature, "signature is required");
-    invariant(res.nonce, "nonce is required");
-
-    const params = new URLSearchParams();
-    params.append("message", res.message);
-    params.append("signature", res.signature);
-    params.append("nonce", res.nonce);
-    res.username && params.append("username", res.username);
-    res.pfpUrl && params.append("pfpUrl", res.pfpUrl);
-    invite && params.append("invite", invite);
-
-    navigate(`/auth/farcaster?${params}`, {
-      replace: true,
-    });
-  }, []);
 
   return (
     <AuthKitProvider config={farcasterConfig}>
@@ -97,6 +78,29 @@ export default function Login() {
             "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
         }}
       >
+        <div className="absolute right-5 top-5">
+          {user ? (
+            <Button
+              asChild
+              size={"lg"}
+              className="no-underline text-white/50"
+              variant={"ghost"}
+            >
+              <Link to="/~">
+                Continue <ArrowRight className="inline ml-2 w-4 h-4" />
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              asChild
+              size={"lg"}
+              className="no-underline text-white/50"
+              variant={"ghost"}
+            >
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
+        </div>
         <div className="max-w-xl flex flex-col justify-center items-center">
           <Link to="/~" className="no-underline">
             <h1 className="text-6xl logo text-white opacity-80">automod</h1>
@@ -112,8 +116,15 @@ export default function Login() {
           )}
 
           {user ? (
-            <Button asChild size={"lg"} className="no-underline">
-              <Link to="/~">Continue</Link>
+            <Button
+              asChild
+              size={"lg"}
+              className="no-underline"
+              variant={"secondary"}
+            >
+              <Link to="/~">
+                Continue <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
             </Button>
           ) : (
             <div className="text-white opacity-60 text-sm">
@@ -122,6 +133,7 @@ export default function Login() {
                 className="text-white opacity-90 hover:opacity-100 transition-all"
                 href="https://tally.so/r/woMkMb"
                 target="_blank"
+                rel="noreferrer"
               >
                 Join the waitlist
               </a>
