@@ -10,7 +10,7 @@ import {
   actionFunctions,
   ruleFunctions,
 } from "~/lib/validations.server";
-import { hideQuietly, isCohost } from "~/lib/warpcast.server";
+import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
 
 export const userPlans = {
   basic: {
@@ -142,13 +142,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  if (moderatedChannel.excludeCohosts && cohost) {
-    console.log(
-      `User ${moderatedChannel.userId} is a cohost and moderation is disabled . Doing nothing.`
-    );
-    return json({ message: "Cohosts are excluded" });
-  }
-
   const channel = await getChannel({ name: moderatedChannel.id }).catch(
     () => null
   );
@@ -190,6 +183,14 @@ export async function validateCast({
   if (isExcluded) {
     console.log(`User @${cast.author.username} is excluded. Doing nothing.`);
     return;
+  }
+
+  if (moderatedChannel.excludeCohosts) {
+    const cohosts = await getChannelHosts({ channel: channel.id });
+    if (cohosts.result.hosts.find((c) => c.fid === cast.author.fid)) {
+      console.log(`User @${cast.author.username} is a cohost. Doing nothing.`);
+      return;
+    }
   }
 
   const cooldown = await db.cooldown.findFirst({

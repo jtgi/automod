@@ -39,6 +39,13 @@ export async function getChannelHosts(props: {
     return cached;
   }
 
+  if (process.env.NODE_ENV === "test") {
+    return {
+      result: {
+        hosts: [],
+      },
+    };
+  }
   const result = await axios.get(
     `https://client.warpcast.com/v2/get-channel-hosts?channelKey=${props.channel}`
   );

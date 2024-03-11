@@ -13,15 +13,20 @@ import { validateCast } from "~/routes/api.webhooks.neynar";
 import { prisma } from "tests/setup";
 
 vi.mock("axios", () => {
-  const axiosDefaultMock = vi.fn(() =>
-    Promise.resolve({ data: "default response" })
-  ) as any;
-  axiosDefaultMock.get = vi.fn(() => Promise.resolve({ data: "get response" }));
-  axiosDefaultMock.post = vi.fn(() =>
-    Promise.resolve({ data: "post response" })
-  );
-  axiosDefaultMock.put = vi.fn(() => Promise.resolve({ data: "put response" }));
-  return { default: axiosDefaultMock };
+  // Mock the specific methods
+  const mockAxios = {
+    get: vi.fn(() => ({ data: "get response" })),
+    post: vi.fn(() => Promise.resolve({ data: "post response" })),
+    put: vi.fn(() => Promise.resolve({ data: "put response" })),
+  };
+
+  // Create a mock for the default export that includes the above methods
+  const axiosInstance = {
+    ...mockAxios,
+    create: () => mockAxios, // If you're using axios.create() somewhere
+  };
+
+  return { default: axiosInstance, ...mockAxios };
 });
 
 describe("validateCast", () => {
