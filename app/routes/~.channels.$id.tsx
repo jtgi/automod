@@ -101,7 +101,7 @@ export default function ChannelRoot() {
             }
           />
         </div>
-        <div className="pt-2">
+        <div className="pt-2 w-full">
           <Outlet />
         </div>
       </div>
@@ -117,11 +117,16 @@ export default function ChannelRoot() {
                   <a
                     href={`https://warpcast.com/~/channel/${channel.id}`}
                     target="_blank"
+                    rel="noreferrer"
                   >
                     /{channel.id}
                   </a>{" "}
                   and add{" "}
-                  <a href="https://warpcast.com/automod" target="_blank">
+                  <a
+                    href="https://warpcast.com/automod"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     @automod
                   </a>{" "}
                   as a cohost to enable moderation.
@@ -131,6 +136,7 @@ export default function ChannelRoot() {
                     className="no-underline"
                     href={`https://warpcast.com/~/channel/${channel.id}`}
                     target="_blank"
+                    rel="noreferrer"
                   >
                     Open /{channel.id}{" "}
                     <ArrowUpRight className="inline ml-1 w-3 h-3" />

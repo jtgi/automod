@@ -123,7 +123,7 @@ export default function FrameConfig() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <ChannelForm
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}

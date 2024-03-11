@@ -10,6 +10,13 @@ import {
   actionDefinitions,
   ruleDefinitions,
 } from "~/lib/validations.server";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "~/components/ui/accordion";
+
 import { Input } from "~/components/ui/input";
 import { FieldLabel } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -17,7 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
-import { Plus, X } from "lucide-react";
+import { MoreVerticalIcon, Plus, X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -37,6 +44,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Button } from "./ui/button";
+import { useState } from "react";
+import { cn } from "~/lib/utils";
 
 export type FormValues = {
   id?: string;
@@ -75,6 +84,8 @@ export function ChannelForm(props: {
     control,
     name: "ruleSets",
   });
+
+  const [openRule, setOpenRule] = useState(0);
 
   const onSubmit = (data: FormValues) => {
     const newRuleSets = [];
@@ -124,7 +135,7 @@ export function ChannelForm(props: {
   };
 
   return (
-    <div>
+    <div className="w-full">
       <FormProvider {...methods}>
         <form
           id="channel-form"
@@ -156,14 +167,33 @@ export function ChannelForm(props: {
               </FieldLabel> */}
           </fieldset>
 
-          <fieldset disabled={isSubmitting} className="space-y-7">
-            {fields.map((ruleSetField, ruleSetIndex) => (
-              <Card key={ruleSetField.id}>
-                <CardHeader className="bg-slate-50 rounded-xl py-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-foreground">
-                      Rule Set {ruleSetIndex + 1}
-                    </CardTitle>
+          <fieldset disabled={isSubmitting} className="space-y-7 w-full">
+            <Accordion
+              type="single"
+              collapsible
+              className="w-full"
+              value={openRule === undefined ? "item-0" : `item-${openRule}`}
+              onValueChange={(value) =>
+                setOpenRule(Number(value.split("-")[1]))
+              }
+            >
+              {fields.map((ruleSetField, ruleSetIndex) => (
+                <AccordionItem
+                  key={ruleSetField.id}
+                  value={`item-${ruleSetIndex}`}
+                >
+                  <AccordionTrigger
+                    className={cn(
+                      "hover:no-underline no-underline w-full py-2 px-4 border bg-slate-50/50 hover:bg-slate-50 data-[state=open]:rounded-b-none",
+                      ruleSetIndex === 0 ? "rounded-t-lg" : "",
+                      ruleSetIndex === fields.length - 1
+                        ? "data-[state=closed]:rounded-b-lg data-[state=open]:rounded-b-none"
+                        : ""
+                    )}
+                    hideChevron
+                  >
+                    <p className="font-semibold">Rule Set {ruleSetIndex + 1}</p>
+
                     <Button
                       type="button"
                       variant={"ghost"}
@@ -176,33 +206,31 @@ export function ChannelForm(props: {
                           remove(ruleSetIndex);
                         }
                       }}
-                      className="rounded-full"
+                      className="rounded-full -mr-5"
                     >
                       <X className="w-5 h-5" />
                     </Button>
-                  </div>
-                </CardHeader>
+                  </AccordionTrigger>
 
-                <hr />
-
-                <CardContent className="pt-4">
-                  <RuleSetEditor
-                    actionDefinitions={props.actionDefinitions}
-                    ruleDefinitions={props.ruleDefinitions}
-                    rulesNames={props.ruleNames}
-                    ruleSetIndex={ruleSetIndex}
-                    watch={watch}
-                    control={control}
-                    register={register}
-                  />
-                </CardContent>
-              </Card>
-            ))}
+                  <AccordionContent className="p-6 border">
+                    <RuleSetEditor
+                      actionDefinitions={props.actionDefinitions}
+                      ruleDefinitions={props.ruleDefinitions}
+                      rulesNames={props.ruleNames}
+                      ruleSetIndex={ruleSetIndex}
+                      watch={watch}
+                      control={control}
+                      register={register}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
 
             <Button
               type="button"
               variant={"secondary"}
-              onClick={() =>
+              onClick={() => {
                 append({
                   id: "",
                   active: true,
@@ -210,9 +238,11 @@ export function ChannelForm(props: {
                   ruleParsed: [],
                   actionsParsed: [],
                   logicType: "and",
-                })
-              }
-              className="add-ruleSet-button-class"
+                });
+
+                setOpenRule(fields.length);
+              }}
+              className="w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 mr-1" /> Rule Set
             </Button>
@@ -382,6 +412,7 @@ function RuleSetEditor(props: {
               args: {},
             })
           }
+          className="w-full sm:w-auto"
         >
           <Plus className="w-4 h-4 mr-1" /> Rule
         </Button>
@@ -474,6 +505,7 @@ function RuleSetEditor(props: {
             type="button"
             onClick={() => appendAction({ type: "hideQuietly" })}
             variant={"secondary"}
+            className="w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-1" /> Action
           </Button>
