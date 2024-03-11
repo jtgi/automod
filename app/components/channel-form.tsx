@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/accordion";
 
 import { Input } from "~/components/ui/input";
-import { FieldLabel } from "~/components/ui/fields";
+import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
@@ -46,10 +46,13 @@ import {
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { cn } from "~/lib/utils";
+import { Textarea } from "./ui/textarea";
 
 export type FormValues = {
   id?: string;
   banThreshold?: number | null;
+  excludeUsernames?: string;
+  excludeCohosts: boolean;
   ruleSets: Array<{
     id?: string;
     active: boolean;
@@ -121,9 +124,12 @@ export function ChannelForm(props: {
       }
     }
 
+    const excludeUsernamesParsed = data.excludeUsernames?.split(/\r\n|\r|\n/);
+
     fetcher.submit(
       {
         ...data,
+        excludeUsernames: excludeUsernamesParsed ?? null,
         banThreshold: data.banThreshold || null,
         ruleSets: newRuleSets,
       },
@@ -143,18 +149,23 @@ export function ChannelForm(props: {
           className="w-full space-y-7"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <fieldset disabled={isSubmitting} className="space-y-7">
-            <FieldLabel label="Channel Name" className="flex-col items-start">
-              <Input
-                disabled={!!props.defaultValues.id}
-                placeholder="base"
-                pattern="^[a-zA-Z0-9\-]+$"
-                required
-                {...register("id", { required: true })}
-              />
-            </FieldLabel>
+          {!props.defaultValues.id && (
+            <>
+              <fieldset disabled={isSubmitting} className="space-y-7">
+                <FieldLabel
+                  label="Channel Name"
+                  className="flex-col items-start"
+                >
+                  <Input
+                    disabled={!!props.defaultValues.id}
+                    placeholder="base"
+                    pattern="^[a-zA-Z0-9\-]+$"
+                    required
+                    {...register("id", { required: true })}
+                  />
+                </FieldLabel>
 
-            {/* <FieldLabel
+                {/* <FieldLabel
                 label="Warns Before Permanently Banned"
                 className="flex-col items-start"
                 description="The number of warns before a user is permanently banned. Banning is not reversable. Example, if its set to 2, when the user breaks rules the 3rd time they are banned."
@@ -165,87 +176,144 @@ export function ChannelForm(props: {
                   {...register("banThreshold")}
                 />
               </FieldLabel> */}
+              </fieldset>
+
+              <div className="py-6">
+                <hr />
+              </div>
+            </>
+          )}
+
+          <fieldset disabled={isSubmitting} className="space-y-6 w-full">
+            <div>
+              <p className="font-medium">Rule Sets</p>
+              <p className="text-gray-500 text-sm">
+                Configure rules and actions to take whenever a cast comes in to
+                your channel.
+              </p>
+            </div>
+
+            <div>
+              <Accordion
+                type="single"
+                collapsible
+                className="w-full mb-6"
+                value={openRule === undefined ? "item-0" : `item-${openRule}`}
+                onValueChange={(value) =>
+                  setOpenRule(Number(value.split("-")[1]))
+                }
+              >
+                {fields.map((ruleSetField, ruleSetIndex) => (
+                  <AccordionItem
+                    key={ruleSetField.id}
+                    value={`item-${ruleSetIndex}`}
+                  >
+                    <AccordionTrigger
+                      className={cn(
+                        "hover:no-underline no-underline w-full py-2 px-4 border bg-slate-50/50 hover:bg-slate-50 data-[state=open]:rounded-b-none",
+                        ruleSetIndex === 0 ? "rounded-t-lg" : "",
+                        ruleSetIndex === fields.length - 1
+                          ? "data-[state=closed]:rounded-b-lg data-[state=open]:rounded-b-none"
+                          : ""
+                      )}
+                      hideChevron
+                    >
+                      <p className="font-semibold">
+                        Rule Set {ruleSetIndex + 1}
+                      </p>
+
+                      <Button
+                        type="button"
+                        variant={"ghost"}
+                        onClick={() => {
+                          if (
+                            confirm(
+                              "Are you sure you want to delete this rule set?"
+                            )
+                          ) {
+                            remove(ruleSetIndex);
+                          }
+                        }}
+                        className="rounded-full -mr-3"
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="p-6 border">
+                      <RuleSetEditor
+                        actionDefinitions={props.actionDefinitions}
+                        ruleDefinitions={props.ruleDefinitions}
+                        rulesNames={props.ruleNames}
+                        ruleSetIndex={ruleSetIndex}
+                        watch={watch}
+                        control={control}
+                        register={register}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+
+              <Button
+                type="button"
+                variant={"secondary"}
+                onClick={() => {
+                  append({
+                    id: "",
+                    active: true,
+                    target: "all" as const,
+                    ruleParsed: [],
+                    actionsParsed: [],
+                    logicType: "and",
+                  });
+
+                  setOpenRule(fields.length);
+                }}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Rule Set
+              </Button>
+            </div>
           </fieldset>
 
-          <fieldset disabled={isSubmitting} className="space-y-7 w-full">
-            <Accordion
-              type="single"
-              collapsible
-              className="w-full"
-              value={openRule === undefined ? "item-0" : `item-${openRule}`}
-              onValueChange={(value) =>
-                setOpenRule(Number(value.split("-")[1]))
-              }
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <fieldset disabled={isSubmitting} className="space-y-6">
+            <div>
+              <p className="font-medium">Bypass</p>
+              <p className="text-gray-500 text-sm">
+                Exclude certain users from being checked by all rules.
+              </p>
+            </div>
+
+            <SliderField
+              label="Cohosts"
+              description="Exclude cohosts from all moderation"
             >
-              {fields.map((ruleSetField, ruleSetIndex) => (
-                <AccordionItem
-                  key={ruleSetField.id}
-                  value={`item-${ruleSetIndex}`}
-                >
-                  <AccordionTrigger
-                    className={cn(
-                      "hover:no-underline no-underline w-full py-2 px-4 border bg-slate-50/50 hover:bg-slate-50 data-[state=open]:rounded-b-none",
-                      ruleSetIndex === 0 ? "rounded-t-lg" : "",
-                      ruleSetIndex === fields.length - 1
-                        ? "data-[state=closed]:rounded-b-lg data-[state=open]:rounded-b-none"
-                        : ""
-                    )}
-                    hideChevron
-                  >
-                    <p className="font-semibold">Rule Set {ruleSetIndex + 1}</p>
-
-                    <Button
-                      type="button"
-                      variant={"ghost"}
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Are you sure you want to delete this rule set?"
-                          )
-                        ) {
-                          remove(ruleSetIndex);
-                        }
-                      }}
-                      className="rounded-full -mr-5"
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
-                  </AccordionTrigger>
-
-                  <AccordionContent className="p-6 border">
-                    <RuleSetEditor
-                      actionDefinitions={props.actionDefinitions}
-                      ruleDefinitions={props.ruleDefinitions}
-                      rulesNames={props.ruleNames}
-                      ruleSetIndex={ruleSetIndex}
-                      watch={watch}
-                      control={control}
-                      register={register}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-
-            <Button
-              type="button"
-              variant={"secondary"}
-              onClick={() => {
-                append({
-                  id: "",
-                  active: true,
-                  target: "all" as const,
-                  ruleParsed: [],
-                  actionsParsed: [],
-                  logicType: "and",
-                });
-
-                setOpenRule(fields.length);
-              }}
-              className="w-full sm:w-auto"
+              <Controller
+                name={`excludeCohosts`}
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    onCheckedChange={field.onChange}
+                    checked={field.value}
+                  />
+                )}
+              />
+            </SliderField>
+            <FieldLabel
+              label="Farcaster Usernames"
+              description="One per line."
+              className="flex-col items-start"
             >
-              <Plus className="w-4 h-4 mr-1" /> Rule Set
-            </Button>
+              <Textarea
+                placeholder="jtgi&#10;wake&#10;deployer"
+                {...register("excludeUsernames")}
+              />
+            </FieldLabel>
           </fieldset>
 
           <div className="py-6">

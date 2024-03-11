@@ -7,6 +7,16 @@ import { Action, Rule } from "./validations.server";
 const db = singleton("prisma", () =>
   new PrismaClient().$extends({
     result: {
+      moderatedChannel: {
+        excludeUsernamesParsed: {
+          needs: {
+            excludeUsernames: true,
+          },
+          compute(data): string[] {
+            return JSON.parse(data.excludeUsernames);
+          },
+        },
+      },
       ruleSet: {
         ruleParsed: {
           needs: {

@@ -160,6 +160,7 @@ describe("validateCast", () => {
         id: "jtgi",
         userId: u0.id,
         banThreshold: 3,
+        excludeCohosts: true,
         ruleSets: {
           create: [
             {
@@ -631,12 +632,62 @@ describe("validateCast", () => {
     expect(logs2[1].action).toBe("hideQuietly");
   });
 
+  it("should exclude usernames", async () => {
+    const mc = await prisma.moderatedChannel.create({
+      data: {
+        id: "jtgi",
+        userId: u0.id,
+        banThreshold: 3,
+        excludeUsernames: JSON.stringify(["jtgi"]),
+        ruleSets: {
+          create: [
+            {
+              rule: JSON.stringify(
+                rule({
+                  name: "containsText",
+                  type: "CONDITION",
+                  args: {
+                    searchText: "spam",
+                    caseSensitive: true,
+                  },
+                })
+              ),
+              actions: JSON.stringify([action({ type: "warnAndHide" })]),
+            },
+          ],
+        },
+      },
+      include: { user: true, ruleSets: { where: { active: true } } },
+    });
+
+    await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        text: "spam",
+        hash: "gm",
+        author: neynarUser({
+          fid: 5179,
+          username: "jtgi",
+          pfp_url: "https://google.com",
+        }),
+      }),
+    });
+
+    const logs = await prisma.moderationLog.findMany({
+      where: { channelId: mc.id },
+    });
+
+    expect(logs).toHaveLength(0);
+  });
+
   it("should mute the user", async () => {
     const mc = await prisma.moderatedChannel.create({
       data: {
         id: "jtgi",
         userId: u0.id,
         banThreshold: 3,
+        excludeCohosts: true,
         ruleSets: {
           create: [
             {

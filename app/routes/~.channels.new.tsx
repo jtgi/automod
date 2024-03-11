@@ -80,6 +80,8 @@ export async function action({ request }: ActionFunctionArgs) {
         },
       },
       banThreshold: channelResult.data.banThreshold,
+      excludeCohosts: channelResult.data.excludeCohosts,
+      excludeUsernames: JSON.stringify(channelResult.data.excludeUsernames),
       ruleSets: {
         create: channelResult.data.ruleSets.map((ruleSet) => {
           return {

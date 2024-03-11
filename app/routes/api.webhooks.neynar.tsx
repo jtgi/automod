@@ -27,16 +27,17 @@ export const userPlans = {
   },
 };
 
-const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelArgs>()({
-  include: {
-    user: true,
-    ruleSets: {
-      where: {
-        active: true,
+const FullModeratedChannel =
+  Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
+    include: {
+      user: true,
+      ruleSets: {
+        where: {
+          active: true,
+        },
       },
     },
-  },
-});
+  });
 
 type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
   typeof FullModeratedChannel
@@ -141,6 +142,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  if (moderatedChannel.excludeCohosts && cohost) {
+    console.log(
+      `User ${moderatedChannel.userId} is a cohost and moderation is disabled . Doing nothing.`
+    );
+    return json({ message: "Cohosts are excluded" });
+  }
+
   const channel = await getChannel({ name: moderatedChannel.id }).catch(
     () => null
   );
@@ -175,6 +183,15 @@ export async function validateCast({
   moderatedChannel: FullModeratedChannel;
   cast: Cast;
 }) {
+  const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(
+    cast.author.username
+  );
+
+  if (isExcluded) {
+    console.log(`User @${cast.author.username} is excluded. Doing nothing.`);
+    return;
+  }
+
   const cooldown = await db.cooldown.findFirst({
     where: {
       affectedUserId: String(cast.author.fid),

@@ -31,6 +31,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const data = await request.json();
 
+  if (process.env.NODE_ENV === "development") {
+    console.log(JSON.stringify(data, null, 2));
+  }
+
   const isHost = await isCohost({
     fid: +user.id,
     channel: data.id,
@@ -63,6 +67,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
     data: {
       banThreshold: ch.data.banThreshold,
+      excludeCohosts: ch.data.excludeCohosts,
+      excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
       ruleSets: {
         deleteMany: {},
         create: ch.data.ruleSets.map((ruleSet) => {
@@ -130,6 +136,7 @@ export default function FrameConfig() {
         ruleNames={ruleNames}
         defaultValues={{
           ...channel,
+          excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
           ruleSets: patchedRuleSets,
         }}
       />

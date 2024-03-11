@@ -386,6 +386,20 @@ export const RuleSetSchema = z.object({
 export const ModeratedChannelSchema = z.object({
   id: z.string(),
   banThreshold: z.coerce.number().nullable(),
+  excludeUsernames: z
+    .array(z.string())
+    .refine((usernames) =>
+      usernames
+        .map((u) => u.trim())
+        .every((u) => !/\s/.test(u) && u.length <= 30, {
+          message: "No spaces, and no more than 30 characters.",
+        })
+    )
+    .transform((usernames) =>
+      usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim())
+    )
+    .default([]),
+  excludeCohosts: z.boolean().default(true),
   ruleSets: z.array(RuleSetSchema),
 });
 
