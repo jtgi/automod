@@ -83,4 +83,14 @@
   a {
     @apply text-primary underline;
   }
+
+  #fc-btn-wrap > div > button {
+    all: unset;
+    @apply border border-zinc-200 bg-white shadow-sm hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-zinc-300 px-2 py-2
+    w-[200px] sm:w-[150px] bg-transparent text-transparent hover:bg-transparent hover:text-transparent
+  }
+
+  #fc-btn-wrap div > button > span, #fc-btn-wrap div > button > svg {
+      visibility: hidden;
+  }
 }

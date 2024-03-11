@@ -3,7 +3,7 @@ export default {
   browserNodeBuiltinsPolyfill: {
     modules: {
       buffer: true,
-    }
+    },
   },
   ignoredRouteFiles: ["**/.*"],
 };

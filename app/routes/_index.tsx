@@ -3,16 +3,18 @@ import {
   SignInButton,
   StatusAPIResponse,
 } from "@farcaster/auth-kit";
+import { ClientOnly } from "remix-utils/client-only";
 import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useNavigate } from "@remix-run/react";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
-import { useCallback } from "react";
-import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import invariant from "tiny-invariant";
+import { ArrowRight, ArrowUpRight, Loader, Loader2 } from "lucide-react";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { authenticator } from "~/lib/auth.server";
 import { getSharedEnv } from "~/lib/utils.server";
+import { Farcaster } from "~/components/icons/farcaster";
+import { useCallback, useState } from "react";
+import invariant from "tiny-invariant";
 
 // export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
@@ -61,13 +63,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Home() {
-  const { user, env, error } = useTypedLoaderData<typeof loader>();
+  const { user, env, error, invite } = useTypedLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const [loggingIn, setLoggingIn] = useState(false);
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,
     domain: new URL(env.hostUrl).host.split(":")[0],
     siweUri: `${env.hostUrl}/login`,
   };
+
+  const handleSuccess = useCallback((res: StatusAPIResponse) => {
+    setLoggingIn(true);
+    invariant(res.message, "message is required");
+    invariant(res.signature, "signature is required");
+    invariant(res.nonce, "nonce is required");
+
+    const params = new URLSearchParams();
+    params.append("message", res.message);
+    params.append("signature", res.signature);
+    params.append("nonce", res.nonce);
+    res.username && params.append("username", res.username);
+    res.pfpUrl && params.append("pfpUrl", res.pfpUrl);
+    invite && params.append("invite", invite);
+
+    navigate(`/auth/farcaster?${params}`, {
+      replace: true,
+    });
+  }, []);
 
   return (
     <AuthKitProvider config={farcasterConfig}>
@@ -78,29 +101,6 @@ export default function Home() {
             "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
         }}
       >
-        <div className="absolute right-5 top-5">
-          {user ? (
-            <Button
-              asChild
-              size={"lg"}
-              className="no-underline text-white/50"
-              variant={"ghost"}
-            >
-              <Link to="/~">
-                Continue <ArrowRight className="inline ml-2 w-4 h-4" />
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              asChild
-              size={"lg"}
-              className="no-underline text-white/50"
-              variant={"ghost"}
-            >
-              <Link to="/login">Login</Link>
-            </Button>
-          )}
-        </div>
         <div className="max-w-xl flex flex-col justify-center items-center">
           <Link to="/~" className="no-underline">
             <h1 className="text-6xl logo text-white opacity-80">automod</h1>
@@ -118,27 +118,50 @@ export default function Home() {
           {user ? (
             <Button
               asChild
-              size={"lg"}
-              className="no-underline"
-              variant={"secondary"}
+              className="no-underline relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/80 hover:bg-primary transition-all duration-100"
+              variant={"outline"}
             >
               <Link to="/~">
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
+                Go to App <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
           ) : (
-            <div className="text-white opacity-60 text-sm">
-              Now in private beta.{" "}
-              <a
-                className="text-white opacity-90 hover:opacity-100 transition-all"
-                href="https://tally.so/r/woMkMb"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Join the waitlist
-              </a>
-              <ArrowUpRight className="inline w-4 h-4" />
-            </div>
+            <>
+              <ClientOnly>
+                {() => {
+                  return (
+                    <Button
+                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/80 hover:bg-primary transition-all duration-100"
+                      variant={"outline"}
+                    >
+                      {loggingIn ? (
+                        <Loader2 className=" animate-spin h-4 w-4" />
+                      ) : (
+                        <>
+                          <Farcaster className="mr-2 h-5 w-5" />
+                          <span>Login with Farcaster</span>
+                          <div id="fc-btn-wrap" className="absolute">
+                            <SignInButton onSuccess={handleSuccess} />
+                          </div>
+                        </>
+                      )}
+                    </Button>
+                  );
+                }}
+              </ClientOnly>
+              <div className="text-white opacity-60 text-sm mt-2">
+                Now in private beta.{" "}
+                <a
+                  className="text-white opacity-90 hover:opacity-100 transition-all"
+                  href="https://tally.so/r/woMkMb"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Join the waitlist
+                </a>
+                <ArrowUpRight className="inline w-4 h-4" />
+              </div>
+            </>
           )}
         </div>
       </div>
