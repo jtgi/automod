@@ -30,13 +30,12 @@ export async function requireUser({ request }: { request: Request }) {
   return user;
 }
 
-export async function requireAdmin({ request }: { request: Request }) {
+export async function requireSuperAdmin({ request }: { request: Request }) {
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: `/`,
   });
 
-  // sup jtgi
-  if (user.id !== "5179") {
+  if (user.role !== "superadmin") {
     throw redirect(`/`, { status: 403 });
   }
 }

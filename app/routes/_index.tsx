@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export default function Login() {
+export default function Home() {
   const { user, env, error } = useTypedLoaderData<typeof loader>();
 
   const farcasterConfig = {

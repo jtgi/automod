@@ -92,15 +92,15 @@ export default function FrameConfig() {
                   <CardHeader>
                     <CardTitle>{channel.id}</CardTitle>
                     <CardDescription>
-                      {channel.ruleSets.length}{" "}
-                      {channel.ruleSets.length === 1 ? "rule" : "rules"}
+                      <div className="flex items-center justify-between">
+                        {channel.ruleSets.length}{" "}
+                        {channel.ruleSets.length === 1 ? "rule" : "rules"}
+                        {channel.comods.some((h) => h.fid === user.id) && (
+                          <Badge variant={"outline"}>Collaborator</Badge>
+                        )}
+                      </div>
                     </CardDescription>
                   </CardHeader>
-                  {channel.comods.some((h) => h.fid === user.id) && (
-                    <CardFooter>
-                      <Badge variant={"outline"}>Collaborator</Badge>
-                    </CardFooter>
-                  )}
                 </Card>
               </Link>
             ))}

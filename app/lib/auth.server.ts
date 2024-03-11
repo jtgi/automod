@@ -4,6 +4,7 @@ import { db } from "~/lib/db.server";
 import { createCookieSessionStorage } from "@remix-run/node";
 import { FarcasterStrategy } from "./farcaster-strategy";
 import { OtpStrategy } from "./otp-strategy";
+import { GodStrategy } from "./god-strategy";
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
@@ -21,6 +22,16 @@ export const { getSession, commitSession, destroySession } = sessionStorage;
 export const authenticator = new Authenticator<User>(sessionStorage, {
   throwOnError: true,
 });
+
+authenticator.use(
+  new GodStrategy(async ({ username }) => {
+    return db.user.findFirstOrThrow({
+      where: {
+        name: username,
+      },
+    });
+  })
+);
 
 authenticator.use(
   new OtpStrategy(async ({ code }) => {
