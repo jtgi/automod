@@ -30,6 +30,8 @@ export function moderatedChannel(
     active: true,
     url: faker.internet.url(),
     userId: faker.string.uuid(),
+    excludeCohosts: false,
+    excludeUsernames: "[]",
     banThreshold: null,
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
