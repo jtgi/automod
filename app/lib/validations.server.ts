@@ -133,6 +133,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     invertable: true,
     args: {
       searchText: {
+        required: true,
         type: "string",
         friendlyName: "Search Text",
         description: "The text to search for",
