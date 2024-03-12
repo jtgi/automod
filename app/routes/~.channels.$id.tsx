@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
-import { getSession } from "~/lib/auth.server";
+import { commitSession, getSession } from "~/lib/auth.server";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -32,11 +32,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     session.get("newChannel") !== undefined ||
     url.searchParams.get("newChannel") !== null;
 
-  return typedjson({
-    user,
-    channel,
-    isNewChannel,
-  });
+  return typedjson(
+    {
+      user,
+      channel,
+      isNewChannel,
+    },
+    {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    }
+  );
 }
 
 export default function ChannelRoot() {
