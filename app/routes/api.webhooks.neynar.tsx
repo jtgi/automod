@@ -1,4 +1,5 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import * as Sentry from "@sentry/remix";
 import { ModeratedChannel, Prisma } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
@@ -307,7 +308,13 @@ export async function validateCast({
           cast,
           action,
         }).catch((e) => {
-          console.error(e.response?.data);
+          Sentry.captureMessage(`Error in ${action.type} action`, {
+            extra: {
+              cast,
+              action,
+            },
+          });
+          console.error(e?.response?.data || e?.message || e);
           throw e;
         });
 
