@@ -87,7 +87,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     description:
       "automod is in private beta and invites are limited. Claim yours now.",
     image: await generateFrame({
-      message: "Invites are limited. Claim yours now.",
+      message: "Welcome to automod",
     }),
     postUrl: `${getSharedEnv().hostUrl}/frame-invites/${invite.id}`,
     buttons: [

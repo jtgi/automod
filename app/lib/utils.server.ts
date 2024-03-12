@@ -338,9 +338,8 @@ export async function parseMessage(payload: any) {
     throw new Error("Invalid message");
   }
 
-  if (
-    new URL(message.action.url).host !== new URL(getSharedEnv().hostUrl).host
-  ) {
+  const host = new URL(message.action.url).host;
+  if (host !== new URL(getSharedEnv().hostUrl).host && host !== "glass.cx") {
     throw new Error("No spoofs sir");
   }
 
