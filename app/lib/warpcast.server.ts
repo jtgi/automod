@@ -12,7 +12,10 @@ const http = axiosFactory.create();
 http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
   const config = err.config;
 
-  if (err.response.status === 429 && !config.__retryCount) {
+  if (
+    (err.response.status === 429 || err.response.status === 502) &&
+    !config.__retryCount
+  ) {
     config.__retryCount = 0;
   }
 
@@ -20,7 +23,9 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
     // Max retry limit
     config.__retryCount += 1;
     const backoffDelay = 2 ** config.__retryCount * 1000; // Exponential backoff
-    console.warn(`Rate limited, retrying in ${backoffDelay}ms`);
+    console.warn(
+      `Received HTTP ${err.response.status}, retrying in ${backoffDelay}ms`
+    );
 
     return new Promise((resolve) => {
       setTimeout(() => {
