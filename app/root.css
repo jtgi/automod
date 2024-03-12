@@ -90,7 +90,9 @@
     w-[200px] sm:w-[150px] bg-transparent text-transparent hover:bg-transparent hover:text-transparent
   }
 
-  #fc-btn-wrap div > button > span, #fc-btn-wrap div > button > svg {
+  #fc-btn-wrap div > button > span, .fc-authkit-signin-button > button > svg {
+
       visibility: hidden;
   }
+
 }

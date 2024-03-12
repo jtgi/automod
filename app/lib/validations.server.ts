@@ -204,6 +204,7 @@ export type ActionDefinition = {
   friendlyName: string;
   description: string;
   hidden?: boolean;
+  isWarpcast: boolean;
   args: Record<
     string,
     | {
@@ -226,52 +227,61 @@ export type ActionDefinition = {
 export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   mute: {
     friendlyName: "Mute",
+    isWarpcast: true,
     description:
       "All this user's casts will be silently hidden from the channel until you unmute.",
     args: {},
   },
   hideQuietly: {
     friendlyName: "Hide Quietly",
+    isWarpcast: true,
     description: "Hide the cast without notifying the user",
     args: {},
   },
   bypass: {
     friendlyName: "Bypass",
+    isWarpcast: false,
     description: "Bypass the rule and let the cast be visible",
     hidden: true,
     args: {},
   },
   ban: {
     friendlyName: "Permanent Ban",
+    isWarpcast: true,
     description: "Permanently ban them. This cannot be undone at the moment.",
     args: {},
   },
   warnAndHide: {
     friendlyName: "Warn and Hide",
+    isWarpcast: true,
     description:
       "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
   unmuted: {
     friendlyName: "Unmuted",
+    isWarpcast: true,
     description: "Unmute the user",
     hidden: true,
     args: {},
   },
   cooldownEnded: {
     friendlyName: "End Cooldown",
+    isWarpcast: false,
     description: "End the user's cooldown period",
     hidden: true,
     args: {},
   },
   unhide: {
     friendlyName: "Unhide",
+    isWarpcast: true,
     description: "Unhide the cast",
     hidden: true,
     args: {},
   },
   cooldown: {
     friendlyName: "Cooldown",
+    isWarpcast: true,
     description:
       "New casts from this user will be automatically hidden for the duration specified.",
     args: {

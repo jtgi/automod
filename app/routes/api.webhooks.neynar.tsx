@@ -3,10 +3,11 @@ import { ModeratedChannel, Prisma } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
 import { getChannel } from "~/lib/neynar.server";
-import { requireValidSignature } from "~/lib/utils.server";
+import { requireValidSignature, sleep } from "~/lib/utils.server";
 import {
   Action,
   Rule,
+  actionDefinitions,
   actionFunctions,
   ruleFunctions,
 } from "~/lib/validations.server";
@@ -300,7 +301,15 @@ export async function validateCast({
       // }
 
       for (const action of actions) {
+        const actionDef = actionDefinitions[action.type];
         const actionFn = actionFunctions[action.type];
+
+        if (actionDef.isWarpcast) {
+          // warpcast handles about 15rps before it starts
+          // 429ing, this helps until proper job etc.
+          await sleep(250);
+        }
+
         await actionFn({
           channel: channel.id,
           cast,

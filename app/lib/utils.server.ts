@@ -380,3 +380,7 @@ export function formatZodError(error: ZodError): string {
 
   return "";
 }
+
+export async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
