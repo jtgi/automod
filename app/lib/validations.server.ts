@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as Sentry from "@sentry/remix";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
@@ -517,6 +518,18 @@ export function userProfileContainsText(args: CheckFunctionArgs) {
 export function userDisplayNameContainsText(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { searchText, caseSensitive } = rule.args;
+
+  if (!cast.author.display_name) {
+    Sentry.captureMessage(
+      `Cast author has no display name: ${cast.author.fid}`,
+      {
+        extra: {
+          cast,
+        },
+      }
+    );
+  }
+
   const containsText = !caseSensitive
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.display_name.includes(searchText);
