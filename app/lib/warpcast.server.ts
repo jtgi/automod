@@ -5,6 +5,30 @@ import { db } from "./db.server";
 import { Action } from "./validations.server";
 
 const token = process.env.WARPCAST_TOKEN!;
+const http = axios.create();
+
+http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
+  const config = err.config;
+
+  if (err.response.status === 429 && !config.__retryCount) {
+    config.__retryCount = 0;
+  }
+
+  if (config.__retryCount < 3) {
+    // Max retry limit
+    config.__retryCount += 1;
+    const backoffDelay = 2 ** config.__retryCount * 1000; // Exponential backoff
+    console.warn(`Rate limited, retrying in ${backoffDelay}ms`);
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(http(config));
+      }, backoffDelay);
+    });
+  }
+
+  return Promise.reject(err);
+});
 
 type HostResult = {
   result: {
