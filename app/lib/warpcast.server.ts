@@ -1,11 +1,13 @@
-import axios, { AxiosResponse } from "axios";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import axiosFactory, { AxiosResponse } from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { cache } from "./cache.server";
 import { db } from "./db.server";
 import { Action } from "./validations.server";
 
 const token = process.env.WARPCAST_TOKEN!;
-const http = axios.create();
+const http = axiosFactory.create();
 
 http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
   const config = err.config;
@@ -70,7 +72,7 @@ export async function getChannelHosts(props: {
       },
     };
   }
-  const result = await axios.get(
+  const result = await http.get(
     `https://client.warpcast.com/v2/get-channel-hosts?channelKey=${props.channel}`
   );
 
@@ -145,7 +147,7 @@ export async function hideQuietly({
   cast: Cast;
   action: Action;
 }) {
-  return axios.put(
+  return http.put(
     `https://client.warpcast.com/v2/debug-cast-embeds`,
     {
       castHash: cast.hash,
@@ -159,7 +161,7 @@ export async function hideQuietly({
 }
 
 export async function unhide({ castHash }: { castHash: string }) {
-  return axios.put(
+  return http.put(
     `https://client.warpcast.com/v2/debug-cast-embeds`,
     {
       castHash,
@@ -190,7 +192,7 @@ export async function ban({
 
   const channelKey = channel;
   const fid = cast.author.fid;
-  return axios.put(
+  return http.put(
     `https://client.warpcast.com/v1/user-channel-ban`,
     {
       channelKey,
@@ -212,7 +214,7 @@ export async function warnAndHide({
   cast: Cast;
   action: Action;
 }) {
-  return axios.put(
+  return http.put(
     `https://client.warpcast.com/v2/debug-cast-embeds`,
     {
       castHash: cast.hash,
