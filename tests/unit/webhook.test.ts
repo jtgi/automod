@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as warpcast from "~/lib/warpcast.server";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import axios from "axios";
@@ -13,17 +15,26 @@ import { validateCast } from "~/routes/api.webhooks.neynar";
 import { prisma } from "tests/setup";
 
 vi.mock("axios", () => {
-  // Mock the specific methods
-  const mockAxios = {
-    get: vi.fn(() => ({ data: "get response" })),
-    post: vi.fn(() => Promise.resolve({ data: "post response" })),
-    put: vi.fn(() => Promise.resolve({ data: "put response" })),
+  const interceptors = {
+    response: {
+      use: vi.fn((onFulfilled: any, onRejected: any) => {
+        // Optional: You can simulate interceptor behavior here if needed
+      }),
+    },
+    // If you use request interceptors, mock them similarly
   };
 
-  // Create a mock for the default export that includes the above methods
+  const mockAxios = {
+    get: vi.fn(() => Promise.resolve({ data: "get response" })),
+    post: vi.fn(() => Promise.resolve({ data: "post response" })),
+    put: vi.fn(() => Promise.resolve({ data: "put response" })),
+    // Ensure interceptors are part of the mocked instance
+    interceptors,
+  };
+
   const axiosInstance = {
     ...mockAxios,
-    create: () => mockAxios, // If you're using axios.create() somewhere
+    create: () => ({ ...mockAxios, interceptors }), // Include interceptors in the created instance
   };
 
   return { default: axiosInstance, ...mockAxios };
