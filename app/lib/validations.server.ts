@@ -462,7 +462,6 @@ export function textMatchesPattern(args: CheckFunctionArgs) {
   const { pattern } = rule.args;
 
   const re2 = new RE2(pattern);
-
   const isMatch = re2.test(cast.text);
 
   if (isMatch && !rule.invert) {

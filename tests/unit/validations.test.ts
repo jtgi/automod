@@ -1,12 +1,12 @@
+/* eslint-disable no-useless-escape */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { assert, it, expect, describe, test } from "vitest";
+import { it, expect, describe } from "vitest";
 import { faker } from "@faker-js/faker";
 import { ModeratedChannel, User } from "@prisma/client";
 import {
   Channel as NeynarChannel,
   User as NeynarUser,
   Cast,
-  UserProfile,
 } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import {
   Action,
@@ -14,12 +14,14 @@ import {
   containsLinks,
   containsText,
   containsTooManyMentions,
+  textMatchesPattern,
   userDisplayNameContainsText,
   userFidInRange,
   userFollowerCount,
   userIsNotActive,
   userProfileContainsText,
 } from "~/lib/validations.server";
+import RE2 from "re2";
 
 export function moderatedChannel(
   data?: Partial<ModeratedChannel>
@@ -133,6 +135,7 @@ export function rule(overrides?: Partial<Rule>): Rule {
       searchText: "example",
       caseSensitive: false,
     },
+    invert: false,
   };
 
   if (overrides?.conditions) {
@@ -187,6 +190,49 @@ describe("containsText", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "notfound", caseSensitive: false } });
     expect(containsText({ channel: m, cast: c, rule: r })).toBeUndefined();
+  });
+});
+
+describe("textMatchesPattern", () => {
+  it("should detect text matches pattern", () => {
+    const c = cast({ text: "Example Text" });
+    const r = rule({ args: { pattern: "Example" } });
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(
+      `Text matches pattern: Example`
+    );
+  });
+
+  it("should match regex", () => {
+    const c = cast({ text: "this is $token Text" });
+    const r = rule({ args: { pattern: "[a-zA-Z]+" } });
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(
+      `Text matches pattern: [a-zA-Z]+`
+    );
+  });
+
+  it("should handle regex with backslash", () => {
+    const c = cast({ text: "this is $token Text" });
+    const r = rule({ args: { pattern: "\\$[a-zA-Z]+" } });
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(
+      `Text matches pattern: \\$[a-zA-Z]+`
+    );
+  });
+
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({ text: "Example Text" });
+    const r = rule({ args: { pattern: "Example" }, invert: true });
+    expect(new RE2("Example").test("Example Text")).toBe(true);
+    expect(
+      textMatchesPattern({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
+  });
+
+  it("should return undefined if text does not match the pattern", () => {
+    const c = cast({ text: "Example Text" });
+    const r = rule({ args: { pattern: "notfound" } });
+    expect(
+      textMatchesPattern({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
   });
 });
 

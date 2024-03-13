@@ -319,7 +319,7 @@ export async function validateCast({
         });
 
         console.log(
-          `@${cast.author.username} violated rule ${rule.name}, ${action.type} action taken`
+          `${action.type} @${cast.author.username}: ${ruleEvaluation.explanation}`
         );
 
         if (
