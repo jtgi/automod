@@ -71,7 +71,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   containsFrame: {
     friendlyName: "Contains Frame",
     description: "Check if the cast contains a frame",
-    hidden: false,
+    hidden: true,
     invertable: true,
     args: {},
   },
@@ -79,7 +79,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   containsMedia: {
     friendlyName: "Contains Media",
     description: "Check if the cast contains media",
-    hidden: false,
+    hidden: true,
     invertable: true,
     args: {
       images: {

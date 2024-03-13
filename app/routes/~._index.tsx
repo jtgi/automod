@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
@@ -18,7 +17,6 @@ import { Badge } from "~/components/ui/badge";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
-  const env = getSharedEnv();
 
   const channels = await db.moderatedChannel.findMany({
     where: {
@@ -49,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { channels, user, env } = useTypedLoaderData<typeof loader>();
+  const { channels, user } = useTypedLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4">
