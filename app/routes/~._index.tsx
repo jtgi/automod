@@ -64,7 +64,7 @@ export default function FrameConfig() {
           <CardContent>
             <Button asChild>
               <Link className="no-underline" to="/~/channels/new">
-                + New Channel
+                + New Bot
               </Link>
             </Button>
           </CardContent>

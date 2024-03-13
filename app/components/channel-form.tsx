@@ -705,6 +705,7 @@ function RuleArgs(props: {
           <Input
             type="number"
             required={argDef.required}
+            defaultValue={argDef.defaultValue as number | undefined}
             {...register(
               `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
             )}
@@ -722,6 +723,7 @@ function RuleArgs(props: {
         >
           <Input
             required={argDef.required}
+            defaultValue={argDef.defaultValue as string | undefined}
             {...register(
               `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
             )}
@@ -744,6 +746,7 @@ function RuleArgs(props: {
           <Controller
             control={control}
             name={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}
+            defaultValue={argDef.defaultValue as boolean | undefined}
             render={({ field: { onChange, name, value } }) => (
               <Checkbox
                 id={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}

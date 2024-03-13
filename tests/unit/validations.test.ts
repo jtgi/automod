@@ -11,7 +11,9 @@ import {
 import {
   Action,
   Rule,
+  containsFrame,
   containsLinks,
+  containsMedia,
   containsText,
   containsTooManyMentions,
   textMatchesPattern,
@@ -22,6 +24,7 @@ import {
   userProfileContainsText,
 } from "~/lib/validations.server";
 import RE2 from "re2";
+import { NeynarCastWithFrame } from "~/lib/types";
 
 export function moderatedChannel(
   data?: Partial<ModeratedChannel>
@@ -110,11 +113,14 @@ export function neynarChannel(
   };
 }
 
-export function cast(overrides?: Partial<Cast>): Cast {
+export function cast(
+  overrides?: Partial<NeynarCastWithFrame>
+): NeynarCastWithFrame {
   return {
     hash: faker.number.hex(42),
     parent_hash: null,
     parent_url: faker.internet.url(),
+    frames: [],
     parent_author: {
       // @ts-ignore
       fid: "518",
@@ -295,6 +301,58 @@ describe("containsLinks", () => {
     const c = cast({ text: "No links here" });
     const r = rule({});
     expect(containsLinks({ channel: m, cast: c, rule: r })).toBeUndefined();
+  });
+});
+
+describe("containsFrame", () => {
+  it("should detect frames", () => {
+    const c = cast({
+      frames: [{ frames_url: "https://google.com" } as any],
+      text: "Check out this frame",
+    });
+    const r = rule({});
+    expect(containsFrame({ channel: m, cast: c, rule: r })).toBe(
+      "Contains frame: https://google.com"
+    );
+  });
+});
+
+describe("containsMedia", () => {
+  it("should detect media", () => {
+    const c = cast({
+      embeds: [{ url: "https://example.com/image.jpg" }],
+      text: "Check out this image",
+    });
+    const r = rule({
+      args: {
+        images: true,
+        videos: true,
+      },
+    });
+    expect(containsMedia({ channel: m, cast: c, rule: r })).toBe(
+      "Contains media: image"
+    );
+  });
+
+  it("should detect video and not image", () => {
+    const c = cast({
+      embeds: [
+        { url: "https://example.com/image.jpg" },
+        {
+          url: "https://example.com/video.m3u8",
+        },
+      ],
+      text: "Check out this image",
+    });
+    const r = rule({
+      args: {
+        images: false,
+        videos: true,
+      },
+    });
+    expect(containsMedia({ channel: m, cast: c, rule: r })).toBe(
+      "Contains media: video"
+    );
   });
 });
 

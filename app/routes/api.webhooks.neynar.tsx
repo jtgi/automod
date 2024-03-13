@@ -249,6 +249,8 @@ export async function validateCast({
 
     const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
 
+    console.log(ruleEvaluation);
+
     if (ruleEvaluation.didViolateRule) {
       /**
        * Temporarily disabling ban threshold until I can

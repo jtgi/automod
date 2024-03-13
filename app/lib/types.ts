@@ -1,4 +1,5 @@
 import { CSSProperties } from "react";
+import { Cast as NeynarCast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 // neynar gaps
 
@@ -128,3 +129,5 @@ export interface FluffyBio {
 export interface TappedButton {
   index: number;
 }
+
+export type NeynarCastWithFrame = NeynarCast & { frames: Frame[] };

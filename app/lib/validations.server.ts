@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Sentry from "@sentry/remix";
+import mimeType from "mime-types";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
@@ -12,6 +13,7 @@ import {
   warnAndHide,
 } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
+import { NeynarCastWithFrame } from "./types";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -22,6 +24,7 @@ export type RuleDefinition = {
     string,
     {
       type: string;
+      defaultValue?: string | number | boolean;
       friendlyName: string;
       description: string;
       required?: boolean;
@@ -61,6 +64,35 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "boolean",
         friendlyName: "Case Sensitive",
         description: "If checked, 'abc' is different from 'ABC'",
+      },
+    },
+  },
+
+  containsFrame: {
+    friendlyName: "Contains Frame",
+    description: "Check if the cast contains a frame",
+    hidden: false,
+    invertable: true,
+    args: {},
+  },
+
+  containsMedia: {
+    friendlyName: "Contains Media",
+    description: "Check if the cast contains media",
+    hidden: false,
+    invertable: true,
+    args: {
+      images: {
+        type: "boolean",
+        defaultValue: true,
+        friendlyName: "Images",
+        description: "Check for images",
+      },
+      videos: {
+        type: "boolean",
+        defaultValue: true,
+        friendlyName: "Videos",
+        description: "Check for videos",
       },
     },
   },
@@ -300,6 +332,8 @@ export const ruleNames = [
   "and",
   "or",
   "containsText",
+  "containsFrame",
+  "containsMedia",
   "textMatchesPattern",
   "containsTooManyMentions",
   "containsLinks",
@@ -422,6 +456,8 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsText: containsText,
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
+  containsMedia: containsMedia,
+  containsFrame: containsFrame,
   userProfileContainsText: userProfileContainsText,
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
@@ -454,6 +490,62 @@ export function containsText(props: CheckFunctionArgs) {
     return `Text contains the text: ${searchText}`;
   } else if (rule.invert && !text.includes(search)) {
     return `Text does not contain the text: ${searchText}`;
+  }
+}
+
+export function containsFrame(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const neynarCast = cast as NeynarCastWithFrame;
+  const hasFrame = neynarCast.frames && neynarCast.frames.length > 0;
+
+  const frameUrls = neynarCast.frames?.map((f) => f.frames_url);
+  if (hasFrame && !rule.invert) {
+    return `Contains frame: ${frameUrls.join(", ")}`;
+  } else if (!hasFrame && rule.invert) {
+    return `Does not contain any frames.`;
+  }
+}
+
+export function containsMedia(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { images, videos } = rule.args;
+
+  const bannedMimeTypePrefixes: string[] = [];
+  if (images) {
+    bannedMimeTypePrefixes.push("image");
+  } else if (videos) {
+    bannedMimeTypePrefixes.push("video");
+
+    // warpcast uses .m3u8 (playlist files) for video
+    bannedMimeTypePrefixes.push("application/vnd.apple.mpegurl");
+  }
+
+  const foundMedia = bannedMimeTypePrefixes.filter((prefix) => {
+    return cast.embeds.some((embed) => {
+      if ("url" in embed) {
+        const mime = mimeType.lookup(embed.url);
+        return mime && mime.startsWith(prefix);
+      } else {
+        return false;
+      }
+    });
+  });
+
+  console.log({ images, videos, bannedMimeTypePrefixes, foundMedia });
+
+  const hasMedia = foundMedia.length > 0;
+  const prettyPrintedMediaFound = foundMedia.map((mediaType) => {
+    if (mediaType === "application/vnd.apple.mpegurl") {
+      return "video";
+    } else {
+      return mediaType;
+    }
+  });
+
+  if (hasMedia && !rule.invert) {
+    return `Contains media: ${prettyPrintedMediaFound.join(", ")}`;
+  } else if (!hasMedia && rule.invert) {
+    return `Does not contain media: ${prettyPrintedMediaFound.join(", ")}`;
   }
 }
 
