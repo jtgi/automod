@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/remix";
 import { ModeratedChannel, Prisma } from "@prisma/client";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
-import { getChannel } from "~/lib/neynar.server";
+import { getChannel, neynar } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 import {
   Action,
@@ -50,6 +50,10 @@ export async function action({ request }: ActionFunctionArgs) {
     type: string;
     data: Cast & { root_parent_url: string };
   };
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(webhookNotif);
+  }
 
   if (webhookNotif.type !== "cast.created") {
     return json({ message: "Invalid webhook type" }, { status: 400 });

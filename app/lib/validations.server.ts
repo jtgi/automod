@@ -13,7 +13,7 @@ import {
   warnAndHide,
 } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
-import { NeynarCastWithFrame } from "./types";
+import { neynar } from "./neynar.server";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -493,12 +493,19 @@ export function containsText(props: CheckFunctionArgs) {
   }
 }
 
-export function containsFrame(args: CheckFunctionArgs) {
+export async function containsFrame(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const neynarCast = cast as NeynarCastWithFrame;
-  const hasFrame = neynarCast.frames && neynarCast.frames.length > 0;
+  const rsp = await neynar.fetchBulkCasts([cast.hash]);
+  const castWithInteractions = rsp.result.casts[0];
 
-  const frameUrls = neynarCast.frames?.map((f) => f.frames_url);
+  if (!castWithInteractions) {
+    throw new Error(`Cast not found. Should be impossible. hash: ${cast.hash}`);
+  }
+
+  const hasFrame =
+    castWithInteractions.frames && castWithInteractions.frames.length > 0;
+
+  const frameUrls = castWithInteractions.frames?.map((f) => f.frames_url) || [];
   if (hasFrame && !rule.invert) {
     return `Contains frame: ${frameUrls.join(", ")}`;
   } else if (!hasFrame && rule.invert) {

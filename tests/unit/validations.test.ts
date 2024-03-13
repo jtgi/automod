@@ -1,6 +1,6 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { it, expect, describe } from "vitest";
+import { it, expect, describe, vi, Mocked, beforeEach } from "vitest";
 import { faker } from "@faker-js/faker";
 import { ModeratedChannel, User } from "@prisma/client";
 import {
@@ -25,6 +25,15 @@ import {
 } from "~/lib/validations.server";
 import RE2 from "re2";
 import { NeynarCastWithFrame } from "~/lib/types";
+import { neynar } from "~/lib/neynar.server";
+
+vi.mock("~/lib/neynar.server", () => {
+  return {
+    neynar: {
+      fetchBulkCasts: vi.fn(),
+    },
+  };
+});
 
 export function moderatedChannel(
   data?: Partial<ModeratedChannel>
@@ -305,13 +314,24 @@ describe("containsLinks", () => {
 });
 
 describe("containsFrame", () => {
-  it("should detect frames", () => {
+  beforeEach(() => {
+    (neynar as Mocked<typeof neynar>).fetchBulkCasts.mockReset();
+  });
+
+  it("should detect frames", async () => {
     const c = cast({
       frames: [{ frames_url: "https://google.com" } as any],
       text: "Check out this frame",
     });
+
+    (neynar as Mocked<typeof neynar>).fetchBulkCasts.mockResolvedValue({
+      result: {
+        casts: [c as any],
+      },
+    });
+
     const r = rule({});
-    expect(containsFrame({ channel: m, cast: c, rule: r })).toBe(
+    expect(await containsFrame({ channel: m, cast: c, rule: r })).toBe(
       "Contains frame: https://google.com"
     );
   });

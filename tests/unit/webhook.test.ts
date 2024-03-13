@@ -14,6 +14,14 @@ import {
 import { validateCast } from "~/routes/api.webhooks.neynar";
 import { prisma } from "tests/setup";
 
+vi.mock("./neynar.server", () => {
+  return {
+    neynar: {
+      fetchBulkCasts: vi.fn(),
+    },
+  };
+});
+
 vi.mock("axios", () => {
   const interceptors = {
     response: {
