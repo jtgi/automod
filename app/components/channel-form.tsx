@@ -24,7 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
-import { MoreVerticalIcon, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -225,6 +225,7 @@ export function ChannelForm(props: {
                       <Button
                         type="button"
                         variant={"ghost"}
+                        asChild
                         onClick={() => {
                           if (
                             confirm(
@@ -234,9 +235,11 @@ export function ChannelForm(props: {
                             remove(ruleSetIndex);
                           }
                         }}
-                        className="rounded-full -mr-3"
+                        className="rounded-full -mr-3 no-underline text-slate-500 hover:text-slate-700 hover:bg-slate-50/50 data-[state=open]:rounded-b-none"
                       >
-                        <X className="w-5 h-5" />
+                        <a href="#delete">
+                          <X className="w-5 h-5" />
+                        </a>
                       </Button>
                     </AccordionTrigger>
 
