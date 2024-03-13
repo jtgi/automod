@@ -11,9 +11,8 @@ import {
 import {
   Action,
   Rule,
-  containsFrame,
   containsLinks,
-  containsMedia,
+  containsEmbeds,
   containsText,
   containsTooManyMentions,
   textMatchesPattern,
@@ -313,7 +312,7 @@ describe("containsLinks", () => {
   });
 });
 
-describe("containsFrame", () => {
+describe("containsEmbeds", () => {
   beforeEach(() => {
     (neynar as Mocked<typeof neynar>).fetchBulkCasts.mockReset();
   });
@@ -330,15 +329,45 @@ describe("containsFrame", () => {
       },
     });
 
-    const r = rule({});
-    expect(await containsFrame({ channel: m, cast: c, rule: r })).toBe(
-      "Contains frame: https://google.com"
+    const r = rule({
+      args: {
+        frames: true,
+      },
+    });
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
+      "Contains embedded content: frame"
     );
   });
-});
 
-describe("containsMedia", () => {
-  it("should detect media", () => {
+  it("should detect only links", async () => {
+    const c = cast({
+      frames: [{ frames_url: "https://google.com" } as any],
+      embeds: [
+        { url: "https://example.com/image.jpg" },
+        { url: "https://divide.cash" },
+      ],
+      text: "Check out this frame",
+    });
+
+    (neynar as Mocked<typeof neynar>).fetchBulkCasts.mockResolvedValue({
+      result: {
+        casts: [c as any],
+      },
+    });
+
+    const r = rule({
+      args: {
+        links: true,
+      },
+    });
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
+      "Contains embedded content: link"
+    );
+  });
+
+  it("should detect images", async () => {
     const c = cast({
       embeds: [{ url: "https://example.com/image.jpg" }],
       text: "Check out this image",
@@ -349,12 +378,13 @@ describe("containsMedia", () => {
         videos: true,
       },
     });
-    expect(containsMedia({ channel: m, cast: c, rule: r })).toBe(
-      "Contains media: image"
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
+      "Contains embedded content: image"
     );
   });
 
-  it("should detect video and not image", () => {
+  it("should detect video and not image", async () => {
     const c = cast({
       embeds: [
         { url: "https://example.com/image.jpg" },
@@ -370,8 +400,56 @@ describe("containsMedia", () => {
         videos: true,
       },
     });
-    expect(containsMedia({ channel: m, cast: c, rule: r })).toBe(
-      "Contains media: video"
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
+      "Contains embedded content: video"
+    );
+  });
+
+  it("should support invert", async () => {
+    const c = cast({
+      embeds: [
+        { url: "https://example.com/image.jpg" },
+        {
+          url: "https://example.com/video.m3u8",
+        },
+      ],
+      text: "Check out this image",
+    });
+
+    const r = rule({
+      args: {
+        images: false,
+        videos: true,
+      },
+      invert: true,
+    });
+
+    expect(
+      await containsEmbeds({ channel: m, cast: c, rule: r })
+    ).toBeUndefined();
+  });
+
+  it("should fail if inverted and embed type not found", async () => {
+    const c = cast({
+      embeds: [
+        {
+          url: "https://example.com/video.m3u8",
+        },
+      ],
+      text: "Check out this image",
+    });
+
+    const r = rule({
+      args: {
+        images: true,
+        videos: true,
+      },
+      invert: true,
+    });
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
+      "Does not contain embedded content: image"
     );
   });
 });

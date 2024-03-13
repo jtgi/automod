@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
@@ -68,31 +69,36 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
-  containsFrame: {
-    friendlyName: "Contains Frame",
-    description: "Check if the cast contains a frame",
-    hidden: true,
-    invertable: true,
-    args: {},
-  },
-
-  containsMedia: {
-    friendlyName: "Contains Media",
-    description: "Check if the cast contains media",
-    hidden: true,
+  containsEmbeds: {
+    friendlyName: "Contains Embedded Content",
+    description:
+      "Check if the cast contains images, gifs, videos, frames or links",
+    hidden: false,
     invertable: true,
     args: {
       images: {
         type: "boolean",
         defaultValue: true,
         friendlyName: "Images",
-        description: "Check for images",
+        description: "Check for images or gifs",
       },
       videos: {
         type: "boolean",
         defaultValue: true,
         friendlyName: "Videos",
         description: "Check for videos",
+      },
+      frames: {
+        type: "boolean",
+        defaultValue: true,
+        friendlyName: "Frames",
+        description: "Check for frames",
+      },
+      links: {
+        type: "boolean",
+        defaultValue: true,
+        friendlyName: "Links",
+        description: "Check for links",
       },
     },
   },
@@ -332,8 +338,7 @@ export const ruleNames = [
   "and",
   "or",
   "containsText",
-  "containsFrame",
-  "containsMedia",
+  "containsEmbeds",
   "textMatchesPattern",
   "containsTooManyMentions",
   "containsLinks",
@@ -456,8 +461,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsText: containsText,
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
-  containsMedia: containsMedia,
-  containsFrame: containsFrame,
+  containsEmbeds: containsEmbeds,
   userProfileContainsText: userProfileContainsText,
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
@@ -513,44 +517,112 @@ export async function containsFrame(args: CheckFunctionArgs) {
   }
 }
 
-export function containsMedia(args: CheckFunctionArgs) {
+export async function containsEmbeds(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { images, videos } = rule.args;
+  const { images, videos, frames, links } = rule.args;
 
-  const bannedMimeTypePrefixes: string[] = [];
-  if (images) {
-    bannedMimeTypePrefixes.push("image");
-  } else if (videos) {
-    bannedMimeTypePrefixes.push("video");
+  const checkForEmbeds: string[] = [];
+  images && checkForEmbeds.push("image");
+  videos && checkForEmbeds.push("video");
+  frames && checkForEmbeds.push("frame");
+  links && checkForEmbeds.push("link");
 
-    // warpcast uses .m3u8 (playlist files) for video
-    bannedMimeTypePrefixes.push("application/vnd.apple.mpegurl");
-  }
+  let embedsFound: string[] = [];
+  const embedTypesFound: string[] = [];
 
-  const foundMedia = bannedMimeTypePrefixes.filter((prefix) => {
-    return cast.embeds.some((embed) => {
-      if ("url" in embed) {
-        const mime = mimeType.lookup(embed.url);
-        return mime && mime.startsWith(prefix);
-      } else {
-        return false;
-      }
-    });
-  });
-
-  const hasMedia = foundMedia.length > 0;
-  const prettyPrintedMediaFound = foundMedia.map((mediaType) => {
-    if (mediaType === "application/vnd.apple.mpegurl") {
-      return "video";
+  // even if not specified in args we always search for
+  // images and videos because they may only be filtering
+  // for `link` embeds in which case these need to be
+  // ruled out. its also free and fast.
+  const foundImages = cast.embeds.filter((embed): embed is { url: string } => {
+    if ("url" in embed) {
+      const mime = mimeType.lookup(embed.url);
+      return !!mime && mime.startsWith("image");
     } else {
-      return mediaType;
+      return false;
     }
   });
 
-  if (hasMedia && !rule.invert) {
-    return `Contains media: ${prettyPrintedMediaFound.join(", ")}`;
-  } else if (!hasMedia && rule.invert) {
-    return `Does not contain media: ${prettyPrintedMediaFound.join(", ")}`;
+  if (foundImages.length > 0) {
+    embedTypesFound.push("image");
+    embedsFound = embedsFound.concat(foundImages.map((i) => i.url));
+  }
+
+  const foundVideos = cast.embeds.filter((embed): embed is { url: string } => {
+    if ("url" in embed) {
+      const mime = mimeType.lookup(embed.url);
+      return (
+        !!mime &&
+        (mime.startsWith("video") ||
+          mime.startsWith("application/vnd.apple.mpegurl"))
+      );
+    } else {
+      return false;
+    }
+  });
+
+  if (foundVideos.length > 0) {
+    embedTypesFound.push("video");
+    embedsFound = embedsFound.concat(foundVideos.map((i) => i.url));
+  }
+
+  // if either is specified we need to fetch the cast
+  // since a frame_url looks just like a link url.
+  // its debatable whether you'd ever want to filter
+  // on this but so it goes..
+  if (links || frames) {
+    const rsp = await neynar.fetchBulkCasts([cast.hash]);
+    const castWithInteractions = rsp.result.casts[0];
+
+    if (!castWithInteractions) {
+      throw new Error(
+        `Cast not found. Should be impossible. hash: ${cast.hash}`
+      );
+    }
+
+    if (castWithInteractions.frames && castWithInteractions.frames.length > 0) {
+      embedTypesFound.push("frame");
+      embedsFound = embedsFound.concat(
+        castWithInteractions.frames?.map((f) => f.frames_url) || []
+      );
+    }
+
+    const remainingUrls = castWithInteractions.embeds.filter(
+      (e): e is { url: string } => {
+        if ("url" in e) {
+          return !embedsFound.includes(e.url);
+        } else {
+          return false;
+        }
+      }
+    );
+
+    if (remainingUrls.length > 0) {
+      embedTypesFound.push("link");
+      embedsFound = embedsFound.concat(remainingUrls.map((i) => i.url));
+    }
+  }
+
+  if (rule.invert) {
+    const missingEmbeds = checkForEmbeds.filter(
+      (embedType) => !embedTypesFound.includes(embedType)
+    );
+
+    if (missingEmbeds.length) {
+      return `Does not contain embedded content: ${missingEmbeds.join(", ")}`;
+    } else {
+      return undefined;
+    }
+  } else {
+    const violatingEmbeds = checkForEmbeds.filter((embedType) =>
+      embedTypesFound.includes(embedType)
+    );
+
+    if (violatingEmbeds.length) {
+      return `Contains embedded content: ${violatingEmbeds.join(", ")}`;
+    } else {
+      return undefined;
+    }
   }
 }
 
