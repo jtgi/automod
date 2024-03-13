@@ -21,6 +21,7 @@ import {
   userFollowerCount,
   userIsNotActive,
   userProfileContainsText,
+  castLength,
 } from "~/lib/validations.server";
 import RE2 from "re2";
 import { NeynarCastWithFrame } from "~/lib/types";
@@ -309,6 +310,30 @@ describe("containsLinks", () => {
     const c = cast({ text: "No links here" });
     const r = rule({});
     expect(containsLinks({ channel: m, cast: c, rule: r })).toBeUndefined();
+  });
+});
+
+describe("castLength", () => {
+  it("should return a message if the cast is too long", () => {
+    const c = cast({ text: "a".repeat(300) });
+    const r = rule({ args: { max: 200 } });
+    expect(castLength({ channel: m, cast: c, rule: r })).toBe(
+      "Cast length exceeds 200 characters"
+    );
+  });
+
+  it("should return undefined if the cast is within the limit", () => {
+    const c = cast({ text: "a".repeat(100) });
+    const r = rule({ args: { min: undefined, max: 200 } });
+    expect(castLength({ channel: m, cast: c, rule: r })).toBeUndefined();
+  });
+
+  it("should return a message if the cast is too short", () => {
+    const c = cast({ text: "a".repeat(100) });
+    const r = rule({ args: { min: 200 } });
+    expect(castLength({ channel: m, cast: c, rule: r })).toBe(
+      "Cast length is less than 200 characters"
+    );
   });
 });
 

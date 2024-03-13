@@ -705,6 +705,7 @@ function RuleArgs(props: {
           <Input
             type="number"
             required={argDef.required}
+            placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as number | undefined}
             {...register(
               `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
@@ -723,6 +724,7 @@ function RuleArgs(props: {
         >
           <Input
             required={argDef.required}
+            placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as string | undefined}
             {...register(
               `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`

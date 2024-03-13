@@ -26,6 +26,7 @@ export type RuleDefinition = {
     {
       type: string;
       defaultValue?: string | number | boolean;
+      placeholder?: string;
       friendlyName: string;
       description: string;
       required?: boolean;
@@ -114,6 +115,29 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         friendlyName: "Pattern",
         description:
           "The regular expression to match against. No leading or trailing slashes.",
+      },
+    },
+  },
+
+  castLength: {
+    friendlyName: "Cast Length",
+    description: "Check if the cast length is within a range",
+    hidden: false,
+    invertable: false,
+    args: {
+      min: {
+        type: "number",
+        friendlyName: "Min Length",
+        placeholder: "No Minimum",
+        description:
+          "Setting a value of 10 would require a cast be at least 10 characters.",
+      },
+      max: {
+        type: "number",
+        friendlyName: "Max Length",
+        placeholder: "∞",
+        description:
+          "Setting a value of 69 would require a cast be at most 69 characters.",
       },
     },
   },
@@ -342,6 +366,7 @@ export const ruleNames = [
   "textMatchesPattern",
   "containsTooManyMentions",
   "containsLinks",
+  "castLength",
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
@@ -462,6 +487,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
   containsEmbeds: containsEmbeds,
+  castLength: castLength,
   userProfileContainsText: userProfileContainsText,
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
@@ -514,6 +540,23 @@ export async function containsFrame(args: CheckFunctionArgs) {
     return `Contains frame: ${frameUrls.join(", ")}`;
   } else if (!hasFrame && rule.invert) {
     return `Does not contain any frames.`;
+  }
+}
+
+export function castLength(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { min, max } = rule.args as { min?: number; max?: number };
+
+  if (min) {
+    if (cast.text.length < min) {
+      return `Cast length is less than ${min} characters`;
+    }
+  }
+
+  if (max) {
+    if (cast.text.length > max) {
+      return `Cast length exceeds ${max} characters`;
+    }
   }
 }
 
