@@ -531,8 +531,6 @@ export function containsMedia(args: CheckFunctionArgs) {
     });
   });
 
-  console.log({ images, videos, bannedMimeTypePrefixes, foundMedia });
-
   const hasMedia = foundMedia.length > 0;
   const prettyPrintedMediaFound = foundMedia.map((mediaType) => {
     if (mediaType === "application/vnd.apple.mpegurl") {
