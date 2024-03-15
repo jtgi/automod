@@ -5,6 +5,7 @@ import { ValidateCastArgs, validateCast } from "~/routes/api.webhooks.neynar";
 
 const connection = new IORedis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
+  family: 6,
 });
 
 export const castQueue = new Queue("castQueue", {
