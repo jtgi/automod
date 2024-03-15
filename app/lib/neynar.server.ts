@@ -5,7 +5,11 @@ import {
   FollowResponseUser,
   Reaction,
 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
-import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import {
+  CastWithInteractions,
+  Channel,
+  User,
+} from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
@@ -56,6 +60,20 @@ export async function registerWebhook({
       },
     }
   );
+}
+
+export async function* pageChannelCasts(props: { id: string }) {
+  let cursor: string | null | undefined = undefined;
+
+  while (cursor !== null) {
+    const response = await neynar.fetchFeedByChannelIds([props.id], {
+      limit: 100,
+      cursor,
+    });
+
+    yield response;
+    cursor = response.next.cursor;
+  }
 }
 
 export async function getChannel(props: { name: string }) {

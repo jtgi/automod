@@ -104,6 +104,7 @@ export default function ChannelRoot() {
                       title: "Collaborators",
                     }
                   : undefined,
+                { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]
             }
           />

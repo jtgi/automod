@@ -6,8 +6,8 @@ import { generateFrameSvg } from "./utils";
 import axios from "axios";
 import { MessageResponse } from "./types";
 import { getChannel } from "./neynar.server";
-import { redirect } from "remix-typedjson";
-import { json } from "@remix-run/node";
+import { redirect, typedjson } from "remix-typedjson";
+import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
 import { getChannelHosts, isCohost } from "./warpcast.server";
@@ -129,6 +129,7 @@ export async function requireUserCanModerateChannel(props: {
     },
     include: {
       ruleSets: true,
+      user: true,
       comods: true,
     },
   });
@@ -346,9 +347,43 @@ export async function parseMessage(payload: any) {
   return message;
 }
 
+export async function successResponse<T>({
+  request,
+  message,
+  session: passedSession,
+  data,
+  status,
+}: {
+  request: Request;
+  session?: Session;
+  message: string;
+  data?: T;
+  status?: number;
+}) {
+  const session =
+    passedSession || (await getSession(request.headers.get("Cookie")));
+  session.flash("message", message);
+
+  console.log("test session", session.get(`sweep:tmp`));
+
+  return typedjson(
+    {
+      message,
+      data,
+    },
+    {
+      status: status || 200,
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    }
+  );
+}
+
 export async function errorResponse(props: {
   request: Request;
   message: string;
+  status?: number;
 }) {
   const session = await getSession(props.request.headers.get("Cookie"));
   session.flash("error", props.message);
@@ -356,7 +391,10 @@ export async function errorResponse(props: {
     {
       message: props.message,
     },
-    { status: 400, headers: { "Set-Cookie": await commitSession(session) } }
+    {
+      status: props.status || 400,
+      headers: { "Set-Cookie": await commitSession(session) },
+    }
   );
 }
 

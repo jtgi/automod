@@ -1,7 +1,6 @@
 import { AuthKitProvider } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, Outlet } from "@remix-run/react";
-import { Triangle } from "lucide-react";
 import { useEffect } from "react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { toast } from "sonner";

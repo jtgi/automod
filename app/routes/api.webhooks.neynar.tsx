@@ -40,7 +40,7 @@ const FullModeratedChannel =
     },
   });
 
-type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
+export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
   typeof FullModeratedChannel
 >;
 
