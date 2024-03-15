@@ -21,7 +21,6 @@ export const castWorker = new Worker(
       Sentry.captureException(e);
       throw e;
     }
-    console.log(job.data);
   },
   {
     connection,
