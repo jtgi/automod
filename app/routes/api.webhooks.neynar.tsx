@@ -166,8 +166,8 @@ export async function action({ request }: ActionFunctionArgs) {
     console.log(channel.id, webhookNotif.data.hash);
   }
 
-  try {
-    await castQueue.add(
+  castQueue
+    .add(
       "processCast",
       {
         channel,
@@ -181,10 +181,8 @@ export async function action({ request }: ActionFunctionArgs) {
           delay: 1000,
         },
       }
-    );
-  } catch (e) {
-    console.error(e);
-  }
+    )
+    .catch(console.error);
 
   await validateCast({
     channel,
