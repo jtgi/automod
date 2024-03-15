@@ -1,10 +1,12 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import * as Sentry from "@sentry/remix";
-import { ModeratedChannel, Prisma } from "@prisma/client";
+import { ModeratedChannel, ModerationLog, Prisma } from "@prisma/client";
+import { v4 } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
-import { getChannel, neynar } from "~/lib/neynar.server";
+import { getChannel } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
+
 import {
   Action,
   Rule,
@@ -12,6 +14,7 @@ import {
   ruleFunctions,
 } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
+import { castQueue } from "~/lib/bullish.server";
 
 export const userPlans = {
   basic: {
@@ -163,38 +166,66 @@ export async function action({ request }: ActionFunctionArgs) {
     console.log(channel.id, webhookNotif.data.hash);
   }
 
+  try {
+    await castQueue.add(
+      "processCast",
+      {
+        channel,
+        moderatedChannel,
+        cast: webhookNotif.data,
+        simulation: true,
+      },
+      {
+        backoff: {
+          type: "exponential",
+          delay: 1000,
+        },
+      }
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
   await validateCast({
     channel,
     moderatedChannel,
     cast: webhookNotif.data,
   });
 
-  return json({});
+  return json({
+    message: "enqueued",
+  });
 }
+
+export type ValidateCastArgs = {
+  channel: Channel;
+  moderatedChannel: FullModeratedChannel;
+  cast: Cast;
+  simulation?: boolean;
+};
 
 export async function validateCast({
   channel,
   moderatedChannel,
   cast,
-}: {
-  channel: Channel;
-  moderatedChannel: FullModeratedChannel;
-  cast: Cast;
-}) {
+  simulation = false,
+}: ValidateCastArgs): Promise<Array<ModerationLog>> {
+  const logs: Array<ModerationLog> = [];
+
   const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(
     cast.author.username
   );
 
   if (isExcluded) {
     console.log(`User @${cast.author.username} is excluded. Doing nothing.`);
-    return;
+    return logs;
   }
 
   if (moderatedChannel.excludeCohosts) {
     const cohosts = await getChannelHosts({ channel: channel.id });
     if (cohosts.result.hosts.find((c) => c.fid === cast.author.fid)) {
       console.log(`User @${cast.author.username} is a cohost. Doing nothing.`);
-      return;
+      return logs;
     }
   }
 
@@ -218,29 +249,37 @@ export async function validateCast({
   });
 
   if (cooldown) {
-    await hideQuietly({
-      channel: moderatedChannel.id,
-      cast,
-      action: { type: "hideQuietly" },
-    });
+    if (!simulation) {
+      await hideQuietly({
+        channel: moderatedChannel.id,
+        cast,
+        action: { type: "hideQuietly" },
+      });
+    }
 
     if (cooldown.expiresAt) {
-      await logModerationAction(
-        moderatedChannel.id,
-        "hideQuietly",
-        `User is in cooldown until ${cooldown.expiresAt.toISOString()}`,
-        cast
+      logs.push(
+        await logModerationAction(
+          moderatedChannel.id,
+          "hideQuietly",
+          `User is in cooldown until ${cooldown.expiresAt.toISOString()}`,
+          cast,
+          simulation
+        )
       );
     } else {
-      await logModerationAction(
-        moderatedChannel.id,
-        "hideQuietly",
-        `User is currently muted`,
-        cast
+      logs.push(
+        await logModerationAction(
+          moderatedChannel.id,
+          "hideQuietly",
+          `User is currently muted`,
+          cast,
+          simulation
+        )
       );
     }
 
-    return;
+    return logs;
   }
 
   for (const ruleSet of moderatedChannel.ruleSets) {
@@ -305,25 +344,29 @@ export async function validateCast({
       // }
 
       for (const action of actions) {
-        const actionFn = actionFunctions[action.type];
+        if (!simulation) {
+          const actionFn = actionFunctions[action.type];
 
-        await actionFn({
-          channel: channel.id,
-          cast,
-          action,
-        }).catch((e) => {
-          Sentry.captureMessage(`Error in ${action.type} action`, {
-            extra: {
-              cast,
-              action,
-            },
+          await actionFn({
+            channel: channel.id,
+            cast,
+            action,
+          }).catch((e) => {
+            Sentry.captureMessage(`Error in ${action.type} action`, {
+              extra: {
+                cast,
+                action,
+              },
+            });
+            console.error(e?.response?.data || e?.message || e);
+            throw e;
           });
-          console.error(e?.response?.data || e?.message || e);
-          throw e;
-        });
+        }
 
         console.log(
-          `${action.type} @${cast.author.username}: ${ruleEvaluation.explanation}`
+          `${simulation ? "[simulation]: " : ""}${action.type} @${
+            cast.author.username
+          }: ${ruleEvaluation.explanation}`
         );
 
         if (
@@ -333,43 +376,69 @@ export async function validateCast({
             channel: channel.id,
           }))
         ) {
-          await logModerationAction(
-            moderatedChannel.id,
-            "bypass",
-            `User would be banned but is a cohost, doing nothing.`,
-            cast
+          logs.push(
+            await logModerationAction(
+              moderatedChannel.id,
+              "bypass",
+              `User would be banned but is a cohost, doing nothing.`,
+              cast,
+              simulation
+            )
           );
           continue;
         }
 
-        await logModerationAction(
-          moderatedChannel.id,
-          action.type,
-          ruleEvaluation.explanation,
-          cast
+        logs.push(
+          await logModerationAction(
+            moderatedChannel.id,
+            action.type,
+            ruleEvaluation.explanation,
+            cast,
+            simulation
+          )
         );
       }
     }
   }
+
+  return logs;
 }
 
 async function logModerationAction(
   moderatedChannelId: string,
   actionType: string,
   reason: string,
-  cast: Cast
-) {
-  return db.moderationLog.create({
-    data: {
+  cast: Cast,
+  simulation: boolean
+): Promise<ModerationLog> {
+  if (!simulation) {
+    return db.moderationLog.create({
+      data: {
+        channelId: moderatedChannelId,
+        action: actionType,
+        actor: "system",
+        reason,
+        affectedUsername: cast.author.username,
+        affectedUserAvatarUrl: cast.author.pfp_url,
+        affectedUserFid: String(cast.author.fid),
+        castHash: cast.hash,
+      },
+    });
+  } else {
+    return {
+      id: `sim-${v4()}`,
       channelId: moderatedChannelId,
       action: actionType,
+      actor: "system",
       reason,
       affectedUsername: cast.author.username,
       affectedUserAvatarUrl: cast.author.pfp_url,
       affectedUserFid: String(cast.author.fid),
       castHash: cast.hash,
-    },
-  });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
 }
 
 async function evaluateRules(

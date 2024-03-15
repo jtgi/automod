@@ -5,11 +5,7 @@ import {
   FollowResponseUser,
   Reaction,
 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
-import {
-  CastWithInteractions,
-  Channel,
-  User,
-} from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
