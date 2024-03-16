@@ -6,6 +6,7 @@ import { SweepArgs, sweep } from "~/routes/~.channels.$id.tools";
 
 const connection = new IORedis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
+  family: 6,
 });
 
 export const castQueue = new Queue("castQueue", {
