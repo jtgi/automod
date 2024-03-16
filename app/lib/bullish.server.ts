@@ -33,11 +33,15 @@ export const castWorker = new Worker(
 castWorker.on("error", Sentry.captureException);
 
 castWorker.on("active", (job) => {
-  console.log(`Job ${job.id} is now active and being processed`);
+  if (process.env.NODE_ENV === "development") {
+    console.log(`Job ${job.id} is now active and being processed`);
+  }
 });
 
 castWorker.on("completed", (job) => {
-  console.log(`${job.data.channel.id}: cast ${job.data.cast.hash} completed`);
+  if (process.env.NODE_ENV === "development") {
+    console.log(`${job.data.channel.id}: cast ${job.data.cast.hash} completed`);
+  }
 });
 
 castWorker.on("failed", (job, err) => {
