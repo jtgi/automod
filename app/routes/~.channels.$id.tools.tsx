@@ -20,6 +20,7 @@ import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { sweepQueue } from "~/lib/bullish.server";
 
 const SWEEP_LIMIT = 500;
 
@@ -31,9 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     userId: user.id,
     channelId: params.id,
   });
-
-  const session = await getSession(request.headers.get("Cookie"));
-  const isActive = isSweepActive(session.get(`sweep:${moderatedChannel.id}`));
+  const isActive = await isSweepActive(moderatedChannel.id);
 
   return typedjson({
     user,
@@ -69,29 +68,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (result.data.intent === "sweep") {
-    if (isSweepActive(session.get(`sweep:${moderatedChannel.id}`))) {
+    if (await isSweepActive(moderatedChannel.id)) {
       return successResponse({
         request,
         message: "Sweep already in progress. Hang tight.",
       });
     }
 
-    console.log(`Sweeping channel ${moderatedChannel.id}`);
-    sweep({
-      channelId: moderatedChannel.id,
-      moderatedChannel,
-      limit: SWEEP_LIMIT,
-    }).then(() => {
-      console.log(`Sweep of ${moderatedChannel.id} complete`);
-    });
-
-    session.set(`sweep:${moderatedChannel.id}`, new Date().toISOString());
+    await sweepQueue.add(
+      "sweep",
+      {
+        channelId: moderatedChannel.id,
+        moderatedChannel,
+        limit: SWEEP_LIMIT,
+      },
+      {
+        removeOnComplete: true,
+        jobId: `sweep:${moderatedChannel.id}`,
+        attempts: 3,
+      }
+    );
 
     return successResponse({
       request,
       session,
-      message:
-        "Sweeping! This will take a while. Monitor progress in the logs.",
+      message: "Sweeping! This will take a while. Monitor progress in the logs.",
     });
   } else {
     return errorResponse({
@@ -114,8 +115,8 @@ export default function Screen() {
         <div>
           <p className="font-medium">Sweep</p>
           <p className="text-sm text-gray-500">
-            Apply your moderation rules to the last {SWEEP_LIMIT} casts in your
-            channel. Applies to root level casts only.
+            Apply your moderation rules to the last {SWEEP_LIMIT} casts in your channel. Applies to root level
+            casts only.
           </p>
         </div>
 
@@ -155,9 +156,7 @@ export async function sweep(args: SweepArgs) {
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
     if (castsChecked >= args.limit) {
-      console.log(
-        `${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`
-      );
+      console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
       break;
     }
 
@@ -175,14 +174,10 @@ export async function sweep(args: SweepArgs) {
     });
 
     const alreadyProcessedHashes = new Set(
-      alreadyProcessed
-        .filter((log): log is { castHash: string } => !!log.castHash)
-        .map((log) => log.castHash)
+      alreadyProcessed.filter((log): log is { castHash: string } => !!log.castHash).map((log) => log.castHash)
     );
 
-    const unprocessedCasts = page.casts.filter(
-      (cast) => !alreadyProcessedHashes.has(cast.hash)
-    );
+    const unprocessedCasts = page.casts.filter((cast) => !alreadyProcessedHashes.has(cast.hash));
 
     for (const cast of unprocessedCasts) {
       console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
@@ -198,11 +193,16 @@ export async function sweep(args: SweepArgs) {
   }
 }
 
-function isSweepActive(dateCreatedString: string | undefined): boolean {
-  if (!dateCreatedString) {
+async function isSweepActive(channelId: string) {
+  const job = await getSweepJob(channelId);
+  if (!job) {
     return false;
   }
 
-  const dateCreated = new Date(dateCreatedString);
-  return Date.now() - dateCreated.getTime() < 1000 * 60 * 15;
+  const state = await job.getState();
+  return state === "active";
+}
+
+async function getSweepJob(channelId: string) {
+  return sweepQueue.getJob(`sweep:${channelId}`);
 }

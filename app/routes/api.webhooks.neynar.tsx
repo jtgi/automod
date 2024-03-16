@@ -7,12 +7,7 @@ import { db } from "~/lib/db.server";
 import { getChannel } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 
-import {
-  Action,
-  Rule,
-  actionFunctions,
-  ruleFunctions,
-} from "~/lib/validations.server";
+import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
 import { castQueue } from "~/lib/bullish.server";
 
@@ -31,21 +26,18 @@ export const userPlans = {
   },
 };
 
-const FullModeratedChannel =
-  Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
-    include: {
-      user: true,
-      ruleSets: {
-        where: {
-          active: true,
-        },
+const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
+  include: {
+    user: true,
+    ruleSets: {
+      where: {
+        active: true,
       },
     },
-  });
+  },
+});
 
-export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<
-  typeof FullModeratedChannel
->;
+export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel>;
 
 export async function action({ request }: ActionFunctionArgs) {
   const rawPayload = await request.text();
@@ -72,9 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const channelName = webhookNotif.data.root_parent_url?.split("/").pop();
 
   if (!channelName) {
-    console.error(
-      `Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`
-    );
+    console.error(`Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`);
     return json({ message: "Invalid parent_url" }, { status: 400 });
   }
 
@@ -102,10 +92,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(
       `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
     );
-    return json(
-      { message: "User's plan is expired, moderation disabled" },
-      { status: 403 }
-    );
+    return json({ message: "User's plan is expired, moderation disabled" }, { status: 403 });
   }
 
   if (moderatedChannel.ruleSets.length === 0) {
@@ -120,9 +107,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (alreadyProcessed) {
-    console.log(
-      `Cast ${webhookNotif.data.hash.substring(0, 10)} already processed`
-    );
+    console.log(`Cast ${webhookNotif.data.hash.substring(0, 10)} already processed`);
     return json({ message: "Already processed" });
   }
 
@@ -132,9 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (!cohost) {
-    console.log(
-      `User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`
-    );
+    console.log(`User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`);
     await db.moderatedChannel.update({
       where: {
         id: moderatedChannel.id,
@@ -144,15 +127,10 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    return json(
-      { message: "Creator of moderated channel is no longer a cohost" },
-      { status: 403 }
-    );
+    return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 403 });
   }
 
-  const channel = await getChannel({ name: moderatedChannel.id }).catch(
-    () => null
-  );
+  const channel = await getChannel({ name: moderatedChannel.id }).catch(() => null);
   if (!channel) {
     console.error(
       `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
@@ -174,12 +152,14 @@ export async function action({ request }: ActionFunctionArgs) {
       cast: webhookNotif.data,
     },
     {
+      jobId: `cast-${webhookNotif.data.hash}`,
       removeOnComplete: 1000,
       removeOnFail: 5000,
       backoff: {
         type: "exponential",
         delay: 1000,
       },
+      attempts: 3,
     }
   );
 
@@ -203,9 +183,7 @@ export async function validateCast({
 }: ValidateCastArgs): Promise<Array<ModerationLog>> {
   const logs: Array<ModerationLog> = [];
 
-  const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(
-    cast.author.username
-  );
+  const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(cast.author.username);
 
   if (isExcluded) {
     console.log(`User @${cast.author.username} is excluded. Doing nothing.`);
@@ -355,9 +333,9 @@ export async function validateCast({
         }
 
         console.log(
-          `${simulation ? "[simulation]: " : ""}${action.type} @${
-            cast.author.username
-          }: ${ruleEvaluation.explanation}`
+          `${simulation ? "[simulation]: " : ""}${action.type} @${cast.author.username}: ${
+            ruleEvaluation.explanation
+          }`
         );
 
         if (
@@ -451,9 +429,7 @@ async function evaluateRules(
   } else if (rule.type === "LOGICAL" && rule.conditions) {
     if (rule.operation === "AND") {
       const evaluations = await Promise.all(
-        rule.conditions.map((subRule) =>
-          evaluateRules(moderatedChannel, cast, subRule)
-        )
+        rule.conditions.map((subRule) => evaluateRules(moderatedChannel, cast, subRule))
       );
       if (evaluations.every((e) => e.didViolateRule)) {
         return {
@@ -470,9 +446,7 @@ async function evaluateRules(
       }
     } else if (rule.operation === "OR") {
       const results = await Promise.all(
-        rule.conditions.map((subRule) =>
-          evaluateRules(moderatedChannel, cast, subRule)
-        )
+        rule.conditions.map((subRule) => evaluateRules(moderatedChannel, cast, subRule))
       );
 
       const violation = results.find((r) => r.didViolateRule);

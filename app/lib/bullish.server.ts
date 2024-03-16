@@ -46,10 +46,7 @@ castWorker.on("completed", (job) => {
 
 castWorker.on("failed", (job, err) => {
   if (job) {
-    console.error(
-      `${job.data.channel.id}: cast ${job.data.cast.hash} failed`,
-      err
-    );
+    console.error(`${job.data.channel.id}: cast ${job.data.cast.hash} failed`, err);
   } else {
     console.error("job failed", err);
   }
@@ -78,3 +75,11 @@ export const sweepWorker = new Worker(
 );
 
 sweepWorker.on("error", Sentry.captureException);
+sweepWorker.on("active", (job) => {
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[${job.data.channelId}] sweeping...`);
+  }
+});
+sweepWorker.on("failed", (job, err) => {
+  console.error(`[${job?.data.channelId}] failed`, err);
+});

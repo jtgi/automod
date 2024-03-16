@@ -59,10 +59,7 @@ export async function requireValidSignature(props: {
   }
 }
 
-export async function requireUserOwnsChannel(props: {
-  userId: string;
-  channelId: string;
-}) {
+export async function requireUserOwnsChannel(props: { userId: string; channelId: string }) {
   const channel = await db.moderatedChannel.findUnique({
     where: {
       id: props.channelId,
@@ -86,10 +83,7 @@ export async function requireUserOwnsChannel(props: {
   return channel;
 }
 
-export async function requireUserIsChannelLead(props: {
-  userId: string;
-  channelId: string;
-}) {
+export async function requireUserIsChannelLead(props: { userId: string; channelId: string }) {
   const result = await isChannelLead({
     userId: props.userId,
     channelId: props.channelId,
@@ -107,10 +101,7 @@ export async function requireUserIsChannelLead(props: {
  * Can moderate if they created the channel (lead) or are a
  * a comod. This is a local check, not remotely.
  */
-export async function requireUserCanModerateChannel(props: {
-  userId: string;
-  channelId: string;
-}) {
+export async function requireUserCanModerateChannel(props: { userId: string; channelId: string }) {
   const channel = await db.moderatedChannel.findUnique({
     where: {
       id: props.channelId,
@@ -141,10 +132,7 @@ export async function requireUserCanModerateChannel(props: {
   return channel;
 }
 
-export async function requireUserIsCohost(props: {
-  fid: number;
-  channelId: string;
-}) {
+export async function requireUserIsCohost(props: { fid: number; channelId: string }) {
   const results = await getChannelHosts({
     channel: props.channelId,
   });
@@ -158,10 +146,7 @@ export async function requireUserIsCohost(props: {
   return cohost;
 }
 
-export async function isChannelLead(props: {
-  userId: string;
-  channelId: string;
-}) {
+export async function isChannelLead(props: { userId: string; channelId: string }) {
   const channel = await getChannel({ name: props.channelId }).catch(() => {
     return null;
   });
@@ -220,10 +205,7 @@ export function getSharedEnv() {
     infuraProjectId: process.env.INFURA_PROJECT_ID!,
     postHogApiKey: process.env.POSTHOG_API_KEY!,
     nodeEnv: process.env.NODE_ENV!,
-    hostUrl:
-      process.env.NODE_ENV === "production"
-        ? process.env.PROD_URL!
-        : process.env.DEV_URL!,
+    hostUrl: process.env.NODE_ENV === "production" ? process.env.PROD_URL! : process.env.DEV_URL!,
   };
 }
 
@@ -234,47 +216,27 @@ export function frameResponse(params: FrameResponseArgs) {
   <html>
     <head>
       ${params.title ? `<title>${params.title}</title>` : ""}
-      ${
-        params.title
-          ? `<meta property="og:title" content="${params.title}">`
-          : ""
-      }
+      ${params.title ? `<meta property="og:title" content="${params.title}">` : ""}
       ${
         params.description
           ? `<meta property="description" content="${params.description}">
       <meta property="og:description" content="${params.description}">`
           : ""
       }
-      ${
-        params.input
-          ? `<meta property="fc:frame:input:text" content="${params.input}">`
-          : ""
-      }
+      ${params.input ? `<meta property="fc:frame:input:text" content="${params.input}">` : ""}
       <meta property="fc:frame" content="${version}">
       <meta property="fc:frame:image" content="${params.image}">
-      ${
-        params.postUrl
-          ? `<meta property="fc:frame:post_url" content="${params.postUrl}">`
-          : ""
-      }
+      ${params.postUrl ? `<meta property="fc:frame:post_url" content="${params.postUrl}">` : ""}
       ${
         params.buttons
           ? params.buttons
               .map((b, index) => {
-                let out = `<meta property="fc:frame:button:${
-                  index + 1
-                }" content="${b.text}">`;
+                let out = `<meta property="fc:frame:button:${index + 1}" content="${b.text}">`;
                 if (b.link) {
-                  out += `\n<meta property="fc:frame:button:${
-                    index + 1
-                  }:action" content="link">`;
-                  out += `\n<meta property="fc:frame:button:${
-                    index + 1
-                  }:target" content="${b.link}">`;
+                  out += `\n<meta property="fc:frame:button:${index + 1}:action" content="link">`;
+                  out += `\n<meta property="fc:frame:button:${index + 1}:target" content="${b.link}">`;
                 } else if (b.isRedirect) {
-                  out += `\n<meta property="fc:frame:button:${
-                    index + 1
-                  }:action" content="post_redirect">`;
+                  out += `\n<meta property="fc:frame:button:${index + 1}:action" content="post_redirect">`;
                 }
                 return out;
               })
@@ -288,9 +250,7 @@ export function frameResponse(params: FrameResponseArgs) {
       <div>
       <img src="${params.image}" />
       </div>
-      ${params.buttons
-        ?.map((b, index) => `<button name="button-${index}">${b.text}</button>`)
-        .join("\n")}
+      ${params.buttons?.map((b, index) => `<button name="button-${index}">${b.text}</button>`).join("\n")}
     </body>
   </html>
   `;
@@ -360,11 +320,8 @@ export async function successResponse<T>({
   data?: T;
   status?: number;
 }) {
-  const session =
-    passedSession || (await getSession(request.headers.get("Cookie")));
+  const session = passedSession || (await getSession(request.headers.get("Cookie")));
   session.flash("message", message);
-
-  console.log("test session", session.get(`sweep:tmp`));
 
   return typedjson(
     {
@@ -380,11 +337,7 @@ export async function successResponse<T>({
   );
 }
 
-export async function errorResponse(props: {
-  request: Request;
-  message: string;
-  status?: number;
-}) {
+export async function errorResponse(props: { request: Request; message: string; status?: number }) {
   const session = await getSession(props.request.headers.get("Cookie"));
   session.flash("error", props.message);
   return json(
