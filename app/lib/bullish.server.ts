@@ -2,10 +2,10 @@ import { Job, Queue, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
 import { ValidateCastArgs, validateCast } from "~/routes/api.webhooks.neynar";
+import { SweepArgs, sweep } from "~/routes/~.channels.$id.tools";
 
 const connection = new IORedis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
-  family: 6,
 });
 
 export const castQueue = new Queue("castQueue", {
@@ -27,6 +27,7 @@ export const castWorker = new Worker(
     lockDuration: 30_000,
   }
 );
+castWorker.on("error", Sentry.captureException);
 
 castWorker.on("active", (job) => {
   console.log(`Job ${job.id} is now active and being processed`);
@@ -46,3 +47,27 @@ castWorker.on("failed", (job, err) => {
     console.error("job failed", err);
   }
 });
+
+// sweeeeep
+export const sweepQueue = new Queue("sweepQueue", {
+  connection,
+});
+
+export const sweepWorker = new Worker(
+  "sweepQueue",
+  async (job: Job<SweepArgs>) => {
+    try {
+      await sweep({
+        channelId: job.data.channelId,
+        limit: job.data.limit,
+        moderatedChannel: job.data.moderatedChannel,
+      });
+    } catch (e) {
+      Sentry.captureException(e);
+      throw e;
+    }
+  },
+  { connection }
+);
+
+sweepWorker.on("error", Sentry.captureException);

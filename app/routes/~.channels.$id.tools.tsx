@@ -141,11 +141,13 @@ export default function Screen() {
   );
 }
 
-export async function sweep(args: {
+export type SweepArgs = {
   channelId: string;
-  limit: number;
   moderatedChannel: FullModeratedChannel;
-}) {
+  limit: number;
+};
+
+export async function sweep(args: SweepArgs) {
   const channel = await getChannel({ name: args.channelId });
 
   let castsChecked = 0;
