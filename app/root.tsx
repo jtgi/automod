@@ -1,14 +1,10 @@
-import { captureRemixErrorBoundaryError, withSentry } from "@sentry/remix";
+import { withSentry } from "@sentry/remix";
 import { cssBundleHref } from "@remix-run/css-bundle";
 
 import rootStyles from "~/root.css";
 
 import farcasterStylesUrl from "@farcaster/auth-kit/styles.css";
-import type {
-  LinksFunction,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import {
   Link,
   Links,
@@ -18,19 +14,10 @@ import {
   Scripts,
   ScrollRestoration,
   isRouteErrorResponse,
-  json,
-  useLoaderData,
   useRouteError,
 } from "@remix-run/react";
 import { Toaster } from "./components/ui/sonner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "./components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./components/ui/card";
 import { Alert } from "./components/ui/alert";
 import { Button } from "./components/ui/button";
 import { getSharedEnv } from "./lib/utils.server";
@@ -104,10 +91,7 @@ function App() {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <Meta />
         <Links />
       </head>
@@ -135,10 +119,7 @@ export const ErrorBoundary = () => {
       <head>
         <title>Oh no!</title>
         <meta charSet="utf-8" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <Meta />
         <Links />
       </head>
@@ -165,9 +146,7 @@ export const ErrorBoundary = () => {
           <Card>
             <CardHeader>
               <CardTitle>Something went wrong</CardTitle>
-              <CardDescription>
-                Sorry about that. The error has been logged.
-              </CardDescription>
+              <CardDescription>Sorry about that. The error has been logged.</CardDescription>
             </CardHeader>
             {error?.message && (
               <CardContent>

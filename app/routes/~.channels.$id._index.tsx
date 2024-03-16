@@ -174,16 +174,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { moderationLogs, actionDefinitions } =
-    useTypedLoaderData<typeof loader>();
+  const { moderationLogs, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   return (
     <div>
       {moderationLogs.length === 0 ? (
         <Alert>
           <div className="text-gray-700">
-            No moderation logs yet. Anytime your bot executes any action it'll
-            show here.
+            No moderation logs yet. Anytime your bot executes any action it'll show here.
           </div>
         </Alert>
       ) : (
@@ -208,36 +206,24 @@ export default function Screen() {
                       src={log.affectedUserAvatarUrl ?? undefined}
                       alt={"@" + log.affectedUsername}
                     />
-                    <AvatarFallback>
-                      {log.affectedUsername.slice(0, 2).toLocaleUpperCase()}
-                    </AvatarFallback>
+                    <AvatarFallback>{log.affectedUsername.slice(0, 2).toLocaleUpperCase()}</AvatarFallback>
                   </Avatar>
                 </a>
                 <div className="flex flex-col w-full">
                   <p className="font-semibold">
-                    <a
-                      href={`https://warpcast.com/${log.affectedUsername}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={`https://warpcast.com/${log.affectedUsername}`} target="_blank" rel="noreferrer">
                       @{log.affectedUsername}
                     </a>
                   </p>
                   <p>
-                    {
-                      actionDefinitions[
-                        log.action as keyof typeof actionDefinitions
-                      ].friendlyName
-                    }
-                    , {parseAndLocalizeDates(log.reason)}
+                    {actionDefinitions[log.action as keyof typeof actionDefinitions].friendlyName},{" "}
+                    {parseAndLocalizeDates(log.reason)}
                   </p>
                   {log.castHash && (
                     <p>
                       <a
                         className="text-[8px] no-underline hover:underline uppercase tracking-wide"
-                        href={`https://warpcast.com/${
-                          log.affectedUsername
-                        }/${log.castHash.substring(0, 10)}`}
+                        href={`https://warpcast.com/${log.affectedUsername}/${log.castHash.substring(0, 10)}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -248,9 +234,7 @@ export default function Screen() {
                   )}
                 </div>
 
-                {["cooldown", "mute", "hideQuietly", "warnAndHide"].includes(
-                  log.action
-                ) && (
+                {["cooldown", "mute", "hideQuietly", "warnAndHide"].includes(log.action) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger>
                       <MoreVerticalIcon className="w-5 h-5" />
@@ -284,8 +268,7 @@ export default function Screen() {
                           </DropdownMenuItem>
                         </Form>
                       )}
-                      {(log.action === "hideQuietly" ||
-                        log.action === "warnAndHide") && (
+                      {(log.action === "hideQuietly" || log.action === "warnAndHide") && (
                         <Form method="post">
                           <input type="hidden" name="logId" value={log.id} />
                           <DropdownMenuItem>

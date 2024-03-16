@@ -1,12 +1,6 @@
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import {
-  errorResponse,
-  formatZodError,
-  getSharedEnv,
-  isChannelLead,
-  requireUser,
-} from "~/lib/utils.server";
+import { errorResponse, formatZodError, getSharedEnv, isChannelLead, requireUser } from "~/lib/utils.server";
 
 import {
   ModeratedChannelSchema,
@@ -33,9 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!isLead) {
       return errorResponse({
         request,
-        message: `Only the channel lead${
-          lead ? ` (@${lead.username})` : ""
-        } can setup a bot`,
+        message: `Only the channel lead${lead ? ` (@${lead.username})` : ""} can setup a bot`,
       });
     }
   }
@@ -79,6 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
           id: user.id,
         },
       },
+      imageUrl: neynarChannel.image_url,
       banThreshold: channelResult.data.banThreshold,
       excludeCohosts: channelResult.data.excludeCohosts,
       excludeUsernames: JSON.stringify(channelResult.data.excludeUsernames),
@@ -121,8 +114,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { ruleNames, ruleDefinitions, actionDefinitions } =
-    useTypedLoaderData<typeof loader>();
+  const { ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4">

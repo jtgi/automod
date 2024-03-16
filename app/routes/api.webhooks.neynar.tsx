@@ -141,7 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (process.env.NODE_ENV === "development") {
     console.log("data", JSON.stringify(webhookNotif.data, null, 2));
   } else {
-    console.log(channel.id, webhookNotif.data.hash);
+    console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
   }
 
   await castQueue.add(
@@ -193,7 +193,7 @@ export async function validateCast({
   if (moderatedChannel.excludeCohosts) {
     const cohosts = await getChannelHosts({ channel: channel.id });
     if (cohosts.result.hosts.find((c) => c.fid === cast.author.fid)) {
-      console.log(`User @${cast.author.username} is a cohost. Doing nothing.`);
+      console.log(`[${channel.id}] @${cast.author.username} is a cohost. Doing nothing.`);
       return logs;
     }
   }
@@ -333,7 +333,7 @@ export async function validateCast({
         }
 
         console.log(
-          `${simulation ? "[simulation]: " : ""}${action.type} @${cast.author.username}: ${
+          `${simulation ? "[simulation]: " : ""}[${channel.id}]: ${action.type} @${cast.author.username}: ${
             ruleEvaluation.explanation
           }`
         );

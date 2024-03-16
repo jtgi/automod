@@ -1,18 +1,12 @@
 /* eslint-disable react/no-unescaped-entities */
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useFetcher } from "@remix-run/react";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { Link, Outlet, useFetcher, useNavigation } from "@remix-run/react";
+import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { SidebarNav, SidebarNavProps } from "~/components/sub-nav";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
@@ -28,9 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const session = await getSession(request.headers.get("Cookie"));
-  const isNewChannel =
-    session.get("newChannel") !== undefined ||
-    url.searchParams.get("newChannel") !== null;
+  const isNewChannel = session.get("newChannel") !== undefined || url.searchParams.get("newChannel") !== null;
 
   return typedjson(
     {
@@ -48,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ChannelRoot() {
   const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
-
+  const navigation = useNavigation();
   const enableFetcher = useFetcher();
 
   return (
@@ -65,10 +57,7 @@ export default function ChannelRoot() {
           <h1 style={{ fontFamily: "Kode Mono" }}>/{channel.id}</h1>
         </div>
         <div className="pl-2 flex items-center gap-7">
-          <form
-            method="post"
-            action={`/api/channels/${channel.id}/toggleEnable`}
-          >
+          <form method="post" action={`/api/channels/${channel.id}/toggleEnable`}>
             <div className="flex items-center">
               <label htmlFor="enabled" className="text-sm p-3">
                 Enabled
@@ -122,19 +111,11 @@ export default function ChannelRoot() {
               <div className="flex flex-col gap-4">
                 <div>
                   Open up{" "}
-                  <a
-                    href={`https://warpcast.com/~/channel/${channel.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href={`https://warpcast.com/~/channel/${channel.id}`} target="_blank" rel="noreferrer">
                     /{channel.id}
                   </a>{" "}
                   and add{" "}
-                  <a
-                    href="https://warpcast.com/automod"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href="https://warpcast.com/automod" target="_blank" rel="noreferrer">
                     @automod
                   </a>{" "}
                   as a cohost to enable moderation.
@@ -146,8 +127,7 @@ export default function ChannelRoot() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Open /{channel.id}{" "}
-                    <ArrowUpRight className="inline ml-1 w-3 h-3" />
+                    Open /{channel.id} <ArrowUpRight className="inline ml-1 w-3 h-3" />
                   </a>
                 </Button>
               </div>

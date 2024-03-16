@@ -1,12 +1,8 @@
-import {
-  AuthKitProvider,
-  SignInButton,
-  StatusAPIResponse,
-} from "@farcaster/auth-kit";
+import { AuthKitProvider, SignInButton, StatusAPIResponse } from "@farcaster/auth-kit";
 import { ClientOnly } from "remix-utils/client-only";
 import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useNavigate } from "@remix-run/react";
-import { ArrowRight, ArrowUpRight, Loader, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Loader2, Zap } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -15,6 +11,8 @@ import { getSharedEnv } from "~/lib/utils.server";
 import { Farcaster } from "~/components/icons/farcaster";
 import { useCallback, useState } from "react";
 import invariant from "tiny-invariant";
+import { db } from "~/lib/db.server";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
 // export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
@@ -52,18 +50,74 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
+  const [activeChannels, totalChannels, totalModerationActions, activeUsers] = await Promise.all([
+    db.moderatedChannel.findMany({
+      select: {
+        id: true,
+        imageUrl: true,
+        _count: {
+          select: {
+            moderationLogs: true,
+          },
+        },
+      },
+      where: {
+        id: {
+          in: [
+            "samantha",
+            "seaport",
+            "degen",
+            "fitness",
+            "higher",
+            "cnz",
+            "replyguys",
+            "nook",
+            "ogs",
+            "wake",
+          ],
+        },
+      },
+      orderBy: {
+        moderationLogs: {
+          _count: "desc",
+        },
+      },
+      take: 10,
+    }),
+    db.moderatedChannel.count({
+      where: {
+        active: true,
+        moderationLogs: {
+          some: {},
+        },
+      },
+    }),
+    db.moderationLog.count({}),
+  ]);
+
   const user = await authenticator.isAuthenticated(request);
 
-  return typedjson({
-    env: getSharedEnv(),
-    user,
-    invite,
-    error,
-  });
+  return typedjson(
+    {
+      env: getSharedEnv(),
+      user,
+      invite,
+      error,
+      activeChannels,
+      totalChannels,
+      totalModerationActions,
+    },
+    {
+      headers: {
+        "Cache-Control": `public, max-age=${60 * 60 * 24}`,
+      },
+    }
+  );
 }
 
 export default function Home() {
-  const { user, env, error, invite } = useTypedLoaderData<typeof loader>();
+  const { user, env, error, invite, totalChannels, activeChannels, totalModerationActions } =
+    useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [loggingIn, setLoggingIn] = useState(false);
 
@@ -101,13 +155,13 @@ export default function Home() {
             "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
         }}
       >
-        <div className="max-w-xl flex flex-col justify-center items-center">
-          <Link to="/~" className="no-underline">
-            <h1 className="text-6xl logo text-white opacity-80">automod</h1>
-          </Link>
-          <h2 className="font-normal mb-8 opacity-50 text-white">
-            Enforce channel norms with bots
-          </h2>
+        <div className="max-w-xl flex flex-col justify-center items-center gap-8">
+          <div className="flex flex-col items-center">
+            <Link to="/~" className="no-underline">
+              <h1 className="text-6xl logo text-white opacity-80">automod</h1>
+            </Link>
+            <h2 className="font-normal mb-8 opacity-50 text-white">Enforce channel norms with bots</h2>
+          </div>
 
           {error && (
             <Alert className="mb-8" variant="destructive">
@@ -127,40 +181,79 @@ export default function Home() {
             </Button>
           ) : (
             <>
-              <ClientOnly>
-                {() => {
-                  return (
-                    <Button
-                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/80 hover:bg-primary transition-all duration-100"
-                      variant={"outline"}
-                    >
-                      {loggingIn ? (
-                        <Loader2 className=" animate-spin h-4 w-4" />
-                      ) : (
-                        <>
-                          <Farcaster className="mr-2 h-5 w-5" />
-                          <span>Login with Farcaster</span>
-                          <div id="fc-btn-wrap" className="absolute">
-                            <SignInButton onSuccess={handleSuccess} />
-                          </div>
-                        </>
-                      )}
-                    </Button>
-                  );
-                }}
-              </ClientOnly>
-              <div className="text-white opacity-60 text-sm mt-2">
-                Now in private beta.{" "}
-                <a
-                  className="text-white opacity-90 hover:opacity-100 transition-all"
-                  href="https://tally.so/r/woMkMb"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Join the waitlist
-                </a>
-                <ArrowUpRight className="inline w-4 h-4" />
+              <div>
+                <ClientOnly>
+                  {() => {
+                    return (
+                      <Button
+                        className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/80 hover:bg-primary transition-all duration-100"
+                        variant={"outline"}
+                      >
+                        {loggingIn ? (
+                          <Loader2 className=" animate-spin h-4 w-4" />
+                        ) : (
+                          <>
+                            <Farcaster className="mr-2 h-5 w-5" />
+                            <span>Login with Farcaster</span>
+                            <div id="fc-btn-wrap" className="absolute">
+                              <SignInButton onSuccess={handleSuccess} />
+                            </div>
+                          </>
+                        )}
+                      </Button>
+                    );
+                  }}
+                </ClientOnly>
+                <div className="text-white opacity-60 text-sm mt-2">
+                  Now in private beta.{" "}
+                  <a
+                    className="text-white opacity-90 hover:opacity-100 transition-all"
+                    href="https://tally.so/r/woMkMb"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Join the waitlist
+                  </a>
+                  <ArrowUpRight className="inline w-4 h-4" />
+                </div>
               </div>
+
+              <section className="flex flex-col items-center mt-8">
+                <p className="mb-2 text-xs text-white opacity-60">
+                  Used by {Math.round(totalChannels / 10) * 10}+ channels
+                </p>
+                <div className="flex -space-x-1">
+                  {activeChannels
+                    .filter((c) => !!c.imageUrl)
+                    .map((channel) => {
+                      return (
+                        <Popover key={channel.id}>
+                          <PopoverTrigger>
+                            <img
+                              key={channel.id}
+                              src={channel.imageUrl ?? undefined}
+                              className="inline-block shrink-0 h-6 w-6 rounded-full ring-2 ring-white"
+                            />
+                          </PopoverTrigger>
+                          <PopoverContent className="flex gap-1 p-1 pr-4 rounded-full items-center w-auto">
+                            <img
+                              src={channel.imageUrl ?? undefined}
+                              className="h-8 w-8 rounded-full block flex-1"
+                            />
+                            <div>
+                              <h3 className="text-sm font-bold font-mono" style={{ fontFamily: "Kode Mono" }}>
+                                /{channel.id}
+                              </h3>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      );
+                    })}
+                </div>
+                <p className="text-xs text-white opacity-60 mt-2">
+                  {totalModerationActions.toLocaleString()} automated actions taken.
+                </p>
+              </section>
             </>
           )}
         </div>
