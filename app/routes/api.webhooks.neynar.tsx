@@ -166,29 +166,22 @@ export async function action({ request }: ActionFunctionArgs) {
     console.log(channel.id, webhookNotif.data.hash);
   }
 
-  castQueue
-    .add(
-      "processCast",
-      {
-        channel,
-        moderatedChannel,
-        cast: webhookNotif.data,
-        simulation: true,
+  await castQueue.add(
+    "processCast",
+    {
+      channel,
+      moderatedChannel,
+      cast: webhookNotif.data,
+    },
+    {
+      removeOnComplete: 1000,
+      removeOnFail: 5000,
+      backoff: {
+        type: "exponential",
+        delay: 1000,
       },
-      {
-        backoff: {
-          type: "exponential",
-          delay: 1000,
-        },
-      }
-    )
-    .catch(console.error);
-
-  await validateCast({
-    channel,
-    moderatedChannel,
-    cast: webhookNotif.data,
-  });
+    }
+  );
 
   return json({
     message: "enqueued",

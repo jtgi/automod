@@ -11,7 +11,7 @@ import {
   sleep,
   successResponse,
 } from "~/lib/utils.server";
-import { Form, useFetcher } from "@remix-run/react";
+import { Form } from "@remix-run/react";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { getChannel, pageChannelCasts } from "~/lib/neynar.server";
@@ -19,6 +19,7 @@ import { FullModeratedChannel, validateCast } from "./api.webhooks.neynar";
 import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
+import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 const SWEEP_LIMIT = 500;
 
@@ -145,6 +146,7 @@ export type SweepArgs = {
   channelId: string;
   moderatedChannel: FullModeratedChannel;
   limit: number;
+  onProcessed?: () => void;
 };
 
 export async function sweep(args: SweepArgs) {
