@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { FarcasterIcon } from "~/components/FarcasterIcon";
 
 // export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
@@ -220,7 +221,7 @@ export default function Home() {
 
               <section className="flex flex-col items-center mt-8">
                 <p className="mb-2 text-xs text-white opacity-60">
-                  Used by {Math.round(totalChannels / 10) * 10}+ channels
+                  Used by beloved <FarcasterIcon className="-mt-[2px] inline w-3 h-3 text-white" /> channels
                 </p>
                 <div className="flex -space-x-1">
                   {activeChannels
