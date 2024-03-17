@@ -1,10 +1,19 @@
 import { AuthKitProvider } from "@farcaster/auth-kit";
+import { DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, Outlet } from "@remix-run/react";
 import { useEffect } from "react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { toast } from "sonner";
-import { Button } from "~/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { cn } from "~/lib/utils";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
@@ -35,8 +44,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-  const { env, message, error, impersonateAs, flashCacheBust } =
-    useTypedLoaderData<typeof loader>();
+  const { env, message, error, impersonateAs, flashCacheBust, user } = useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
     if (message) {
@@ -72,9 +80,32 @@ export default function Index() {
             <h1 className="logo text-3xl">automod</h1>
           </Link>
           <div className="flex space-x-4">
-            <Form method="post" action="/~/logout">
-              <Button variant={"ghost"}>Logout</Button>
-            </Form>
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Avatar className="shadow p-1 w-11 h-11 hover:shadow-orange-500 transition-all duration-400">
+                  <AvatarImage className="rounded-full" src={user.avatarUrl ?? undefined} alt={user.name} />
+                  <AvatarFallback className="text-white bg-primary">
+                    {user.name.slice(0, 2).toLocaleUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent>
+                <DropdownMenuLabel
+                  style={{
+                    fontFamily: "Kode Mono",
+                  }}
+                >
+                  @{user.name}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Form method="post" action="/~/logout">
+                  <DropdownMenuItem onClick={(e) => e.currentTarget.closest("form")?.submit()}>
+                    Logout
+                  </DropdownMenuItem>
+                </Form>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </nav>
         <Outlet />

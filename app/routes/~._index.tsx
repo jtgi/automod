@@ -6,13 +6,7 @@ import { useClipboard } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { Link } from "@remix-run/react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -55,9 +49,7 @@ export default function FrameConfig() {
         <Card>
           <CardHeader>
             <CardTitle>Welcome</CardTitle>
-            <CardDescription>
-              Creating a bot for your channel just takes a few seconds.
-            </CardDescription>
+            <CardDescription>Creating a bot for your channel just takes a few seconds.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild>
@@ -81,23 +73,34 @@ export default function FrameConfig() {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {channels.map((channel) => (
-              <Link
-                to={`/~/channels/${channel.id}`}
-                className="no-underline"
-                key={channel.id}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{channel.id}</CardTitle>
-                    <CardDescription className="flex items-center justify-between">
-                      {channel.ruleSets.length}{" "}
-                      {channel.ruleSets.length === 1 ? "rule" : "rules"}
-                      {channel.comods.some((h) => h.fid === user.id) && (
-                        <Badge variant={"outline"}>Collaborator</Badge>
-                      )}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+              <Link to={`/~/channels/${channel.id}`} className="no-underline" key={channel.id}>
+                <div className="flex gap-2 rounded-lg p-4 shadow border hover:border-orange-200 hover:shadow-orange-200 transition-all duration-300">
+                  <img
+                    src={channel.imageUrl ?? undefined}
+                    alt={channel.id}
+                    className="h-12 w-12 rounded-full block"
+                  />
+                  <div className="w-full overflow-hidden">
+                    <h3
+                      title={channel.id}
+                      className=" text-ellipsis whitespace-nowrap overflow-hidden"
+                      style={{ fontFamily: "Kode Mono" }}
+                    >
+                      /{channel.id}
+                    </h3>
+                    <div className="flex w-full justify-between">
+                      <p className="text-sm text-gray-400">
+                        {channel.ruleSets.length === 0 ? (
+                          "No rules yet."
+                        ) : (
+                          <>
+                            {channel.ruleSets.length} {channel.ruleSets.length === 1 ? "rule" : "rules"}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </Link>
             ))}
           </div>
@@ -107,13 +110,7 @@ export default function FrameConfig() {
   );
 }
 
-export function CopyButton({
-  frame,
-  env,
-}: {
-  frame: { slug: string };
-  env: { hostUrl: string };
-}) {
+export function CopyButton({ frame, env }: { frame: { slug: string }; env: { hostUrl: string } }) {
   const { copy, copied } = useClipboard();
 
   return (

@@ -252,7 +252,7 @@ export default function Home() {
                     })}
                 </div>
                 <p className="text-xs text-white opacity-60 mt-2">
-                  {totalModerationActions.toLocaleString()} automated actions taken.
+                  {totalModerationActions.toLocaleString()} automated actions taken
                 </p>
               </section>
             </>
