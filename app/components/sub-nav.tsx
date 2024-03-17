@@ -18,6 +18,7 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
         <NavLink
           key={item.to}
           to={item.to}
+          prefetch="intent"
           end
           className={({ isActive, isPending }) =>
             cn(

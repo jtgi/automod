@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { authenticator } from "~/lib/auth.server";
 import { getSharedEnv } from "~/lib/utils.server";
 import { Farcaster } from "~/components/icons/farcaster";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
@@ -121,6 +121,7 @@ export default function Home() {
     useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [loggingIn, setLoggingIn] = useState(false);
+  const coin = useRef<HTMLAudioElement>();
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,
@@ -146,6 +147,21 @@ export default function Home() {
       replace: true,
     });
   }, []);
+
+  useEffect(() => {
+    if (!coin.current) {
+      coin.current = new Audio("/1up.wav");
+    }
+    const audio = coin.current;
+    audio.preload = "auto";
+    audio.load();
+  }, []);
+
+  const playSound = () => {
+    // Clone the audio node and play it
+    const audioClone = coin.current?.cloneNode() as HTMLAudioElement;
+    audioClone.play().catch((error) => console.error("Error playing the sound:", error));
+  };
 
   return (
     <AuthKitProvider config={farcasterConfig}>
@@ -226,10 +242,17 @@ export default function Home() {
                 <div className="flex -space-x-1">
                   {activeChannels
                     .filter((c) => !!c.imageUrl)
-                    .map((channel) => {
+                    .map((channel, index) => {
                       return (
                         <Popover key={channel.id}>
-                          <PopoverTrigger>
+                          <PopoverTrigger
+                            className="hover:-translate-y-1 transition-all duration-400 z-auto"
+                            onMouseEnter={playSound}
+                            style={{
+                              zIndex: index,
+                            }}
+                            onClick={playSound}
+                          >
                             <img
                               key={channel.id}
                               src={channel.imageUrl ?? undefined}
