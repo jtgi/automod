@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const [activeChannels, totalChannels, totalModerationActions, activeUsers] = await Promise.all([
+  const [activeChannels, totalChannels, totalModerationActions] = await Promise.all([
     db.moderatedChannel.findMany({
       select: {
         id: true,
