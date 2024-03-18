@@ -109,6 +109,7 @@ model ModerationLog {
   action                String
   reason                String
   castHash              String?
+  castText              String?
   actor                 String           @default("system")
   affectedUserFid       String
   affectedUsername      String

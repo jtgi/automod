@@ -32,7 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const channelResult = ModeratedChannelSchema.safeParse(data);
+  const channelResult = await ModeratedChannelSchema.safeParseAsync(data);
 
   if (!channelResult.success) {
     console.error(channelResult.error);

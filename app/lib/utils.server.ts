@@ -10,7 +10,9 @@ import { redirect, typedjson } from "remix-typedjson";
 import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
-import { getChannelHosts, isCohost } from "./warpcast.server";
+import { getChannelHosts } from "./warpcast.server";
+import { erc20Abi, erc721Abi, getAddress, getContract } from "viem";
+import { clientsByChainId } from "./viem.server";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -373,4 +375,48 @@ export function formatZodError(error: ZodError): string {
 
 export async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function validateErc721(props: { chainId?: string; contractAddress?: string }) {
+  if (!props.chainId || !props.contractAddress) {
+    return false;
+  }
+
+  const client = clientsByChainId[props.chainId];
+  const contract = getContract({
+    address: getAddress(props.contractAddress),
+    abi: erc721Abi,
+    client,
+  });
+
+  await contract.read.name().catch(() => {
+    return false;
+  });
+
+  return true;
+}
+
+export async function validateErc20({
+  chainId,
+  contractAddress,
+}: {
+  chainId?: string;
+  contractAddress?: string;
+}) {
+  if (!chainId || !contractAddress) {
+    return false;
+  }
+
+  const client = clientsByChainId[chainId];
+  const contract = getContract({
+    address: getAddress(contractAddress),
+    abi: erc20Abi,
+    client,
+  });
+
+  await contract.read.name().catch(() => {
+    return false;
+  });
+
+  return true;
 }

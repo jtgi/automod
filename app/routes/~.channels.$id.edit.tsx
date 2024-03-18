@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const ch = ModeratedChannelSchema.safeParse(data);
+  const ch = await ModeratedChannelSchema.safeParseAsync(data);
 
   if (!ch.success) {
     console.error(JSON.stringify(ch.error, null, 2));
@@ -112,17 +112,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions } =
-    useTypedLoaderData<typeof loader>();
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   const patchedRuleSets = channel.ruleSets.map((ruleSet) => {
     const ruleParsed = JSON.parse(ruleSet.rule);
 
     return {
       ...ruleSet,
-      logicType: (ruleParsed.operation === "AND" ? "and" : "or") as
-        | "and"
-        | "or",
+      logicType: (ruleParsed.operation === "AND" ? "and" : "or") as "and" | "or",
       ruleParsed: ruleParsed.conditions,
       actionsParsed: JSON.parse(ruleSet.actions),
     };

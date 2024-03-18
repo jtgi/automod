@@ -386,6 +386,7 @@ async function logModerationAction(
         affectedUsername: cast.author.username,
         affectedUserAvatarUrl: cast.author.pfp_url,
         affectedUserFid: String(cast.author.fid),
+        castText: cast.text,
         castHash: cast.hash,
       },
     });
@@ -400,6 +401,7 @@ async function logModerationAction(
       affectedUserAvatarUrl: cast.author.pfp_url,
       affectedUserFid: String(cast.author.fid),
       castHash: cast.hash,
+      castText: cast.text,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

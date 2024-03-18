@@ -2,8 +2,11 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
@@ -18,9 +21,12 @@ import {
 import { Form, Link } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
-import { ArrowUpRight, MoreVerticalIcon } from "lucide-react";
+import { ArrowUpRight, MoreVerticalIcon, SlidersHorizontalIcon } from "lucide-react";
 import { z } from "zod";
 import { unhide } from "~/lib/warpcast.server";
+import { useLocalStorage } from "~/lib/utils";
+import { Switch } from "~/components/ui/switch";
+import { Button } from "~/components/ui/button";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -175,9 +181,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function Screen() {
   const { moderationLogs, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const [showCastText, setShowCastText] = useLocalStorage("showCastText", true);
 
   return (
     <div>
+      <div className="flex justify-between border-b">
+        <div>
+          <p className="text-lg font-semibold">Logs</p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="rounded-full">
+              <SlidersHorizontalIcon className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <DropdownMenuCheckboxItem checked={showCastText} onCheckedChange={setShowCastText}>
+              Show Cast Text
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       {moderationLogs.length === 0 ? (
         <Alert>
           <div className="text-gray-700">
@@ -219,6 +243,11 @@ export default function Screen() {
                     {actionDefinitions[log.action as keyof typeof actionDefinitions].friendlyName},{" "}
                     {parseAndLocalizeDates(log.reason)}
                   </p>
+
+                  {log.castText && showCastText && (
+                    <Alert className="my-2 text-sm text-gray-500 italic">{log.castText}</Alert>
+                  )}
+
                   {log.castHash && (
                     <p>
                       <a
@@ -227,7 +256,7 @@ export default function Screen() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        View Cast
+                        View on Warpcast
                       </a>
                       <ArrowUpRight className="inline w-2 h-2 mt-[2px] text-primary" />
                     </p>

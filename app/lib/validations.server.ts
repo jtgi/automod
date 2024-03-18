@@ -10,6 +10,7 @@ import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import { clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
+import { validateErc20, validateErc721 } from "./utils.server";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -479,24 +480,51 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
-}).refine(
-  (data) => {
-    if (data.name === "textMatchesPattern") {
-      try {
-        new RE2(data.args.pattern);
-      } catch (e) {
-        return false;
-      }
+})
+  .refine(
+    (data) => {
+      if (data.name === "textMatchesPattern") {
+        try {
+          new RE2(data.args.pattern);
+        } catch (e) {
+          return false;
+        }
 
-      return true;
-    } else {
-      return true;
+        return true;
+      } else {
+        return true;
+      }
+    },
+    (value) => ({
+      message: `The pattern "${value.name}" is no good. It should be javascript compatible. Backreferences and lookahead assertions are not supported.`,
+    })
+  )
+  .refine(
+    async (data) => {
+      if (data.name === "requiresErc721") {
+        return await validateErc721({
+          chainId: data.args.chainId,
+          contractAddress: data.args.contractAddress,
+        });
+      }
+    },
+    {
+      message: "Couldn't find that ERC-721 contract. Sure you got the right chain?",
     }
-  },
-  (value) => ({
-    message: `The pattern "${value.name}" is no good. It should be javascript compatible. Backreferences and lookahead assertions are not supported.`,
-  })
-);
+  )
+  .refine(
+    async (data) => {
+      if (data.name === "requiresErc20") {
+        return await validateErc20({
+          chainId: data.args.chainId,
+          contractAddress: data.args.contractAddress,
+        });
+      }
+    },
+    {
+      message: "Couldn't find that ERC-20 contract. Sure you got the right chain?",
+    }
+  );
 
 const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
@@ -895,15 +923,6 @@ export async function requiresErc20(args: CheckFunctionArgs) {
     minBalanceRequired: minBalance,
   });
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("ERC-20 check", {
-      contractAddress,
-      minBalance,
-      hasEnough,
-      invert: rule.invert,
-    });
-  }
-
   if (!hasEnough) {
     return `Wallet does not hold enough ERC-20.`;
   }
@@ -933,15 +952,6 @@ export async function verifyErc20Balance({
   const decimals = await contract.read.decimals();
   const minBalanceBigInt = parseUnits(minBalanceRequired ?? "0", decimals);
   const sum = balances.reduce((a, b) => a + b, BigInt(0));
-
-  console.log("ERC-20 balance check", {
-    contractAddress,
-    balances: balances.map((b) => b.toString()),
-    minBalanceRequired,
-    decimals,
-    minBalanceBigInt: minBalanceBigInt.toString(),
-    sum,
-  });
 
   return {
     result: sum >= minBalanceBigInt && sum > BigInt(0),
