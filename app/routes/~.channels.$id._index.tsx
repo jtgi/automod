@@ -279,8 +279,13 @@ export default function Screen() {
                       {parseAndLocalizeDates(log.reason)}
                     </p>
 
-                    {log.castText && showCastText && (
-                      <Alert className="my-2 text-sm text-gray-500 italic">{log.castText}</Alert>
+                    {showCastText && (
+                      <Alert className="my-2 text-sm text-gray-500 italic  break-all">
+                        US Defense Department contracts with Elon Musk of SpaceX to develop global spy
+                        satellite network, according to reports; $1.8B deal with the company's Starshield
+                        program was inked in 2021
+                        https://www.reuters.com/technology/space/musks-spacex-is-building-spy-satellite-network-us-intelligence-agency-sources-2024-03-16/
+                      </Alert>
                     )}
 
                     {log.castHash && (
