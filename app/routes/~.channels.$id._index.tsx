@@ -231,9 +231,9 @@ export default function Screen() {
         </DropdownMenu>
       </div>
       {moderationLogs.length === 0 ? (
-        <Alert>
-          <div className="mt-2 text-gray-700">
-            No moderation logs yet. Anytime your bot executes any action it'll show here.
+        <Alert className="mt-2">
+          <div className="text-gray-700">
+            No moderation logs yet. Anytime your bot executes an action it'll show here.
           </div>
         </Alert>
       ) : (
