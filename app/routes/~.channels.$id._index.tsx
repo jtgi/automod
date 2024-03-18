@@ -234,7 +234,7 @@ export default function Screen() {
       </div>
       {moderationLogs.length === 0 ? (
         <Alert>
-          <div className="text-gray-700">
+          <div className="mt-2 text-gray-700">
             No moderation logs yet. Anytime your bot executes any action it'll show here.
           </div>
         </Alert>
