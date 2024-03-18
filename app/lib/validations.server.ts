@@ -223,7 +223,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
-  requireUserIsActive: {
+  userIsNotActive: {
     friendlyName: "User is Not Active",
     hidden: false,
     invertable: true,
@@ -435,7 +435,7 @@ export const ruleNames = [
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
-  "requireUserIsActive",
+  "userIsNotActive",
   "userFidInRange",
   "userIsCohost",
   "requiresErc721",
@@ -578,7 +578,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
-  requireUserIsActive: requireUserIsActive,
+  userIsNotActive: userIsNotActive,
   userFidInRange: userFidInRange,
   requiresErc721: requiresErc721,
   requiresErc20: requiresErc20,
@@ -853,7 +853,7 @@ export async function userIsCohost(args: CheckFunctionArgs) {
 }
 
 // Rule: user active_status must be active
-export function requireUserIsActive(args: CheckFunctionArgs) {
+export function userIsNotActive(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   if (!rule.invert && cast.author.active_status !== "active") {
     return `User is not active`;

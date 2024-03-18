@@ -15,9 +15,9 @@ import {
   userDisplayNameContainsText,
   userFidInRange,
   userFollowerCount,
-  requireUserIsActive,
   userProfileContainsText,
   castLength,
+  userIsNotActive,
 } from "~/lib/validations.server";
 import RE2 from "re2";
 import { NeynarCastWithFrame } from "~/lib/types";
@@ -525,19 +525,19 @@ describe("userIsNotActive", () => {
   it("should return undefined if user is active", () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({});
-    expect(requireUserIsActive({ channel: m, cast: c, rule: r })).toBeUndefined();
+    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it('should invert the rule if "invert" is set', () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({ invert: true });
-    expect(requireUserIsActive({ channel: m, cast: c, rule: r })).toBe("User is active");
+    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe("User is active");
   });
 
   it("should return a message if user is not active", () => {
     const c = cast({ author: { active_status: "inactive" } as any });
     const r = rule({});
-    expect(requireUserIsActive({ channel: m, cast: c, rule: r })).toBe("User is not active");
+    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe("User is not active");
   });
 });
 
