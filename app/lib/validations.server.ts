@@ -164,99 +164,6 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       },
     },
   },
-  userProfileContainsText: {
-    friendlyName: "User Profile Contains Text",
-    description: "Check if the user's profile contains a specific string",
-    hidden: false,
-
-    invertable: true,
-    args: {
-      searchText: {
-        type: "string",
-        friendlyName: "Search Text",
-        description: "The text to search for",
-      },
-      caseSensitive: {
-        type: "boolean",
-        friendlyName: "Case Sensitive",
-        description: "If checked, 'abc' is different from 'ABC'",
-      },
-    },
-  },
-  userDisplayNameContainsText: {
-    friendlyName: "User Display Name Contains Text",
-    description: "Check if the user's display name contains a specific string",
-    hidden: false,
-
-    invertable: true,
-    args: {
-      searchText: {
-        required: true,
-        type: "string",
-        friendlyName: "Search Text",
-        description: "The text to search for",
-      },
-      caseSensitive: {
-        type: "boolean",
-        friendlyName: "Case Sensitive",
-        description: "If checked 'abc' is different from 'ABC'",
-      },
-    },
-  },
-
-  userFollowerCount: {
-    friendlyName: "User Follower Count",
-    hidden: false,
-    invertable: false,
-    description: "Check if the user's follower count is within a range",
-    args: {
-      min: {
-        type: "number",
-        friendlyName: "Min",
-        description: "The minimum number of followers",
-      },
-      max: {
-        type: "number",
-        friendlyName: "Max",
-        description: "The maximum number of followers",
-      },
-    },
-  },
-
-  userIsNotActive: {
-    friendlyName: "User is Not Active",
-    hidden: false,
-    invertable: true,
-    description: "Require the user is active",
-    args: {},
-  },
-
-  userIsCohost: {
-    friendlyName: "User Is Cohost",
-    description: "Check if the user is a cohost",
-    hidden: false,
-    invertable: true,
-    args: {},
-  },
-
-  userFidInRange: {
-    friendlyName: "User FID In Range",
-    description: "Check if the user's FID is within a range",
-    hidden: false,
-    invertable: false,
-    args: {
-      minFid: {
-        type: "number",
-        friendlyName: "Min FID",
-        description: "The minimum FID",
-      },
-      maxFid: {
-        type: "number",
-        friendlyName: "Max FID",
-        description: "The maximum FID",
-      },
-    },
-  },
 
   requiresErc20: {
     friendlyName: "User Holds ERC-20",
@@ -327,6 +234,100 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         pattern: "[0-9]+",
         friendlyName: "Token ID (optional)",
         description: "",
+      },
+    },
+  },
+
+  userIsNotActive: {
+    friendlyName: "User is Not Active",
+    hidden: false,
+    invertable: true,
+    description: "Require the user is active",
+    args: {},
+  },
+
+  userIsCohost: {
+    friendlyName: "User Is Cohost",
+    description: "Check if the user is a cohost",
+    hidden: false,
+    invertable: true,
+    args: {},
+  },
+
+  userProfileContainsText: {
+    friendlyName: "User Profile Contains Text",
+    description: "Check if the user's profile contains a specific string",
+    hidden: false,
+
+    invertable: true,
+    args: {
+      searchText: {
+        type: "string",
+        friendlyName: "Search Text",
+        description: "The text to search for",
+      },
+      caseSensitive: {
+        type: "boolean",
+        friendlyName: "Case Sensitive",
+        description: "If checked, 'abc' is different from 'ABC'",
+      },
+    },
+  },
+  userDisplayNameContainsText: {
+    friendlyName: "User Display Name Contains Text",
+    description: "Check if the user's display name contains a specific string",
+    hidden: false,
+
+    invertable: true,
+    args: {
+      searchText: {
+        required: true,
+        type: "string",
+        friendlyName: "Search Text",
+        description: "The text to search for",
+      },
+      caseSensitive: {
+        type: "boolean",
+        friendlyName: "Case Sensitive",
+        description: "If checked 'abc' is different from 'ABC'",
+      },
+    },
+  },
+
+  userFollowerCount: {
+    friendlyName: "User Follower Count",
+    hidden: false,
+    invertable: false,
+    description: "Check if the user's follower count is within a range",
+    args: {
+      min: {
+        type: "number",
+        friendlyName: "Min",
+        description: "The minimum number of followers",
+      },
+      max: {
+        type: "number",
+        friendlyName: "Max",
+        description: "The maximum number of followers",
+      },
+    },
+  },
+
+  userFidInRange: {
+    friendlyName: "User FID In Range",
+    description: "Check if the user's FID is within a range",
+    hidden: false,
+    invertable: false,
+    args: {
+      minFid: {
+        type: "number",
+        friendlyName: "Min FID",
+        description: "The minimum FID",
+      },
+      maxFid: {
+        type: "number",
+        friendlyName: "Max FID",
+        description: "The maximum FID",
       },
     },
   },
