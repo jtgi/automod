@@ -19,10 +19,9 @@ import { FullModeratedChannel, validateCast } from "./api.webhooks.neynar";
 import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
-import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { sweepQueue } from "~/lib/bullish.server";
 
-const SWEEP_LIMIT = 500;
+const SWEEP_LIMIT = 1000;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
