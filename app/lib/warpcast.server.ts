@@ -12,10 +12,12 @@ const http = axiosFactory.create();
 http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
   const config = err.config;
 
-  if (
-    (err.response.status === 429 || err.response.status === 502) &&
-    !config.__retryCount
-  ) {
+  console.error({
+    status: err.response?.status,
+    data: err.response?.data,
+  });
+
+  if ((err.response?.status === 429 || err.response?.status === 502) && !config.__retryCount) {
     config.__retryCount = 0;
   }
 
@@ -23,9 +25,7 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
     // Max retry limit
     config.__retryCount += 1;
     const backoffDelay = 2 ** config.__retryCount * 1000; // Exponential backoff
-    console.warn(
-      `Received HTTP ${err.response.status}, retrying in ${backoffDelay}ms`
-    );
+    console.warn(`Received HTTP ${err.response.status}, retrying in ${backoffDelay}ms`);
 
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -60,9 +60,7 @@ export async function isCohost(props: { fid: number; channel: string }) {
   return rsp.result.hosts.some((host) => host.fid == props.fid);
 }
 
-export async function getChannelHosts(props: {
-  channel: string;
-}): Promise<HostResult> {
+export async function getChannelHosts(props: { channel: string }): Promise<HostResult> {
   const cacheKey = `getChannelHosts-${props.channel}`;
   const cached = cache.get<HostResult>(cacheKey);
 
@@ -85,15 +83,7 @@ export async function getChannelHosts(props: {
   return result.data;
 }
 
-export async function cooldown({
-  channel,
-  cast,
-  action,
-}: {
-  channel: string;
-  cast: Cast;
-  action: Action;
-}) {
+export async function cooldown({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
   const { duration } = (action as any).args;
 
   return db.cooldown.upsert({
@@ -115,15 +105,7 @@ export async function cooldown({
   });
 }
 
-export async function mute({
-  channel,
-  cast,
-  action,
-}: {
-  channel: string;
-  cast: Cast;
-  action: Action;
-}) {
+export async function mute({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
   return db.cooldown.upsert({
     where: {
       affectedUserId_channelId: {
@@ -179,15 +161,7 @@ export async function unhide({ castHash }: { castHash: string }) {
   );
 }
 
-export async function ban({
-  channel,
-  cast,
-  action,
-}: {
-  channel: string;
-  cast: Cast;
-  action: Action;
-}) {
+export async function ban({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
   const isCohostCheck = await isCohost({ fid: cast.author.fid, channel });
 
   if (isCohostCheck) {
