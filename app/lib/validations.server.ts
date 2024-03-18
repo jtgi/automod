@@ -506,6 +506,8 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
           chainId: data.args.chainId,
           contractAddress: data.args.contractAddress,
         });
+      } else {
+        return true;
       }
     },
     {
@@ -519,6 +521,8 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
           chainId: data.args.chainId,
           contractAddress: data.args.contractAddress,
         });
+      } else {
+        return true;
       }
     },
     {
