@@ -17,7 +17,11 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
     data: err.response?.data,
   });
 
-  if ((err.response?.status === 429 || err.response?.status === 502) && !config.__retryCount) {
+  if (
+    err.response?.status &&
+    (err.response.status === 429 || err.response.status >= 500) &&
+    !config.__retryCount
+  ) {
     config.__retryCount = 0;
   }
 
