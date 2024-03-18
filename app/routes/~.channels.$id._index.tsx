@@ -22,7 +22,6 @@ import { actionDefinitions } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import {
   ArrowUpRight,
-  ChevronLeft,
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreVerticalIcon,
@@ -30,9 +29,8 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { unhide } from "~/lib/warpcast.server";
-import { cn, useLocalStorage } from "~/lib/utils";
+import { useLocalStorage } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { $1 } from "re2";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -279,13 +277,8 @@ export default function Screen() {
                       {parseAndLocalizeDates(log.reason)}
                     </p>
 
-                    {showCastText && (
-                      <Alert className="my-2 text-sm text-gray-500 italic  break-all">
-                        US Defense Department contracts with Elon Musk of SpaceX to develop global spy
-                        satellite network, according to reports; $1.8B deal with the company's Starshield
-                        program was inked in 2021
-                        https://www.reuters.com/technology/space/musks-spacex-is-building-spy-satellite-network-us-intelligence-agency-sources-2024-03-16/
-                      </Alert>
+                    {log.castText && showCastText && (
+                      <Alert className="my-2 text-sm text-gray-500 italic  break-all">{log.castText}</Alert>
                     )}
 
                     {log.castHash && (
