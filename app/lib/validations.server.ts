@@ -5,20 +5,16 @@ import mimeType from "mime-types";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
-import {
-  ban,
-  cooldown,
-  hideQuietly,
-  isCohost,
-  mute,
-  warnAndHide,
-} from "./warpcast.server";
+import { ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
+import { clientsByChainId } from "./viem.server";
+import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 
 export type RuleDefinition = {
   friendlyName: string;
   description: string;
+  invertedDescription?: string;
   hidden: boolean;
   invertable: boolean;
   args: Record<
@@ -29,7 +25,9 @@ export type RuleDefinition = {
       placeholder?: string;
       friendlyName: string;
       description: string;
+      pattern?: string;
       required?: boolean;
+      options?: Array<{ value: string; label: string }>;
     }
   >;
 };
@@ -72,8 +70,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsEmbeds: {
     friendlyName: "Contains Embedded Content",
-    description:
-      "Check if the cast contains images, gifs, videos, frames or links",
+    description: "Check if the cast contains images, gifs, videos, frames or links",
     hidden: false,
     invertable: true,
     args: {
@@ -113,8 +110,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       pattern: {
         type: "string",
         friendlyName: "Pattern",
-        description:
-          "The regular expression to match against. No leading or trailing slashes.",
+        description: "The regular expression to match against. No leading or trailing slashes.",
       },
     },
   },
@@ -129,15 +125,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Min Length",
         placeholder: "No Minimum",
-        description:
-          "Setting a value of 10 would require a cast be at least 10 characters.",
+        description: "Setting a value of 10 would require a cast be at least 10 characters.",
       },
       max: {
         type: "number",
         friendlyName: "Max Length",
         placeholder: "∞",
-        description:
-          "Setting a value of 69 would require a cast be at most 69 characters.",
+        description: "Setting a value of 69 would require a cast be at most 69 characters.",
       },
     },
   },
@@ -228,8 +222,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
-  userIsNotActive: {
-    friendlyName: "User Is Not Active",
+  requireUserIsActive: {
+    friendlyName: "User is Not Active",
     hidden: false,
     invertable: true,
     description: "Require the user is active",
@@ -259,6 +253,79 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Max FID",
         description: "The maximum FID",
+      },
+    },
+  },
+
+  requiresErc20: {
+    friendlyName: "User Holds ERC-20",
+    description: "Check if the user holds a certain amount of ERC-20 tokens",
+    invertedDescription: "Check for users who do not hold the ERC-20",
+    hidden: false,
+    invertable: true,
+    args: {
+      chainId: {
+        type: "select",
+        friendlyName: "Chain",
+        description: "",
+        required: true,
+        options: [
+          { value: "1", label: "Ethereum" },
+          { value: "10", label: "Optimism" },
+          { value: "8453", label: "Base" },
+        ],
+      },
+      contractAddress: {
+        type: "string",
+        required: true,
+        friendlyName: "Contract Address",
+        pattern: "0x[a-fA-F0-9]{40}",
+        placeholder: "0xdead...",
+        description: "",
+      },
+      minBalance: {
+        type: "string",
+        required: false,
+        placeholder: "Any Amount",
+        friendlyName: "Minimum Balance (optional)",
+        description: "",
+      },
+    },
+  },
+
+  requiresErc721: {
+    friendlyName: "User Holds ERC-721",
+    description: "Check if the user holds a certain ERC-721 token",
+    invertedDescription: "Check for users who do not hold the ERC-721 token",
+    hidden: false,
+    invertable: true,
+    args: {
+      chainId: {
+        type: "select",
+        friendlyName: "Chain",
+        description: "",
+        required: true,
+        options: [
+          { value: "1", label: "Ethereum" },
+          { value: "10", label: "Optimism" },
+          { value: "8453", label: "Base" },
+        ],
+      },
+      contractAddress: {
+        type: "string",
+        required: true,
+        pattern: "0x[a-fA-F0-9]{40}",
+        placeholder: "0xdead...",
+        friendlyName: "Contract Address",
+        description: "",
+      },
+      tokenId: {
+        type: "string",
+        required: false,
+        placeholder: "Any Token",
+        pattern: "[0-9]+",
+        friendlyName: "Token ID (optional)",
+        description: "",
       },
     },
   },
@@ -292,8 +359,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   mute: {
     friendlyName: "Mute",
     isWarpcast: true,
-    description:
-      "All this user's casts will be silently hidden from the channel until you unmute.",
+    description: "All this user's casts will be silently hidden from the channel until you unmute.",
     args: {},
   },
   hideQuietly: {
@@ -318,8 +384,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   warnAndHide: {
     friendlyName: "Warn and Hide",
     isWarpcast: true,
-    description:
-      "Hide the cast and let them know it was hidden via a notification",
+    description: "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
   unmuted: {
@@ -346,8 +411,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
   cooldown: {
     friendlyName: "Cooldown",
     isWarpcast: true,
-    description:
-      "New casts from this user will be automatically hidden for the duration specified.",
+    description: "New casts from this user will be automatically hidden for the duration specified.",
     args: {
       duration: {
         type: "number",
@@ -370,9 +434,11 @@ export const ruleNames = [
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
-  "userIsNotActive",
+  "requireUserIsActive",
   "userFidInRange",
   "userIsCohost",
+  "requiresErc721",
+  "requiresErc20",
 ] as const;
 
 export const actionTypes = [
@@ -396,14 +462,8 @@ export type CheckFunctionArgs = {
   rule: Rule;
 };
 
-export type CheckFunction = (
-  props: CheckFunctionArgs
-) => (string | undefined) | Promise<string | undefined>;
-export type ActionFunction<T = any> = (args: {
-  channel: string;
-  cast: Cast;
-  action: Action;
-}) => Promise<T>;
+export type CheckFunction = (props: CheckFunctionArgs) => (string | undefined) | Promise<string | undefined>;
+export type ActionFunction<T = any> = (args: { channel: string; cast: Cast; action: Action }) => Promise<T>;
 
 const BaseRuleSchema = z.object({
   name: z.enum(ruleNames),
@@ -471,9 +531,7 @@ export const ModeratedChannelSchema = z.object({
           message: "No spaces, and no more than 30 characters.",
         })
     )
-    .transform((usernames) =>
-      usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim())
-    )
+    .transform((usernames) => usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim()))
     .default([]),
   excludeCohosts: z.boolean().default(true),
   ruleSets: z.array(RuleSetSchema),
@@ -492,8 +550,10 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
-  userIsNotActive: userIsNotActive,
+  requireUserIsActive: requireUserIsActive,
   userFidInRange: userFidInRange,
+  requiresErc721: requiresErc721,
+  requiresErc20: requiresErc20,
 };
 
 export const actionFunctions: Record<ActionType, ActionFunction> = {
@@ -532,8 +592,7 @@ export async function containsFrame(args: CheckFunctionArgs) {
     throw new Error(`Cast not found. Should be impossible. hash: ${cast.hash}`);
   }
 
-  const hasFrame =
-    castWithInteractions.frames && castWithInteractions.frames.length > 0;
+  const hasFrame = castWithInteractions.frames && castWithInteractions.frames.length > 0;
 
   const frameUrls = castWithInteractions.frames?.map((f) => f.frames_url) || [];
   if (hasFrame && !rule.invert) {
@@ -594,11 +653,7 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   const foundVideos = cast.embeds.filter((embed): embed is { url: string } => {
     if ("url" in embed) {
       const mime = mimeType.lookup(embed.url);
-      return (
-        !!mime &&
-        (mime.startsWith("video") ||
-          mime.startsWith("application/vnd.apple.mpegurl"))
-      );
+      return !!mime && (mime.startsWith("video") || mime.startsWith("application/vnd.apple.mpegurl"));
     } else {
       return false;
     }
@@ -618,27 +673,21 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     const castWithInteractions = rsp.result.casts[0];
 
     if (!castWithInteractions) {
-      throw new Error(
-        `Cast not found. Should be impossible. hash: ${cast.hash}`
-      );
+      throw new Error(`Cast not found. Should be impossible. hash: ${cast.hash}`);
     }
 
     if (castWithInteractions.frames && castWithInteractions.frames.length > 0) {
       embedTypesFound.push("frame");
-      embedsFound = embedsFound.concat(
-        castWithInteractions.frames?.map((f) => f.frames_url) || []
-      );
+      embedsFound = embedsFound.concat(castWithInteractions.frames?.map((f) => f.frames_url) || []);
     }
 
-    const remainingUrls = castWithInteractions.embeds.filter(
-      (e): e is { url: string } => {
-        if ("url" in e) {
-          return !embedsFound.includes(e.url);
-        } else {
-          return false;
-        }
+    const remainingUrls = castWithInteractions.embeds.filter((e): e is { url: string } => {
+      if ("url" in e) {
+        return !embedsFound.includes(e.url);
+      } else {
+        return false;
       }
-    );
+    });
 
     if (remainingUrls.length > 0) {
       embedTypesFound.push("link");
@@ -647,9 +696,7 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   }
 
   if (rule.invert) {
-    const missingEmbeds = checkForEmbeds.filter(
-      (embedType) => !embedTypesFound.includes(embedType)
-    );
+    const missingEmbeds = checkForEmbeds.filter((embedType) => !embedTypesFound.includes(embedType));
 
     if (missingEmbeds.length) {
       return `Does not contain embedded content: ${missingEmbeds.join(", ")}`;
@@ -657,9 +704,7 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
       return undefined;
     }
   } else {
-    const violatingEmbeds = checkForEmbeds.filter((embedType) =>
-      embedTypesFound.includes(embedType)
-    );
+    const violatingEmbeds = checkForEmbeds.filter((embedType) => embedTypesFound.includes(embedType));
 
     if (violatingEmbeds.length) {
       return `Contains embedded content: ${violatingEmbeds.join(", ")}`;
@@ -714,9 +759,7 @@ export function userProfileContainsText(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { searchText, caseSensitive } = rule.args;
   const containsText = !caseSensitive
-    ? cast.author.profile.bio.text
-        .toLowerCase()
-        .includes(searchText.toLowerCase())
+    ? cast.author.profile.bio.text.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.profile.bio.text.includes(searchText);
 
   if (!rule.invert && containsText) {
@@ -731,14 +774,11 @@ export function userDisplayNameContainsText(args: CheckFunctionArgs) {
   const { searchText, caseSensitive } = rule.args;
 
   if (!cast.author.display_name) {
-    Sentry.captureMessage(
-      `Cast author has no display name: ${cast.author.fid}`,
-      {
-        extra: {
-          cast,
-        },
-      }
-    );
+    Sentry.captureMessage(`Cast author has no display name: ${cast.author.fid}`, {
+      extra: {
+        cast,
+      },
+    });
   }
 
   const containsText = !caseSensitive
@@ -785,13 +825,129 @@ export async function userIsCohost(args: CheckFunctionArgs) {
 }
 
 // Rule: user active_status must be active
-export function userIsNotActive(args: CheckFunctionArgs) {
+export function requireUserIsActive(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   if (!rule.invert && cast.author.active_status !== "active") {
     return `User is not active`;
   } else if (rule.invert && cast.author.active_status === "active") {
     return `User is active`;
   }
+}
+
+export async function requiresErc721(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { chainId, contractAddress, tokenId } = rule.args;
+  const client = clientsByChainId[chainId];
+
+  if (!client) {
+    throw new Error(`No client found for chainId: ${chainId}`);
+  }
+
+  let isOwner = false;
+  const contract = getContract({
+    address: getAddress(contractAddress),
+    abi: erc721Abi,
+    client,
+  });
+
+  if (tokenId) {
+    const owner = await contract.read.ownerOf([BigInt(tokenId)]);
+    isOwner = cast.author.verifications.some((address) => address.toLowerCase() === owner.toLowerCase());
+  } else {
+    for (const address of cast.author.verifications) {
+      const balance = await contract.read.balanceOf([getAddress(address)]);
+      if (balance > 0) {
+        isOwner = true;
+        break;
+      }
+    }
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("ERC-721 check", {
+      contractAddress,
+      tokenId,
+      isOwner,
+      invert: rule.invert,
+    });
+  }
+
+  if (!rule.invert && !isOwner) {
+    return `Wallet does not hold ERC-721 token: ${contractAddress}:${tokenId}`;
+  } else if (rule.invert && isOwner) {
+    return `Wallet holds ERC-721 token: ${contractAddress}:${tokenId}`;
+  }
+}
+
+export async function requiresErc20(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { chainId, contractAddress, minBalance } = rule.args;
+  const client = clientsByChainId[chainId];
+
+  if (!client) {
+    throw new Error(`No client found for chainId: ${chainId}`);
+  }
+
+  const { result: hasEnough } = await verifyErc20Balance({
+    wallets: cast.author.verifications,
+    chainId,
+    contractAddress,
+    minBalanceRequired: minBalance,
+  });
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("ERC-20 check", {
+      contractAddress,
+      minBalance,
+      hasEnough,
+      invert: rule.invert,
+    });
+  }
+
+  if (!hasEnough) {
+    return `Wallet does not hold enough ERC-20.`;
+  }
+}
+
+export async function verifyErc20Balance({
+  wallets,
+  chainId,
+  contractAddress,
+  minBalanceRequired,
+}: {
+  wallets: string[];
+  chainId: string;
+  contractAddress: string;
+  minBalanceRequired?: string;
+}) {
+  const client = clientsByChainId[chainId];
+  const contract = getContract({
+    address: getAddress(contractAddress),
+    abi: erc20Abi,
+    client,
+  });
+
+  const balances = (await Promise.all(
+    wallets.map((add) => contract.read.balanceOf([getAddress(add)]))
+  )) as bigint[];
+  const decimals = await contract.read.decimals();
+  const minBalanceBigInt = parseUnits(minBalanceRequired ?? "0", decimals);
+  const sum = balances.reduce((a, b) => a + b, BigInt(0));
+
+  console.log("ERC-20 balance check", {
+    contractAddress,
+    balances: balances.map((b) => b.toString()),
+    minBalanceRequired,
+    decimals,
+    minBalanceBigInt: minBalanceBigInt.toString(),
+    sum,
+  });
+
+  return {
+    result: sum >= minBalanceBigInt && sum > BigInt(0),
+    balance: sum,
+    contract,
+  };
 }
 
 // Rule: user fid must be in range

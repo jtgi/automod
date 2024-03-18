@@ -10,12 +10,7 @@ import {
   actionDefinitions,
   ruleDefinitions,
 } from "~/lib/validations.server";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 
 import { Input } from "~/components/ui/input";
 import { FieldLabel, SliderField } from "~/components/ui/fields";
@@ -36,13 +31,7 @@ import {
   useFormContext,
 } from "react-hook-form";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Button } from "./ui/button";
 import { useState } from "react";
 import { cn } from "~/lib/utils";
@@ -73,6 +62,7 @@ export function ChannelForm(props: {
   const methods = useForm<FormValues>({
     defaultValues: props.defaultValues,
     shouldFocusError: false,
+    criteriaMode: "all",
   });
 
   const {
@@ -143,19 +133,11 @@ export function ChannelForm(props: {
   return (
     <div className="w-full">
       <FormProvider {...methods}>
-        <form
-          id="channel-form"
-          method="post"
-          className="w-full space-y-7"
-          onSubmit={handleSubmit(onSubmit)}
-        >
+        <form id="channel-form" method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
           {!props.defaultValues.id && (
             <>
               <fieldset disabled={isSubmitting} className="space-y-7">
-                <FieldLabel
-                  label="Channel Name"
-                  className="flex-col items-start"
-                >
+                <FieldLabel label="Channel Name" className="flex-col items-start">
                   <Input
                     disabled={!!props.defaultValues.id}
                     placeholder="base"
@@ -188,8 +170,7 @@ export function ChannelForm(props: {
             <div>
               <p className="font-medium">Rule Sets</p>
               <p className="text-gray-500 text-sm">
-                Configure rules and actions to take whenever a cast comes in to
-                your channel.
+                Configure rules and actions to take whenever a cast comes in to your channel.
               </p>
             </div>
 
@@ -199,15 +180,10 @@ export function ChannelForm(props: {
                 collapsible
                 className="w-full mb-6"
                 value={openRule === undefined ? "item-0" : `item-${openRule}`}
-                onValueChange={(value) =>
-                  setOpenRule(Number(value.split("-")[1]))
-                }
+                onValueChange={(value) => setOpenRule(Number(value.split("-")[1]))}
               >
                 {fields.map((ruleSetField, ruleSetIndex) => (
-                  <AccordionItem
-                    key={ruleSetField.id}
-                    value={`item-${ruleSetIndex}`}
-                  >
+                  <AccordionItem key={ruleSetField.id} value={`item-${ruleSetIndex}`}>
                     <AccordionTrigger
                       className={cn(
                         "hover:no-underline no-underline w-full py-2 px-4 border bg-slate-50/50 hover:bg-slate-50 data-[state=open]:rounded-b-none",
@@ -218,20 +194,14 @@ export function ChannelForm(props: {
                       )}
                       hideChevron
                     >
-                      <p className="font-semibold">
-                        Rule Set {ruleSetIndex + 1}
-                      </p>
+                      <p className="font-semibold">Rule Set {ruleSetIndex + 1}</p>
 
                       <Button
                         type="button"
                         variant={"ghost"}
                         asChild
                         onClick={() => {
-                          if (
-                            confirm(
-                              "Are you sure you want to delete this rule set?"
-                            )
-                          ) {
+                          if (confirm("Are you sure you want to delete this rule set?")) {
                             remove(ruleSetIndex);
                           }
                         }}
@@ -287,24 +257,14 @@ export function ChannelForm(props: {
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
               <p className="font-medium">Bypass</p>
-              <p className="text-gray-500 text-sm">
-                Exclude certain users from being checked by all rules.
-              </p>
+              <p className="text-gray-500 text-sm">Exclude certain users from being checked by all rules.</p>
             </div>
 
-            <SliderField
-              label="Cohosts"
-              description="Exclude cohosts from all moderation"
-            >
+            <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
               <Controller
                 name={`excludeCohosts`}
                 control={control}
-                render={({ field }) => (
-                  <Switch
-                    onCheckedChange={field.onChange}
-                    checked={field.value}
-                  />
-                )}
+                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
               />
             </SliderField>
             <FieldLabel
@@ -323,12 +283,7 @@ export function ChannelForm(props: {
             <hr />
           </div>
 
-          <Button
-            type="submit"
-            size={"lg"}
-            className="w-full"
-            disabled={fetcher.state === "submitting"}
-          >
+          <Button type="submit" size={"lg"} className="w-full" disabled={fetcher.state === "submitting"}>
             {fetcher.state === "submitting"
               ? props.defaultValues.id
                 ? "Updating..."
@@ -378,36 +333,25 @@ function RuleSetEditor(props: {
         <div>
           <p className=" font-medium">Rules</p>
           <p className="text-gray-500 text-sm">
-            Configure checks to verify everytime a cast comes in to your
-            channel.
+            Configure checks to verify everytime a cast comes in to your channel.
           </p>
         </div>
 
         <div className="space-y-4">
           {ruleFields.map((ruleField, ruleIndex) => {
-            const ruleName = props.watch(
-              `ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name`
-            );
+            const ruleName = props.watch(`ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name`);
 
             return (
               <Card key={ruleField.id} className="w-full rounded-sm">
                 <CardHeader>
                   <div className="flex justify-between items-center gap-8">
                     <CardTitle className="font-normal w-full text-foreground">
-                      <FieldLabel
-                        label=""
-                        className="flex-col items-start w-full"
-                      >
+                      <FieldLabel label="" className="flex-col items-start w-full">
                         <Controller
-                          name={
-                            `ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const
-                          }
+                          name={`ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const}
                           control={control}
                           render={({ field }) => (
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select a rule" />
                               </SelectTrigger>
@@ -434,9 +378,7 @@ function RuleSetEditor(props: {
                       <X className="w-5 h-5" />
                     </Button>
                   </div>
-                  <p className="text-gray-500 text-xs">
-                    {props.ruleDefinitions[ruleName].description}
-                  </p>
+                  <p className="text-gray-500 text-xs">{props.ruleDefinitions[ruleName].description}</p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -452,17 +394,15 @@ function RuleSetEditor(props: {
                             <p>Invert</p>
                           </label>
                           <p className="text-xs text-gray-500">
-                            Check for the opposite condition
+                            {props.ruleDefinitions[ruleName].invertedDescription ??
+                              "Check for the opposite condition"}
                           </p>
                         </div>
                         <Controller
                           name={`ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.invert`}
                           control={control}
                           render={({ field }) => (
-                            <Switch
-                              onCheckedChange={field.onChange}
-                              checked={field.value}
-                            />
+                            <Switch onCheckedChange={field.onChange} checked={field.value} />
                           )}
                         />
                       </div>
@@ -496,15 +436,11 @@ function RuleSetEditor(props: {
       <div className="space-y-4">
         <div>
           <p className=" font-medium">Actions</p>
-          <p className="text-gray-500 text-sm">
-            Configure what actions to take when the rules are met.
-          </p>
+          <p className="text-gray-500 text-sm">Configure what actions to take when the rules are met.</p>
         </div>
         <div className="space-y-4">
           {actionFields.map((actionField, actionIndex) => {
-            const actionType = props.watch(
-              `ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`
-            );
+            const actionType = props.watch(`ruleSets.${ruleSetIndex}.actionsParsed.${actionIndex}.type`);
 
             const action = props.actionDefinitions[actionType];
 
@@ -530,10 +466,7 @@ function RuleSetEditor(props: {
                                 {Object.entries(props.actionDefinitions)
                                   .filter((args) => !args[1].hidden)
                                   .map(([actionName, actionDef]) => (
-                                    <SelectItem
-                                      key={actionName}
-                                      value={actionName}
-                                    >
+                                    <SelectItem key={actionName} value={actionName}>
                                       {actionDef.friendlyName}
                                     </SelectItem>
                                   ))}
@@ -542,11 +475,7 @@ function RuleSetEditor(props: {
                           )}
                         />
                       </p>
-                      {action && (
-                        <p className="text-gray-500 text-xs mt-1">
-                          {action.description}
-                        </p>
-                      )}
+                      {action && <p className="text-gray-500 text-xs mt-1">{action.description}</p>}
                     </div>
                     {action && Object.entries(action.args).length > 0 && (
                       <div>
@@ -561,11 +490,7 @@ function RuleSetEditor(props: {
                       </div>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    onClick={() => removeAction(actionIndex)}
-                    variant={"ghost"}
-                  >
+                  <Button type="button" onClick={() => removeAction(actionIndex)} variant={"ghost"}>
                     <X className="w-5 h-5" />
                   </Button>
                 </div>
@@ -605,10 +530,7 @@ function RuleSetEditor(props: {
                   htmlFor: `ruleSets.${ruleSetIndex}.logicType.and`,
                 }}
               >
-                <RadioGroupItem
-                  value="and"
-                  id={`ruleSets.${ruleSetIndex}.logicType.and`}
-                />
+                <RadioGroupItem value="and" id={`ruleSets.${ruleSetIndex}.logicType.and`} />
               </FieldLabel>
               <FieldLabel
                 label="Any rule matches"
@@ -617,10 +539,7 @@ function RuleSetEditor(props: {
                   htmlFor: `ruleSets.${ruleSetIndex}.logicType.or`,
                 }}
               >
-                <RadioGroupItem
-                  value="or"
-                  id={`ruleSets.${ruleSetIndex}.logicType.or`}
-                />
+                <RadioGroupItem value="or" id={`ruleSets.${ruleSetIndex}.logicType.or`} />
               </FieldLabel>
             </RadioGroup>
           )}
@@ -649,10 +568,7 @@ function RuleSetEditor(props: {
                   htmlFor: `ruleSets.${ruleSetIndex}.target.all`,
                 }}
               >
-                <RadioGroupItem
-                  value="all"
-                  id={`ruleSets.${ruleSetIndex}.target.all`}
-                />
+                <RadioGroupItem value="all" id={`ruleSets.${ruleSetIndex}.target.all`} />
               </FieldLabel>
               <FieldLabel
                 label="Root Level"
@@ -662,10 +578,7 @@ function RuleSetEditor(props: {
                   htmlFor: `ruleSets.${ruleSetIndex}.target.root`,
                 }}
               >
-                <RadioGroupItem
-                  value="root"
-                  id={`ruleSets.${ruleSetIndex}.target.root`}
-                />
+                <RadioGroupItem value="root" id={`ruleSets.${ruleSetIndex}.target.root`} />
               </FieldLabel>
               <FieldLabel
                 label="Replies"
@@ -675,10 +588,7 @@ function RuleSetEditor(props: {
                   htmlFor: `ruleSets.${ruleSetIndex}.target.replies`,
                 }}
               >
-                <RadioGroupItem
-                  value="reply"
-                  id={`ruleSets.${ruleSetIndex}.target.replies`}
-                />
+                <RadioGroupItem value="reply" id={`ruleSets.${ruleSetIndex}.target.replies`} />
               </FieldLabel>
             </RadioGroup>
           )}
@@ -688,13 +598,11 @@ function RuleSetEditor(props: {
   );
 }
 
-function RuleArgs(props: {
-  ruleDefinition: RuleDefinition;
-  ruleIndex: number;
-  ruleSetIndex: number;
-}) {
+function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number; ruleSetIndex: number }) {
   const { register, control } = useFormContext<FormValues>();
   const ruleDef = props.ruleDefinition;
+
+  // check for if rule is currently inverted, if so change description
 
   return Object.entries(ruleDef.args).map(([argName, argDef]) => {
     if (argDef.type === "number") {
@@ -710,13 +618,43 @@ function RuleArgs(props: {
             required={argDef.required}
             placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as number | undefined}
-            {...register(
-              `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
+            {...register(`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`)}
+          />
+        </FieldLabel>
+      );
+    }
+
+    if (argDef.type === "select") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <Controller
+            name={`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`}
+            defaultValue={argDef.defaultValue as string | undefined}
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value} required={argDef.required}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={`Select a ${argDef.friendlyName.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {argDef.options?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           />
         </FieldLabel>
       );
     }
+
     if (argDef.type === "string") {
       return (
         <FieldLabel
@@ -727,11 +665,10 @@ function RuleArgs(props: {
         >
           <Input
             required={argDef.required}
+            pattern={argDef.pattern}
             placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as string | undefined}
-            {...register(
-              `ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`
-            )}
+            {...register(`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`)}
           />
         </FieldLabel>
       );
@@ -825,9 +762,7 @@ function ActionArgs(props: {
         >
           <Controller
             control={control}
-            name={
-              `ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}` as any
-            }
+            name={`ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}` as any}
             render={({ field: { onChange, name, value } }) => (
               <Checkbox
                 id={`ruleSets.${props.ruleSetIndex}.actionsParsed.${props.actionIndex}.args.${argName}`}

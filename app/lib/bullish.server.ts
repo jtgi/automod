@@ -30,11 +30,14 @@ export const castWorker = new Worker(
     lockDuration: 30_000,
   }
 );
-castWorker.on("error", Sentry.captureException);
+castWorker.on("error", (err: Error) => {
+  Sentry.captureException(err);
+  console.error("job error", err);
+});
 
 castWorker.on("active", (job) => {
   if (process.env.NODE_ENV === "development") {
-    console.log(`Job ${job.id} is now active and being processed`);
+    console.log(`[${job.data.channel.id}]: ${job.id} is now active`);
   }
 });
 

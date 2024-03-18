@@ -3,11 +3,7 @@
 import { it, expect, describe, vi, Mocked, beforeEach } from "vitest";
 import { faker } from "@faker-js/faker";
 import { ModeratedChannel, User } from "@prisma/client";
-import {
-  Channel as NeynarChannel,
-  User as NeynarUser,
-  Cast,
-} from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Channel as NeynarChannel, User as NeynarUser, Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import {
   Action,
   Rule,
@@ -19,7 +15,7 @@ import {
   userDisplayNameContainsText,
   userFidInRange,
   userFollowerCount,
-  userIsNotActive,
+  requireUserIsActive,
   userProfileContainsText,
   castLength,
 } from "~/lib/validations.server";
@@ -35,9 +31,7 @@ vi.mock("~/lib/neynar.server", () => {
   };
 });
 
-export function moderatedChannel(
-  data?: Partial<ModeratedChannel>
-): ModeratedChannel {
+export function moderatedChannel(data?: Partial<ModeratedChannel>): ModeratedChannel {
   return {
     id: faker.string.uuid(),
     imageUrl: faker.internet.userName(),
@@ -73,9 +67,7 @@ type WebhookCallback = {
   type: string;
   data: Cast;
 };
-export function webhookCallback(
-  overrides?: Partial<WebhookCallback>
-): WebhookCallback {
+export function webhookCallback(overrides?: Partial<WebhookCallback>): WebhookCallback {
   return {
     created_at: faker.date.past().getTime(),
     type: faker.lorem.word(),
@@ -106,9 +98,7 @@ export function neynarUser(overrides?: Partial<NeynarUser>): NeynarUser {
   } as NeynarUser;
 }
 
-export function neynarChannel(
-  overrides?: Partial<NeynarChannel>
-): NeynarChannel {
+export function neynarChannel(overrides?: Partial<NeynarChannel>): NeynarChannel {
   return {
     id: faker.string.uuid(),
     url: faker.internet.url(),
@@ -122,9 +112,7 @@ export function neynarChannel(
   };
 }
 
-export function cast(
-  overrides?: Partial<NeynarCastWithFrame>
-): NeynarCastWithFrame {
+export function cast(overrides?: Partial<NeynarCastWithFrame>): NeynarCastWithFrame {
   return {
     hash: faker.number.hex(42),
     parent_hash: null,
@@ -179,17 +167,13 @@ describe("containsText", () => {
   it("should detect text correctly without case sensitivity", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "example", caseSensitive: false } });
-    expect(containsText({ channel: m, cast: c, rule: r })).toBe(
-      `Text contains the text: example`
-    );
+    expect(containsText({ channel: m, cast: c, rule: r })).toBe(`Text contains the text: example`);
   });
 
   it("should detect text correctly with case sensitivity", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { searchText: "Example", caseSensitive: true } });
-    expect(containsText({ channel: m, cast: c, rule: r })).toBe(
-      `Text contains the text: Example`
-    );
+    expect(containsText({ channel: m, cast: c, rule: r })).toBe(`Text contains the text: Example`);
   });
 
   it("should invert the check if the rule is inverted", () => {
@@ -212,42 +196,32 @@ describe("textMatchesPattern", () => {
   it("should detect text matches pattern", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { pattern: "Example" } });
-    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(
-      `Text matches pattern: Example`
-    );
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(`Text matches pattern: Example`);
   });
 
   it("should match regex", () => {
     const c = cast({ text: "this is $token Text" });
     const r = rule({ args: { pattern: "[a-zA-Z]+" } });
-    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(
-      `Text matches pattern: [a-zA-Z]+`
-    );
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(`Text matches pattern: [a-zA-Z]+`);
   });
 
   it("should handle regex with backslash", () => {
     const c = cast({ text: "this is $token Text" });
     const r = rule({ args: { pattern: "\\$[a-zA-Z]+" } });
-    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(
-      `Text matches pattern: \\$[a-zA-Z]+`
-    );
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBe(`Text matches pattern: \\$[a-zA-Z]+`);
   });
 
   it("should invert the check if the rule is inverted", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { pattern: "Example" }, invert: true });
     expect(new RE2("Example").test("Example Text")).toBe(true);
-    expect(
-      textMatchesPattern({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should return undefined if text does not match the pattern", () => {
     const c = cast({ text: "Example Text" });
     const r = rule({ args: { pattern: "notfound" } });
-    expect(
-      textMatchesPattern({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(textMatchesPattern({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -263,17 +237,13 @@ describe("containsTooManyMentions", () => {
   it("should return undefined if the mentions are within limit", () => {
     const c = cast({ text: "@user1 @user2" });
     const r = rule({ args: { maxMentions: 3 } });
-    expect(
-      containsTooManyMentions({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(containsTooManyMentions({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should invert the check if the rule is inverted", () => {
     const c = cast({ text: "@user1 @user2 @user3" });
     const r = rule({ args: { maxMentions: 2 }, invert: true });
-    expect(
-      containsTooManyMentions({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(containsTooManyMentions({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -281,9 +251,7 @@ describe("containsLinks", () => {
   it("should detect links in the text", () => {
     const c = cast({ text: "Check out this link https://example.com" });
     const r = rule({});
-    expect(containsLinks({ channel: m, cast: c, rule: r })).toBe(
-      "Too many links. Max: 0"
-    );
+    expect(containsLinks({ channel: m, cast: c, rule: r })).toBe("Too many links. Max: 0");
   });
 
   it("should detect links based on a threshold", () => {
@@ -295,9 +263,7 @@ describe("containsLinks", () => {
     expect(containsLinks({ channel: m, cast: c, rule: r1 })).toBeUndefined();
 
     const r2 = rule({ args: { maxLinks: 1 } });
-    expect(containsLinks({ channel: m, cast: c, rule: r2 })).toBe(
-      "Too many links. Max: 1"
-    );
+    expect(containsLinks({ channel: m, cast: c, rule: r2 })).toBe("Too many links. Max: 1");
   });
 
   it("should invert the check if the rule is inverted", () => {
@@ -317,9 +283,7 @@ describe("castLength", () => {
   it("should return a message if the cast is too long", () => {
     const c = cast({ text: "a".repeat(300) });
     const r = rule({ args: { max: 200 } });
-    expect(castLength({ channel: m, cast: c, rule: r })).toBe(
-      "Cast length exceeds 200 characters"
-    );
+    expect(castLength({ channel: m, cast: c, rule: r })).toBe("Cast length exceeds 200 characters");
   });
 
   it("should return undefined if the cast is within the limit", () => {
@@ -331,9 +295,7 @@ describe("castLength", () => {
   it("should return a message if the cast is too short", () => {
     const c = cast({ text: "a".repeat(100) });
     const r = rule({ args: { min: 200 } });
-    expect(castLength({ channel: m, cast: c, rule: r })).toBe(
-      "Cast length is less than 200 characters"
-    );
+    expect(castLength({ channel: m, cast: c, rule: r })).toBe("Cast length is less than 200 characters");
   });
 });
 
@@ -360,18 +322,13 @@ describe("containsEmbeds", () => {
       },
     });
 
-    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
-      "Contains embedded content: frame"
-    );
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe("Contains embedded content: frame");
   });
 
   it("should detect only links", async () => {
     const c = cast({
       frames: [{ frames_url: "https://google.com" } as any],
-      embeds: [
-        { url: "https://example.com/image.jpg" },
-        { url: "https://divide.cash" },
-      ],
+      embeds: [{ url: "https://example.com/image.jpg" }, { url: "https://divide.cash" }],
       text: "Check out this frame",
     });
 
@@ -387,9 +344,7 @@ describe("containsEmbeds", () => {
       },
     });
 
-    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
-      "Contains embedded content: link"
-    );
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe("Contains embedded content: link");
   });
 
   it("should detect images", async () => {
@@ -404,9 +359,7 @@ describe("containsEmbeds", () => {
       },
     });
 
-    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
-      "Contains embedded content: image"
-    );
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe("Contains embedded content: image");
   });
 
   it("should detect video and not image", async () => {
@@ -426,9 +379,7 @@ describe("containsEmbeds", () => {
       },
     });
 
-    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
-      "Contains embedded content: video"
-    );
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe("Contains embedded content: video");
   });
 
   it("should support invert", async () => {
@@ -450,9 +401,7 @@ describe("containsEmbeds", () => {
       invert: true,
     });
 
-    expect(
-      await containsEmbeds({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should fail if inverted and embed type not found", async () => {
@@ -508,9 +457,7 @@ describe("userProfileContainsText", () => {
     const r = rule({
       args: { searchText: "developer", caseSensitive: false, invert: true },
     });
-    expect(
-      userProfileContainsText({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(userProfileContainsText({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should return undefined if text is not found in user profile bio", () => {
@@ -518,9 +465,7 @@ describe("userProfileContainsText", () => {
       author: { profile: { bio: { text: "Developer and writer." } } },
     } as any);
     const r = rule({ args: { searchText: "artist", caseSensitive: false } });
-    expect(
-      userProfileContainsText({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(userProfileContainsText({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -546,17 +491,13 @@ describe("userDisplayNameContainsText", () => {
     const r = rule({
       args: { searchText: "sean", caseSensitive: false, invert: true },
     });
-    expect(
-      userDisplayNameContainsText({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(userDisplayNameContainsText({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it("should return undefined if text is not found in user display name", () => {
     const c = cast({ author: { display_name: "JohnDoe" } as any });
     const r = rule({ args: { searchText: "JaneDoe", caseSensitive: false } });
-    expect(
-      userDisplayNameContainsText({ channel: m, cast: c, rule: r })
-    ).toBeUndefined();
+    expect(userDisplayNameContainsText({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 });
 
@@ -564,17 +505,13 @@ describe("userFollowerCount", () => {
   it("should return message if follower count is less than minimum", () => {
     const c = cast({ author: { follower_count: 50 } as any });
     const r = rule({ args: { min: 100 } });
-    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBe(
-      "Follower count less than 100"
-    );
+    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBe("Follower count less than 100");
   });
 
   it("should return message if follower count is greater than maximum", () => {
     const c = cast({ author: { follower_count: 500 } as any });
     const r = rule({ args: { max: 300 } });
-    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBe(
-      "Follower count greater than 300"
-    );
+    expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBe("Follower count greater than 300");
   });
 
   it("should return undefined if follower count is within the specified range", () => {
@@ -588,23 +525,19 @@ describe("userIsNotActive", () => {
   it("should return undefined if user is active", () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({});
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBeUndefined();
+    expect(requireUserIsActive({ channel: m, cast: c, rule: r })).toBeUndefined();
   });
 
   it('should invert the rule if "invert" is set', () => {
     const c = cast({ author: { active_status: "active" } as any });
     const r = rule({ invert: true });
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe(
-      "User is active"
-    );
+    expect(requireUserIsActive({ channel: m, cast: c, rule: r })).toBe("User is active");
   });
 
   it("should return a message if user is not active", () => {
     const c = cast({ author: { active_status: "inactive" } as any });
     const r = rule({});
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe(
-      "User is not active"
-    );
+    expect(requireUserIsActive({ channel: m, cast: c, rule: r })).toBe("User is not active");
   });
 });
 
@@ -612,17 +545,13 @@ describe("userFidInRange", () => {
   it("should return message if FID is less than minimum", () => {
     const c = cast({ author: { fid: 500 } as any });
     const r = rule({ args: { minFid: 1000 } });
-    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBe(
-      "FID 500 is less than 1000"
-    );
+    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBe("FID 500 is less than 1000");
   });
 
   it("should return message if FID is greater than maximum", () => {
     const c = cast({ author: { fid: 2000 } as any });
     const r = rule({ args: { maxFid: 1500 } });
-    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBe(
-      "FID 2000 is greater than 1500"
-    );
+    expect(userFidInRange({ channel: m, cast: c, rule: r })).toBe("FID 2000 is greater than 1500");
   });
 
   it("should return undefined if FID is within the specified range", () => {

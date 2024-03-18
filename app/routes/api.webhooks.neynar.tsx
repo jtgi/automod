@@ -138,11 +138,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel not found" }, { status: 404 });
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log("data", JSON.stringify(webhookNotif.data, null, 2));
-  } else {
-    console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
-  }
+  console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
 
   await castQueue.add(
     "processCast",
