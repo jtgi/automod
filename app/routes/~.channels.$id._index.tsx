@@ -247,7 +247,7 @@ export default function Screen() {
                 >
                   {log.createdAt.toLocaleString()}
                 </p>
-                <div className="flex gap-2 w-full">
+                <div className="flex gap-2 w-full items-start">
                   <a
                     className="no-underline"
                     target="_blank"
@@ -272,9 +272,9 @@ export default function Screen() {
                         @{log.affectedUsername}
                       </a>
                     </p>
-                    <p>
+                    <p className="break-word text-sm overflow-ellipsis overflow-hidden">
                       {actionDefinitions[log.action as keyof typeof actionDefinitions].friendlyName},{" "}
-                      {parseAndLocalizeDates(log.reason)}
+                      {formatText(log.reason)}
                     </p>
 
                     {log.castText && showCastText && (
@@ -414,17 +414,21 @@ export default function Screen() {
   );
 }
 
-function parseAndLocalizeDates(text: string): string {
+function formatText(text: string): string {
   const datePattern = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g;
 
-  let match;
-  while ((match = datePattern.exec(text)) !== null) {
-    const date = new Date(match[0]);
-    const localTimeString = date.toLocaleString();
-    text = text.replace(match[0], localTimeString);
-  }
+  if (datePattern.test(text) === true) {
+    let match;
+    while ((match = datePattern.exec(text)) !== null) {
+      const date = new Date(match[0]);
+      const localTimeString = date.toLocaleString();
+      text = text.replace(match[0], localTimeString);
+    }
 
-  return text;
+    return text;
+  } else {
+    return text;
+  }
 }
 
 const defaultPageSize = 50;
