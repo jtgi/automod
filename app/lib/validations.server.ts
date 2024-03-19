@@ -166,7 +166,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc20: {
-    friendlyName: "Require User Holds ERC-20",
+    friendlyName: "User does not hold ERC-20",
     description: "Check that the user holds a certain amount of ERC-20 tokens in their connected wallets.",
     invertedDescription: "Check for users who do hold the ERC-20",
     hidden: false,
@@ -202,7 +202,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc721: {
-    friendlyName: "Require User Holds ERC-721",
+    friendlyName: "User does not hold ERC-721",
     description: "Require users holds a certain ERC-721 token",
     invertedDescription: "Check for users who *do* hold the ERC-721 token",
     hidden: false,
