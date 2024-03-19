@@ -64,8 +64,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const channelName = webhookNotif.data.root_parent_url?.split("/").pop();
 
   if (!channelName) {
-    console.error(`Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`);
-    return json({ message: "Invalid parent_url" }, { status: 400 });
+    console.error(`Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`, webhookNotif.data);
+    return json({ message: "Invalid parent_url" }, { status: 200 });
   }
 
   const moderatedChannel = await db.moderatedChannel.findFirst({
@@ -84,15 +84,15 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (!moderatedChannel) {
-    console.error(`Channel ${channelName} is not moderated`);
-    return json({ message: "Channel is not moderated" }, { status: 404 });
+    console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
+    return json({ message: "Channel is not moderated" }, { status: 200 });
   }
 
   if (moderatedChannel.user.plan === "expired") {
     console.error(
       `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
     );
-    return json({ message: "User's plan is expired, moderation disabled" }, { status: 403 });
+    return json({ message: "User's plan is expired, moderation disabled" }, { status: 200 });
   }
 
   if (moderatedChannel.ruleSets.length === 0) {
@@ -127,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 403 });
+    return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 200 });
   }
 
   const channel = await getChannel({ name: moderatedChannel.id }).catch(() => null);
@@ -135,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(
       `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
     );
-    return json({ message: "Channel not found" }, { status: 404 });
+    return json({ message: "Channel not found" }, { status: 200 });
   }
 
   console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
