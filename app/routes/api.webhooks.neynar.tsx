@@ -1,7 +1,7 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import * as Sentry from "@sentry/remix";
 import { ModeratedChannel, ModerationLog, Prisma } from "@prisma/client";
-import { v4 } from "uuid";
+import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
 import { getChannel } from "~/lib/neynar.server";
@@ -392,7 +392,7 @@ async function logModerationAction(
     });
   } else {
     return {
-      id: `sim-${v4()}`,
+      id: `sim-${uuid()}`,
       channelId: moderatedChannelId,
       action: actionType,
       actor: "system",

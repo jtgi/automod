@@ -1,5 +1,4 @@
 import { AuthKitProvider } from "@farcaster/auth-kit";
-import { DropdownMenuGroup } from "@radix-ui/react-dropdown-menu";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, Outlet } from "@remix-run/react";
 import { useEffect } from "react";
@@ -21,9 +20,8 @@ import { getSharedEnv, requireUser } from "~/lib/utils.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
   const session = await getSession(request.headers.get("Cookie"));
-  const message = session.get("message") ?? undefined;
-  const flashCacheBust = new Date();
-  const error = session.get("error") ?? undefined;
+  const message =
+    (session.get("message") as { id: string; type: string; message: string } | null) ?? undefined;
   const impersonateAs = session.get("impersonateAs") ?? undefined;
 
   return typedjson(
@@ -31,8 +29,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       user,
       impersonateAs,
       message,
-      flashCacheBust,
-      error,
       env: getSharedEnv(),
     },
     {
@@ -44,17 +40,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-  const { env, message, error, impersonateAs, flashCacheBust, user } = useTypedLoaderData<typeof loader>();
+  const { env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
     if (message) {
-      toast(message);
+      if (message.type === "success") {
+        toast(message.message);
+      } else if (message.type === "error") {
+        toast.error(message.message);
+      }
     }
-
-    if (error) {
-      toast.error(error);
-    }
-  }, [message, error, flashCacheBust]);
+  }, [message?.id]);
 
   const farcasterConfig = {
     rpcUrl: `https://optimism-mainnet.infura.io/v3/${env.infuraProjectId}`,

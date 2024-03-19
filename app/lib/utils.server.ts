@@ -1,4 +1,5 @@
 import sharp from "sharp";
+import { v4 as uuid } from "uuid";
 import * as Sentry from "@sentry/remix";
 import * as crypto from "crypto";
 import { authenticator, commitSession, getSession } from "./auth.server";
@@ -323,7 +324,11 @@ export async function successResponse<T>({
   status?: number;
 }) {
   const session = passedSession || (await getSession(request.headers.get("Cookie")));
-  session.flash("message", message);
+  session.flash("message", {
+    id: uuid(),
+    type: "success",
+    message,
+  });
 
   return typedjson(
     {
@@ -341,7 +346,12 @@ export async function successResponse<T>({
 
 export async function errorResponse(props: { request: Request; message: string; status?: number }) {
   const session = await getSession(props.request.headers.get("Cookie"));
-  session.flash("error", props.message);
+  session.flash("message", {
+    id: uuid(),
+    type: "error",
+    message: props.message,
+  });
+
   return json(
     {
       message: props.message,

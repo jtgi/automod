@@ -2,6 +2,7 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link, Outlet, useFetcher, useNavigation } from "@remix-run/react";
 import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { SidebarNav, SidebarNavProps } from "~/components/sub-nav";
@@ -24,6 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   const isNewChannel = session.get("newChannel") !== undefined || url.searchParams.get("newChannel") !== null;
 
+  console.log("loader", { isNewChannel });
   return typedjson(
     {
       user,
@@ -40,7 +42,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ChannelRoot() {
   const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
-  const navigation = useNavigation();
   const enableFetcher = useFetcher();
 
   return (
@@ -107,7 +108,7 @@ export default function ChannelRoot() {
         <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Success! One last step...</DialogTitle>
-            <DialogDescription>
+            <DialogDescription asChild>
               <div className="flex flex-col gap-4">
                 <div>
                   Open up{" "}

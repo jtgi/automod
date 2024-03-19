@@ -3,6 +3,7 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
+import { v4 as uuid } from "uuid";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { commitSession, getSession } from "~/lib/auth.server";
@@ -75,10 +76,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
     });
 
-    session.flash(
-      "message",
-      `Removed @${currentStatus.username} as a collaborator`
-    );
+    session.flash("message", {
+      id: uuid(),
+      type: "success",
+      message: `Removed @${currentStatus.username} as a collaborator`,
+    });
   } else {
     const cohost = await requireUserIsCohost({
       fid: +cohostId,
@@ -94,7 +96,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
     });
 
-    session.flash("message", `Added @${cohost.username} as a collaborator`);
+    session.flash("message", {
+      id: uuid(),
+      type: "success",
+      message: `Added @${cohost.username} as a collaborator`,
+    });
   }
 
   return typedjson(
@@ -108,8 +114,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { user, channel, channelHosts, automodCohosts } =
-    useTypedLoaderData<typeof loader>();
+  const { user, channel, channelHosts, automodCohosts } = useTypedLoaderData<typeof loader>();
 
   const allCohosts = [
     ...automodCohosts.map((h) => ({
@@ -133,26 +138,16 @@ export default function Screen() {
     <div>
       <p className="font-semibold">Add Cohosts to Automod</p>
       <p className="text-gray-500">
-        Collaborators can manage all moderation settings except for adding or
-        removing other collaborators.
+        Collaborators can manage all moderation settings except for adding or removing other collaborators.
       </p>
 
       <div className="divide-y border-t border-b mt-8">
         {allCohosts.map((cohost) => (
-          <Form
-            key={cohost.fid}
-            method="post"
-            className="flex items-center justify-between py-2"
-          >
+          <Form key={cohost.fid} method="post" className="flex items-center justify-between py-2">
             <div className="flex items-center gap-2">
               <Avatar className="w-9 h-9">
-                <AvatarImage
-                  src={cohost.avatarUrl ?? undefined}
-                  alt={"@" + cohost.username}
-                />
-                <AvatarFallback>
-                  {cohost.username.slice(0, 2).toLocaleUpperCase()}
-                </AvatarFallback>
+                <AvatarImage src={cohost.avatarUrl ?? undefined} alt={"@" + cohost.username} />
+                <AvatarFallback>{cohost.username.slice(0, 2).toLocaleUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
                 <p className=" font-medium">{cohost.username}</p>

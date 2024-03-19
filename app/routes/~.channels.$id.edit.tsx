@@ -19,6 +19,7 @@ import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
 import { isCohost } from "~/lib/warpcast.server";
 import { ChannelForm } from "~/components/channel-form";
+import { v4 as uuid } from "uuid";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -83,7 +84,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const session = await getSession(request.headers.get("Cookie"));
-  session.flash("message", "Channel updated!");
+  session.flash("message", {
+    id: uuid(),
+    type: "success",
+    message: "Channel updated!",
+  });
 
   return redirect(`/~/channels/${updatedChannel.id}/edit`, {
     headers: {

@@ -203,14 +203,6 @@ export default function Screen() {
   const prevPage = Math.max(page - 1, 0);
   const nextPage = page + 1 > Math.ceil(total / pageSize) ? null : page + 1;
 
-  console.log({
-    page,
-    pageSize,
-    nextPage,
-    prevPage,
-    total,
-  });
-
   return (
     <div>
       <div className="flex justify-between border-b">
