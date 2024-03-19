@@ -166,9 +166,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc20: {
-    friendlyName: "User Holds ERC-20",
-    description: "Check if the user holds a certain amount of ERC-20 tokens",
-    invertedDescription: "Check for users who do not hold the ERC-20",
+    friendlyName: "Require User Holds ERC-20",
+    description: "Check that the user holds a certain amount of ERC-20 tokens in their connected wallets.",
+    invertedDescription: "Check for users who do hold the ERC-20",
     hidden: false,
     invertable: true,
     args: {
@@ -202,9 +202,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc721: {
-    friendlyName: "User Holds ERC-721",
-    description: "Check if the user holds a certain ERC-721 token",
-    invertedDescription: "Check for users who do not hold the ERC-721 token",
+    friendlyName: "Require User Holds ERC-721",
+    description: "Require users holds a certain ERC-721 token",
+    invertedDescription: "Check for users who *do* hold the ERC-721 token",
     hidden: false,
     invertable: true,
     args: {
@@ -928,8 +928,10 @@ export async function requiresErc20(args: CheckFunctionArgs) {
     minBalanceRequired: minBalance,
   });
 
-  if (!hasEnough) {
+  if (!rule.invert && !hasEnough) {
     return `Wallet does not hold enough ERC-20.`;
+  } else if (rule.invert && hasEnough) {
+    return `Wallet holds forbidden ERC-20.`;
   }
 }
 

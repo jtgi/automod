@@ -13,6 +13,7 @@ import { db } from "~/lib/db.server";
 import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { ChannelForm } from "~/components/channel-form";
+import { getChannelHosts } from "~/lib/warpcast.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -24,7 +25,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (process.env.NODE_ENV !== "development") {
-    if (!isLead) {
+    let isCohostOverride = false;
+    if (data.id === "rainbow") {
+      const cohosts = await getChannelHosts({ channel: data.id });
+      isCohostOverride = cohosts.result.hosts.some((host) => String(host.fid) === user.id);
+    }
+
+    if (!isLead && !isCohostOverride) {
       return errorResponse({
         request,
         message: `Only the channel lead${lead ? ` (@${lead.username})` : ""} can setup a bot`,
