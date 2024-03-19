@@ -15,6 +15,10 @@ primary_region = 'lax'
   auto_start_machines = true
   max_machines_running = 1
   min_machines_running = 1
+  [http_service.concurrency]
+      type = "requests"
+      soft_limit = 100
+      hard_limit = 200
   processes = ['app']
 
 [[vm]]
