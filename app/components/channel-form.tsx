@@ -2,16 +2,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import {
   Action,
   ActionDefinition,
+  ActionType,
   Rule,
   RuleDefinition,
   RuleName,
   actionDefinitions,
+  actionTypes,
   ruleDefinitions,
 } from "~/lib/validations.server";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
 
+import { loader as jobStatusLoader } from "~/routes/api.channels.$id.simulations.$jobId";
 import { Input } from "~/components/ui/input";
 import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -19,7 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
-import { Plus, X } from "lucide-react";
+import { Bot, Plus, ServerCrash, X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -33,9 +46,15 @@ import {
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "~/lib/utils";
 import { Textarea } from "./ui/textarea";
+import { Dialog, DialogTitle, DialogContent, DialogDescription, DialogHeader } from "./ui/dialog";
+import { action } from "~/routes/api.channels.$id.simulations";
+import { JobState as BullJobState } from "bullmq";
+import { SimulationResult } from "~/routes/~.channels.$id.tools";
+import { ClientOnly } from "remix-utils/client-only";
+import { Alert } from "./ui/alert";
 
 export type FormValues = {
   id?: string;
@@ -81,53 +100,10 @@ export function ChannelForm(props: {
   const [openRule, setOpenRule] = useState(0);
 
   const onSubmit = (data: FormValues) => {
-    const newRuleSets = [];
-    for (const ruleSet of data.ruleSets) {
-      if (ruleSet.logicType === "and") {
-        const rule: Rule = {
-          name: "and",
-          type: "LOGICAL",
-          args: {},
-          operation: "AND",
-          conditions: ruleSet.ruleParsed,
-        };
-
-        newRuleSets.push({
-          ...ruleSet,
-          rule,
-          ruleParsed: rule,
-        });
-      } else if (ruleSet.logicType === "or") {
-        const rule: Rule = {
-          name: "or",
-          type: "LOGICAL",
-          args: {},
-          operation: "OR",
-          conditions: ruleSet.ruleParsed,
-        };
-
-        newRuleSets.push({
-          ...ruleSet,
-          rule,
-          ruleParsed: rule,
-        });
-      }
-    }
-
-    const excludeUsernamesParsed = data.excludeUsernames?.split(/\r\n|\r|\n/);
-
-    fetcher.submit(
-      {
-        ...data,
-        excludeUsernames: excludeUsernamesParsed ?? null,
-        banThreshold: data.banThreshold || null,
-        ruleSets: newRuleSets,
-      },
-      {
-        encType: "application/json",
-        method: "post",
-      }
-    );
+    fetcher.submit(prepareFormValues(data), {
+      encType: "application/json",
+      method: "post",
+    });
   };
 
   return (
@@ -283,19 +259,718 @@ export function ChannelForm(props: {
             <hr />
           </div>
 
-          <Button type="submit" size={"lg"} className="w-full" disabled={fetcher.state === "submitting"}>
-            {fetcher.state === "submitting"
-              ? props.defaultValues.id
-                ? "Updating..."
-                : "Creating..."
-              : props.defaultValues.id
-              ? "Update"
-              : "Create"}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4">
+            {props.defaultValues.id && (
+              <SimulateButton channelId={props.defaultValues.id} actionDefs={props.actionDefinitions} />
+            )}
+
+            <Button type="submit" size={"lg"} className="w-full" disabled={fetcher.state === "submitting"}>
+              {fetcher.state === "submitting"
+                ? props.defaultValues.id
+                  ? "Updating..."
+                  : "Creating..."
+                : props.defaultValues.id
+                ? "Update"
+                : "Create"}
+            </Button>
+          </div>
         </form>
       </FormProvider>
     </div>
   );
+}
+
+function SimulateButton(props: { channelId: string; actionDefs: typeof actionDefinitions }) {
+  const [open, setIsOpen] = useState<boolean>(false);
+  const fetcher = useFetcher<typeof action>();
+  const form = useFormContext<FormValues>();
+  const jobFetcher = useFetcher<typeof jobStatusLoader>();
+  const interval = useRef<any>();
+  const [simulating, setSimulating] = useState(false);
+  const [result, setResult] = useState<SimulationResult | null>(null);
+
+  const onSubmit = () => {
+    setSimulating(true);
+    const data = form.getValues();
+    fetcher.submit(prepareFormValues(data), {
+      encType: "application/json",
+      method: "post",
+      action: `/api/channels/${props.channelId}/simulations`,
+    });
+  };
+
+  useEffect(() => {
+    if (fetcher.data && "jobId" in fetcher.data && fetcher.data.jobId) {
+      const jobId = fetcher.data.jobId;
+      interval.current = setInterval(() => {
+        jobFetcher.load(`/api/channels/${props.channelId}/simulations/${jobId}`);
+      }, 2000);
+    }
+
+    return () => {
+      if (interval.current) {
+        clearInterval(interval.current);
+      }
+    };
+  }, [fetcher.state]);
+
+  useEffect(() => {
+    if (isFinished(jobFetcher.data)) {
+      clearInterval(interval.current);
+      // @ts-ignore
+      setResult(jobFetcher.data);
+      setSimulating(false);
+    }
+  }, [jobFetcher.data]);
+
+  return (
+    <ClientOnly>
+      {() => (
+        <>
+          <Dialog
+            open={open}
+            onOpenChange={(open) => {
+              setIsOpen(open);
+
+              if (!open) {
+                setResult(null);
+                setSimulating(false);
+              }
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Simulation</DialogTitle>
+                <DialogDescription>
+                  Run the last 100 casts in your channel through your new proposed ruleset. No real actions
+                  will be performed.
+                </DialogDescription>
+              </DialogHeader>
+              {(fetcher.data || fetcher.state !== "idle") && (
+                <div>
+                  {isFinished(jobFetcher.data) && result && (
+                    <SimulationResultDisplay simulation={result} actionDefinitions={props.actionDefs} />
+                  )}
+
+                  {isFailure(jobFetcher.data) && (
+                    <div className="p-4 border rounded-md space-y-4">
+                      <ServerCrash className="w-12 h-12" />
+                      <p>Something went wrong. Sorry. Try again?</p>
+                    </div>
+                  )}
+
+                  {simulating && (
+                    <div className="flex flex-col items-center gap-4 p-8 border rounded-lg">
+                      <Bot className="w-12 h-12 animate-bounce" />
+                      <p className="text-center text-sm">Hang tight, this takes about 15 seconds...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {isFinished(jobFetcher.data) && (
+                <>
+                  <div className="py-2">
+                    <hr />
+                  </div>
+                  <Button variant={"secondary"} onClick={() => setIsOpen(false)}>
+                    Okay
+                  </Button>
+                </>
+              )}
+
+              {!simulating && !result && (
+                <Button type="button" onClick={() => onSubmit()}>
+                  Start Simulation
+                </Button>
+              )}
+            </DialogContent>
+          </Dialog>
+          <Button
+            size={"lg"}
+            className="w-full"
+            type="button"
+            variant="secondary"
+            onClick={() => setIsOpen(true)}
+          >
+            Simulate
+          </Button>
+        </>
+      )}
+    </ClientOnly>
+  );
+}
+
+function SimulationResultDisplay(props: {
+  simulation: SimulationResult;
+  actionDefinitions: typeof actionDefinitions;
+}) {
+  const results = [
+    {
+      hash: "0xfa5af54878ceb7ef2d48de8ce5985478069403e2",
+      existing: [],
+      proposed: [],
+    },
+    {
+      hash: "0xbc49102b309282668232c026fad9b4fc53966982",
+      existing: [
+        {
+          id: "sim-88095d04-843d-4f90-ab7c-ab7ea88c31c8",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xbc49102b309282668232c026fad9b4fc53966982",
+          castText: "tmprmnt",
+          createdAt: "2024-03-20T09:47:45.222Z",
+          updatedAt: "2024-03-20T09:47:45.222Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-3a4d8e94-dc52-4e5b-bf58-dcf24e91ecb6",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xbc49102b309282668232c026fad9b4fc53966982",
+          castText: "tmprmnt",
+          createdAt: "2024-03-20T09:47:45.244Z",
+          updatedAt: "2024-03-20T09:47:45.244Z",
+        },
+      ],
+    },
+    {
+      hash: "0x2b31dc209d1eef94a3644414321d8632a11e4b33",
+      existing: [
+        {
+          id: "sim-e9658656-322f-4a11-8742-6835677725ea",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0x2b31dc209d1eef94a3644414321d8632a11e4b33",
+          castText: "tmprmntl",
+          createdAt: "2024-03-20T09:47:46.013Z",
+          updatedAt: "2024-03-20T09:47:46.013Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-c2232553-4816-4eba-be36-db646b448e26",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0x2b31dc209d1eef94a3644414321d8632a11e4b33",
+          castText: "tmprmntl",
+          createdAt: "2024-03-20T09:47:46.024Z",
+          updatedAt: "2024-03-20T09:47:46.024Z",
+        },
+      ],
+    },
+    {
+      hash: "0xe96a83d56cb998e1db5c33bcd497424e8d0392d5",
+      existing: [
+        {
+          id: "sim-2273a734-2f16-427e-97b9-4287c6e9f633",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xe96a83d56cb998e1db5c33bcd497424e8d0392d5",
+          castText: "tmplton",
+          createdAt: "2024-03-20T09:47:46.793Z",
+          updatedAt: "2024-03-20T09:47:46.793Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-02585e75-86fc-478a-bc06-68192c89d2e3",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xe96a83d56cb998e1db5c33bcd497424e8d0392d5",
+          castText: "tmplton",
+          createdAt: "2024-03-20T09:47:46.810Z",
+          updatedAt: "2024-03-20T09:47:46.810Z",
+        },
+      ],
+    },
+    {
+      hash: "0xdc297b778f93c375698ffc31ebebc7d96883139f",
+      existing: [
+        {
+          id: "sim-7f7b6ada-7f96-4669-b692-dca3ce812246",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xdc297b778f93c375698ffc31ebebc7d96883139f",
+          castText: "don’t tmp me",
+          createdAt: "2024-03-20T09:47:47.602Z",
+          updatedAt: "2024-03-20T09:47:47.602Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-68da8948-5c24-4007-ae0c-2ca75cff3018",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xdc297b778f93c375698ffc31ebebc7d96883139f",
+          castText: "don’t tmp me",
+          createdAt: "2024-03-20T09:47:47.602Z",
+          updatedAt: "2024-03-20T09:47:47.602Z",
+        },
+      ],
+    },
+    {
+      hash: "0xbc0c1bd8822b1c9e88417f81af7601a0b4ff2366",
+      existing: [
+        {
+          id: "sim-f3003f85-134f-45dc-9c37-2dea690ca7d9",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xbc0c1bd8822b1c9e88417f81af7601a0b4ff2366",
+          castText: "gm",
+          createdAt: "2024-03-20T09:47:48.410Z",
+          updatedAt: "2024-03-20T09:47:48.410Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-27d95084-2b8b-4a1a-aea5-0d335a774948",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xbc0c1bd8822b1c9e88417f81af7601a0b4ff2366",
+          castText: "gm",
+          createdAt: "2024-03-20T09:47:48.390Z",
+          updatedAt: "2024-03-20T09:47:48.390Z",
+        },
+      ],
+    },
+    {
+      hash: "0xc180615bbe506cd74784180c7c4fc83124826645",
+      existing: [
+        {
+          id: "sim-c44a1471-d927-48ed-b52c-63cce6029a41",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "beachcrypto",
+          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
+          affectedUserFid: "256829",
+          castHash: "0xc180615bbe506cd74784180c7c4fc83124826645",
+          castText: "mfer mentality",
+          createdAt: "2024-03-20T09:47:49.185Z",
+          updatedAt: "2024-03-20T09:47:49.185Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-4c7c3192-4022-4803-917b-9a54ffbb7f2e",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "beachcrypto",
+          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
+          affectedUserFid: "256829",
+          castHash: "0xc180615bbe506cd74784180c7c4fc83124826645",
+          castText: "mfer mentality",
+          createdAt: "2024-03-20T09:47:49.187Z",
+          updatedAt: "2024-03-20T09:47:49.187Z",
+        },
+      ],
+    },
+    {
+      hash: "0xb77a0abb5f1fb2faa31a0d8900f37e68e02f1994",
+      existing: [],
+      proposed: [],
+    },
+    {
+      hash: "0x6b95b67f3ffb2b68db01fb240685dbfaabcc4ff2",
+      existing: [
+        {
+          id: "sim-b092bac0-9fa4-4da2-afa3-ca163c937c27",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0x6b95b67f3ffb2b68db01fb240685dbfaabcc4ff2",
+          castText: "still banned?",
+          createdAt: "2024-03-20T09:47:51.239Z",
+          updatedAt: "2024-03-20T09:47:51.239Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-2e19fffe-dc1d-47c6-b029-dc2c0385c6b0",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0x6b95b67f3ffb2b68db01fb240685dbfaabcc4ff2",
+          castText: "still banned?",
+          createdAt: "2024-03-20T09:47:51.238Z",
+          updatedAt: "2024-03-20T09:47:51.238Z",
+        },
+      ],
+    },
+    {
+      hash: "0x90bb293a882c58c126666600008c4060eb0cdaf4",
+      existing: [],
+      proposed: [],
+    },
+    {
+      hash: "0xd6091c1eebf07756cff2191c2131e6a47f77453d",
+      existing: [],
+      proposed: [],
+    },
+    {
+      hash: "0x51c140d24620fe90b64684e887a0fdd028065aee",
+      existing: [],
+      proposed: [],
+    },
+    {
+      hash: "0xd357c4da2d198f5c16de09e9d9c80ca1c5f063ca",
+      existing: [
+        {
+          id: "sim-c1296344-eea6-4d42-93d5-2735316bfb73",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xd357c4da2d198f5c16de09e9d9c80ca1c5f063ca",
+          castText: "more",
+          createdAt: "2024-03-20T09:47:54.529Z",
+          updatedAt: "2024-03-20T09:47:54.529Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-fb252320-644d-414f-9371-4fc0e4daf2a2",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xd357c4da2d198f5c16de09e9d9c80ca1c5f063ca",
+          castText: "more",
+          createdAt: "2024-03-20T09:47:54.529Z",
+          updatedAt: "2024-03-20T09:47:54.529Z",
+        },
+      ],
+    },
+    {
+      hash: "0x40dc3e7a04cf67fc3f383d859f41b6b8c387a17c",
+      existing: [
+        {
+          id: "sim-bfc6898b-ce60-4406-82a9-c582250ee565",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0x40dc3e7a04cf67fc3f383d859f41b6b8c387a17c",
+          castText: "Now?",
+          createdAt: "2024-03-20T09:47:55.295Z",
+          updatedAt: "2024-03-20T09:47:55.295Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-7f85cafc-1154-4711-8fe8-56f1076dd971",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0x40dc3e7a04cf67fc3f383d859f41b6b8c387a17c",
+          castText: "Now?",
+          createdAt: "2024-03-20T09:47:55.298Z",
+          updatedAt: "2024-03-20T09:47:55.298Z",
+        },
+      ],
+    },
+    {
+      hash: "0xae3ff73f50fcc7e222c99439bc310f62c99b4791",
+      existing: [
+        {
+          id: "sim-44b8cbc5-ecaf-4ac9-a227-d038e25930ec",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xae3ff73f50fcc7e222c99439bc310f62c99b4791",
+          castText: "tmp thought",
+          createdAt: "2024-03-20T09:47:56.085Z",
+          updatedAt: "2024-03-20T09:47:56.085Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-83ce70cc-8c56-407f-bcfa-cf8ba63dc8d2",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "framer",
+          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
+          affectedUserFid: "236918",
+          castHash: "0xae3ff73f50fcc7e222c99439bc310f62c99b4791",
+          castText: "tmp thought",
+          createdAt: "2024-03-20T09:47:56.241Z",
+          updatedAt: "2024-03-20T09:47:56.241Z",
+        },
+      ],
+    },
+    {
+      hash: "0x16bbfa3262801cac6912d246ea3d05f88b5650bc",
+      existing: [],
+      proposed: [],
+    },
+    {
+      hash: "0x6353ff9673105cf72e77c88d7a396d7df8d4be0d",
+      existing: [
+        {
+          id: "sim-da92d089-81dc-4021-a275-1a9387390fce",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "beachcrypto",
+          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
+          affectedUserFid: "256829",
+          castHash: "0x6353ff9673105cf72e77c88d7a396d7df8d4be0d",
+          castText: "Is this thing on?",
+          createdAt: "2024-03-20T09:47:57.802Z",
+          updatedAt: "2024-03-20T09:47:57.802Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-59a103b9-3072-4180-8445-68840e716522",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "beachcrypto",
+          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
+          affectedUserFid: "256829",
+          castHash: "0x6353ff9673105cf72e77c88d7a396d7df8d4be0d",
+          castText: "Is this thing on?",
+          createdAt: "2024-03-20T09:47:57.794Z",
+          updatedAt: "2024-03-20T09:47:57.794Z",
+        },
+      ],
+    },
+    {
+      hash: "0x3c34585257e816511b9516d9a095b03f989c92f9",
+      existing: [
+        {
+          id: "sim-0e22ae6d-00f7-4768-ba36-8c5b08e3ea0e",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "pixel",
+          affectedUserAvatarUrl:
+            "https://lh3.googleusercontent.com/WuVUEzf_r3qgz3cf4mtkXpLat5zNZbxKjoV-AldwfCQ8-_Y5yfWScMBEalpvbVgpt4ttXruxTD9GM983-UJBzMil5GRQF1qZ_aMY",
+          affectedUserFid: "4286",
+          castHash: "0x3c34585257e816511b9516d9a095b03f989c92f9",
+          castText: "I use /tmp a lot and I love it",
+          createdAt: "2024-03-20T09:47:58.820Z",
+          updatedAt: "2024-03-20T09:47:58.820Z",
+        },
+      ],
+      proposed: [
+        {
+          id: "sim-358306f9-41ae-44f1-8789-20c324b7be24",
+          channelId: "tmp",
+          action: "hideQuietly",
+          actor: "system",
+          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
+          affectedUsername: "pixel",
+          affectedUserAvatarUrl:
+            "https://lh3.googleusercontent.com/WuVUEzf_r3qgz3cf4mtkXpLat5zNZbxKjoV-AldwfCQ8-_Y5yfWScMBEalpvbVgpt4ttXruxTD9GM983-UJBzMil5GRQF1qZ_aMY",
+          affectedUserFid: "4286",
+          castHash: "0x3c34585257e816511b9516d9a095b03f989c92f9",
+          castText: "I use /tmp a lot and I love it",
+          createdAt: "2024-03-20T09:47:58.831Z",
+          updatedAt: "2024-03-20T09:47:58.831Z",
+        },
+      ],
+    },
+  ];
+  const actionCounts: Record<string, { proposed: number; existing: number }> = {};
+
+  let proposedCastsActedOn = 0;
+  let existingCastsActedOn = 0;
+  for (const result of results) {
+    for (const proposed of result.proposed) {
+      actionCounts[proposed.action] = actionCounts[proposed.action] ?? { proposed: 0, existing: 0 };
+
+      actionCounts[proposed.action].proposed++;
+    }
+
+    for (const existing of result.existing) {
+      actionCounts[existing.action] = actionCounts[existing.action] ?? { proposed: 0, existing: 0 };
+
+      actionCounts[existing.action].existing++;
+    }
+
+    proposedCastsActedOn += result.proposed.length;
+    existingCastsActedOn += result.existing.length;
+  }
+
+  if (proposedCastsActedOn + existingCastsActedOn === 0) {
+    return <Alert>No actions would be taken</Alert>;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="w-[50px]">Action</TableHead>
+          <TableHead className="w-[50px]">Current</TableHead>
+          <TableHead className="w-[50px]">Proposed</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {Object.entries(actionCounts).map(([action, { proposed, existing }]) => (
+          <TableRow key={action}>
+            <TableCell>{props.actionDefinitions[action as ActionType].friendlyName}</TableCell>
+            <TableCell>{existing}</TableCell>
+            <TableCell>{proposed}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+      <TableFooter>
+        <TableCell>Casts Impacted</TableCell>
+        <TableCell>{existingCastsActedOn}</TableCell>
+        <TableCell>{proposedCastsActedOn}</TableCell>
+      </TableFooter>
+    </Table>
+  );
+}
+
+type JobState = {
+  jobId: string;
+  state: "unknown" | BullJobState;
+  progress: number;
+  result: SimulationResult | null;
+};
+
+function isFinished(data?: any): data is JobState {
+  return data && "state" in data && (data.state === "completed" || data.state === "failed");
+}
+
+function isFailure(data?: any): data is JobState {
+  return data && "state" in data && data.state === "failed";
+}
+
+function isInQueue(data?: any): data is JobState {
+  return data && "state" in data && (data.state === "waiting" || data.state === "active");
+}
+
+function prepareFormValues(data: FormValues) {
+  const newRuleSets = [];
+  for (const ruleSet of data.ruleSets) {
+    if (ruleSet.logicType === "and") {
+      const rule: Rule = {
+        name: "and",
+        type: "LOGICAL",
+        args: {},
+        operation: "AND",
+        conditions: ruleSet.ruleParsed,
+      };
+
+      newRuleSets.push({
+        ...ruleSet,
+        rule,
+        ruleParsed: rule,
+      });
+    } else if (ruleSet.logicType === "or") {
+      const rule: Rule = {
+        name: "or",
+        type: "LOGICAL",
+        args: {},
+        operation: "OR",
+        conditions: ruleSet.ruleParsed,
+      };
+
+      newRuleSets.push({
+        ...ruleSet,
+        rule,
+        ruleParsed: rule,
+      });
+    }
+  }
+
+  const excludeUsernamesParsed = data.excludeUsernames?.split(/\r\n|\r|\n/);
+
+  return {
+    ...data,
+    excludeUsernames: excludeUsernamesParsed ?? null,
+    banThreshold: data.banThreshold || null,
+    ruleSets: newRuleSets,
+  };
 }
 
 function RuleSetEditor(props: {
@@ -344,31 +1019,29 @@ function RuleSetEditor(props: {
             return (
               <Card key={ruleField.id} className="w-full rounded-sm">
                 <CardHeader>
-                  <div className="flex justify-between items-center gap-8">
-                    <CardTitle className="font-normal w-full text-foreground">
-                      <FieldLabel label="" className="flex-col items-start w-full">
-                        <Controller
-                          name={`ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const}
-                          control={control}
-                          render={({ field }) => (
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a rule" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Object.entries(props.ruleDefinitions)
-                                  .filter((args) => !args[1].hidden)
-                                  .map(([name, ruleDef]) => (
-                                    <SelectItem key={name} value={name}>
-                                      {ruleDef.friendlyName}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        />
-                      </FieldLabel>
-                    </CardTitle>
+                  <div className="flex justify-between items-center gap-2">
+                    <FieldLabel label="" className=" grow-0 flex-col items-start w-full">
+                      <Controller
+                        name={`ruleSets.${ruleSetIndex}.ruleParsed.${ruleIndex}.name` as const}
+                        control={control}
+                        render={({ field }) => (
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger className="w-[150px] sm:w-[200px] md:w-[400px]">
+                              <SelectValue placeholder="Select a rule" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(props.ruleDefinitions)
+                                .filter((args) => !args[1].hidden)
+                                .map(([name, ruleDef]) => (
+                                  <SelectItem key={name} value={name}>
+                                    {ruleDef.friendlyName}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </FieldLabel>
                     <Button
                       type="button"
                       className="rounded-full"

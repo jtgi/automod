@@ -20,6 +20,7 @@ import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
 import { sweepQueue } from "~/lib/bullish.server";
+import { ModerationLog } from "@prisma/client";
 
 const SWEEP_LIMIT = 1000;
 
@@ -204,4 +205,62 @@ async function isSweepActive(channelId: string) {
 
 async function getSweepJob(channelId: string) {
   return sweepQueue.getJob(`sweep:${channelId}`);
+}
+
+export type SimulateArgs = {
+  channelId: string;
+  moderatedChannel: FullModeratedChannel;
+  proposedModeratedChannel: FullModeratedChannel;
+  limit: number;
+  onProgress?: (castsProcessed: number) => Promise<void>;
+};
+
+export type SimulationResult = Array<{
+  hash: string;
+  existing: ModerationLog[];
+  proposed: ModerationLog[];
+}>;
+
+export async function simulate(args: SimulateArgs) {
+  const channel = await getChannel({ name: args.channelId });
+
+  const aggregatedResults: SimulationResult = [];
+  let castsChecked = 0;
+  for await (const page of pageChannelCasts({ id: args.channelId })) {
+    if (castsChecked >= args.limit) {
+      console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
+      break;
+    }
+
+    castsChecked += page.casts.length;
+    for (const cast of page.casts) {
+      console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
+
+      const [existing, proposed] = await Promise.all([
+        validateCast({
+          cast,
+          channel,
+          moderatedChannel: args.moderatedChannel,
+          simulation: true,
+        }),
+        validateCast({
+          cast,
+          channel,
+          moderatedChannel: args.proposedModeratedChannel,
+          simulation: true,
+        }),
+      ]);
+
+      aggregatedResults.push({
+        hash: cast.hash,
+        existing,
+        proposed,
+      });
+      await args.onProgress?.(castsChecked);
+
+      await sleep(500);
+    }
+  }
+
+  return aggregatedResults;
 }

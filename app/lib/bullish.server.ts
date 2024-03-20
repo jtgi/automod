@@ -2,7 +2,7 @@ import { Job, Queue, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
 import { ValidateCastArgs, validateCast } from "~/routes/api.webhooks.neynar";
-import { SweepArgs, sweep } from "~/routes/~.channels.$id.tools";
+import { SimulateArgs, SweepArgs, simulate, sweep } from "~/routes/~.channels.$id.tools";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -85,4 +85,48 @@ sweepWorker.on("active", (job) => {
 });
 sweepWorker.on("failed", (job, err) => {
   console.error(`[${job?.data.channelId}] failed`, err);
+});
+
+// sweeeeep
+export const simulationQueue = new Queue("simulationQueue", {
+  connection,
+});
+
+export const simulationWorker = new Worker(
+  "simulationQueue",
+  async (job: Job<SimulateArgs>) => {
+    let result;
+    try {
+      result = await simulate({
+        channelId: job.data.channelId,
+        limit: job.data.limit,
+        moderatedChannel: job.data.moderatedChannel,
+        proposedModeratedChannel: job.data.proposedModeratedChannel,
+        onProgress: async (castsProcessed: number) => {
+          await job.updateProgress(castsProcessed);
+        },
+      });
+    } catch (e) {
+      Sentry.captureException(e);
+      throw e;
+    }
+
+    return result;
+  },
+  { connection }
+);
+
+simulationWorker.on("error", Sentry.captureException);
+simulationWorker.on("active", (job) => {
+  if (process.env.NODE_ENV === "development") {
+    console.log(`[${job.data.channelId}] simulating...`);
+  }
+});
+
+simulationWorker.on("failed", (job, err) => {
+  console.error(`[${job?.data.channelId}] failed`, err);
+});
+
+simulationWorker.on("completed", (job) => {
+  console.log(`[${job.data.channelId}] simulation completed`);
 });
