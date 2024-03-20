@@ -282,9 +282,17 @@ export function ChannelForm(props: {
 
 function SimulateButton(props: { channelId: string; actionDefs: typeof actionDefinitions }) {
   const [open, setIsOpen] = useState<boolean>(false);
-  const fetcher = useFetcher<typeof action>();
+  const [fetcherKey, setFetcherKey] = useState<string | null>(String(new Date().getTime()));
+
+  const fetcher = useFetcher<typeof action>({
+    key: `start-sim-${fetcherKey}`,
+  });
+
+  const jobFetcher = useFetcher<typeof jobStatusLoader>({
+    key: `job-status-${fetcherKey}`,
+  });
+
   const form = useFormContext<FormValues>();
-  const jobFetcher = useFetcher<typeof jobStatusLoader>();
   const interval = useRef<any>();
   const [simulating, setSimulating] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
@@ -317,11 +325,16 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
   useEffect(() => {
     if (isFinished(jobFetcher.data)) {
       clearInterval(interval.current);
-      // @ts-ignore
-      setResult(jobFetcher.data);
+      setResult(jobFetcher.data.result);
       setSimulating(false);
     }
   }, [jobFetcher.data]);
+
+  const teardown = () => {
+    setResult(null);
+    setSimulating(false);
+    setFetcherKey(String(new Date().getTime()));
+  };
 
   return (
     <ClientOnly>
@@ -333,8 +346,7 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
               setIsOpen(open);
 
               if (!open) {
-                setResult(null);
-                setSimulating(false);
+                teardown();
               }
             }}
           >
@@ -372,7 +384,13 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
                   <div className="py-2">
                     <hr />
                   </div>
-                  <Button variant={"secondary"} onClick={() => setIsOpen(false)}>
+                  <Button
+                    variant={"secondary"}
+                    onClick={() => {
+                      setIsOpen(false);
+                      teardown();
+                    }}
+                  >
                     Okay
                   </Button>
                 </>
@@ -404,465 +422,12 @@ function SimulationResultDisplay(props: {
   simulation: SimulationResult;
   actionDefinitions: typeof actionDefinitions;
 }) {
-  const results = [
-    {
-      hash: "0xfa5af54878ceb7ef2d48de8ce5985478069403e2",
-      existing: [],
-      proposed: [],
-    },
-    {
-      hash: "0xbc49102b309282668232c026fad9b4fc53966982",
-      existing: [
-        {
-          id: "sim-88095d04-843d-4f90-ab7c-ab7ea88c31c8",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xbc49102b309282668232c026fad9b4fc53966982",
-          castText: "tmprmnt",
-          createdAt: "2024-03-20T09:47:45.222Z",
-          updatedAt: "2024-03-20T09:47:45.222Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-3a4d8e94-dc52-4e5b-bf58-dcf24e91ecb6",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xbc49102b309282668232c026fad9b4fc53966982",
-          castText: "tmprmnt",
-          createdAt: "2024-03-20T09:47:45.244Z",
-          updatedAt: "2024-03-20T09:47:45.244Z",
-        },
-      ],
-    },
-    {
-      hash: "0x2b31dc209d1eef94a3644414321d8632a11e4b33",
-      existing: [
-        {
-          id: "sim-e9658656-322f-4a11-8742-6835677725ea",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0x2b31dc209d1eef94a3644414321d8632a11e4b33",
-          castText: "tmprmntl",
-          createdAt: "2024-03-20T09:47:46.013Z",
-          updatedAt: "2024-03-20T09:47:46.013Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-c2232553-4816-4eba-be36-db646b448e26",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0x2b31dc209d1eef94a3644414321d8632a11e4b33",
-          castText: "tmprmntl",
-          createdAt: "2024-03-20T09:47:46.024Z",
-          updatedAt: "2024-03-20T09:47:46.024Z",
-        },
-      ],
-    },
-    {
-      hash: "0xe96a83d56cb998e1db5c33bcd497424e8d0392d5",
-      existing: [
-        {
-          id: "sim-2273a734-2f16-427e-97b9-4287c6e9f633",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xe96a83d56cb998e1db5c33bcd497424e8d0392d5",
-          castText: "tmplton",
-          createdAt: "2024-03-20T09:47:46.793Z",
-          updatedAt: "2024-03-20T09:47:46.793Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-02585e75-86fc-478a-bc06-68192c89d2e3",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xe96a83d56cb998e1db5c33bcd497424e8d0392d5",
-          castText: "tmplton",
-          createdAt: "2024-03-20T09:47:46.810Z",
-          updatedAt: "2024-03-20T09:47:46.810Z",
-        },
-      ],
-    },
-    {
-      hash: "0xdc297b778f93c375698ffc31ebebc7d96883139f",
-      existing: [
-        {
-          id: "sim-7f7b6ada-7f96-4669-b692-dca3ce812246",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xdc297b778f93c375698ffc31ebebc7d96883139f",
-          castText: "don’t tmp me",
-          createdAt: "2024-03-20T09:47:47.602Z",
-          updatedAt: "2024-03-20T09:47:47.602Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-68da8948-5c24-4007-ae0c-2ca75cff3018",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xdc297b778f93c375698ffc31ebebc7d96883139f",
-          castText: "don’t tmp me",
-          createdAt: "2024-03-20T09:47:47.602Z",
-          updatedAt: "2024-03-20T09:47:47.602Z",
-        },
-      ],
-    },
-    {
-      hash: "0xbc0c1bd8822b1c9e88417f81af7601a0b4ff2366",
-      existing: [
-        {
-          id: "sim-f3003f85-134f-45dc-9c37-2dea690ca7d9",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xbc0c1bd8822b1c9e88417f81af7601a0b4ff2366",
-          castText: "gm",
-          createdAt: "2024-03-20T09:47:48.410Z",
-          updatedAt: "2024-03-20T09:47:48.410Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-27d95084-2b8b-4a1a-aea5-0d335a774948",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xbc0c1bd8822b1c9e88417f81af7601a0b4ff2366",
-          castText: "gm",
-          createdAt: "2024-03-20T09:47:48.390Z",
-          updatedAt: "2024-03-20T09:47:48.390Z",
-        },
-      ],
-    },
-    {
-      hash: "0xc180615bbe506cd74784180c7c4fc83124826645",
-      existing: [
-        {
-          id: "sim-c44a1471-d927-48ed-b52c-63cce6029a41",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "beachcrypto",
-          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
-          affectedUserFid: "256829",
-          castHash: "0xc180615bbe506cd74784180c7c4fc83124826645",
-          castText: "mfer mentality",
-          createdAt: "2024-03-20T09:47:49.185Z",
-          updatedAt: "2024-03-20T09:47:49.185Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-4c7c3192-4022-4803-917b-9a54ffbb7f2e",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "beachcrypto",
-          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
-          affectedUserFid: "256829",
-          castHash: "0xc180615bbe506cd74784180c7c4fc83124826645",
-          castText: "mfer mentality",
-          createdAt: "2024-03-20T09:47:49.187Z",
-          updatedAt: "2024-03-20T09:47:49.187Z",
-        },
-      ],
-    },
-    {
-      hash: "0xb77a0abb5f1fb2faa31a0d8900f37e68e02f1994",
-      existing: [],
-      proposed: [],
-    },
-    {
-      hash: "0x6b95b67f3ffb2b68db01fb240685dbfaabcc4ff2",
-      existing: [
-        {
-          id: "sim-b092bac0-9fa4-4da2-afa3-ca163c937c27",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0x6b95b67f3ffb2b68db01fb240685dbfaabcc4ff2",
-          castText: "still banned?",
-          createdAt: "2024-03-20T09:47:51.239Z",
-          updatedAt: "2024-03-20T09:47:51.239Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-2e19fffe-dc1d-47c6-b029-dc2c0385c6b0",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0x6b95b67f3ffb2b68db01fb240685dbfaabcc4ff2",
-          castText: "still banned?",
-          createdAt: "2024-03-20T09:47:51.238Z",
-          updatedAt: "2024-03-20T09:47:51.238Z",
-        },
-      ],
-    },
-    {
-      hash: "0x90bb293a882c58c126666600008c4060eb0cdaf4",
-      existing: [],
-      proposed: [],
-    },
-    {
-      hash: "0xd6091c1eebf07756cff2191c2131e6a47f77453d",
-      existing: [],
-      proposed: [],
-    },
-    {
-      hash: "0x51c140d24620fe90b64684e887a0fdd028065aee",
-      existing: [],
-      proposed: [],
-    },
-    {
-      hash: "0xd357c4da2d198f5c16de09e9d9c80ca1c5f063ca",
-      existing: [
-        {
-          id: "sim-c1296344-eea6-4d42-93d5-2735316bfb73",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xd357c4da2d198f5c16de09e9d9c80ca1c5f063ca",
-          castText: "more",
-          createdAt: "2024-03-20T09:47:54.529Z",
-          updatedAt: "2024-03-20T09:47:54.529Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-fb252320-644d-414f-9371-4fc0e4daf2a2",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xd357c4da2d198f5c16de09e9d9c80ca1c5f063ca",
-          castText: "more",
-          createdAt: "2024-03-20T09:47:54.529Z",
-          updatedAt: "2024-03-20T09:47:54.529Z",
-        },
-      ],
-    },
-    {
-      hash: "0x40dc3e7a04cf67fc3f383d859f41b6b8c387a17c",
-      existing: [
-        {
-          id: "sim-bfc6898b-ce60-4406-82a9-c582250ee565",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0x40dc3e7a04cf67fc3f383d859f41b6b8c387a17c",
-          castText: "Now?",
-          createdAt: "2024-03-20T09:47:55.295Z",
-          updatedAt: "2024-03-20T09:47:55.295Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-7f85cafc-1154-4711-8fe8-56f1076dd971",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0x40dc3e7a04cf67fc3f383d859f41b6b8c387a17c",
-          castText: "Now?",
-          createdAt: "2024-03-20T09:47:55.298Z",
-          updatedAt: "2024-03-20T09:47:55.298Z",
-        },
-      ],
-    },
-    {
-      hash: "0xae3ff73f50fcc7e222c99439bc310f62c99b4791",
-      existing: [
-        {
-          id: "sim-44b8cbc5-ecaf-4ac9-a227-d038e25930ec",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xae3ff73f50fcc7e222c99439bc310f62c99b4791",
-          castText: "tmp thought",
-          createdAt: "2024-03-20T09:47:56.085Z",
-          updatedAt: "2024-03-20T09:47:56.085Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-83ce70cc-8c56-407f-bcfa-cf8ba63dc8d2",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "framer",
-          affectedUserAvatarUrl: "https://i.imgur.com/1ueYBxQ.jpg",
-          affectedUserFid: "236918",
-          castHash: "0xae3ff73f50fcc7e222c99439bc310f62c99b4791",
-          castText: "tmp thought",
-          createdAt: "2024-03-20T09:47:56.241Z",
-          updatedAt: "2024-03-20T09:47:56.241Z",
-        },
-      ],
-    },
-    {
-      hash: "0x16bbfa3262801cac6912d246ea3d05f88b5650bc",
-      existing: [],
-      proposed: [],
-    },
-    {
-      hash: "0x6353ff9673105cf72e77c88d7a396d7df8d4be0d",
-      existing: [
-        {
-          id: "sim-da92d089-81dc-4021-a275-1a9387390fce",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "beachcrypto",
-          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
-          affectedUserFid: "256829",
-          castHash: "0x6353ff9673105cf72e77c88d7a396d7df8d4be0d",
-          castText: "Is this thing on?",
-          createdAt: "2024-03-20T09:47:57.802Z",
-          updatedAt: "2024-03-20T09:47:57.802Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-59a103b9-3072-4180-8445-68840e716522",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "beachcrypto",
-          affectedUserAvatarUrl: "https://i.imgur.com/t5pmdBH.jpg",
-          affectedUserFid: "256829",
-          castHash: "0x6353ff9673105cf72e77c88d7a396d7df8d4be0d",
-          castText: "Is this thing on?",
-          createdAt: "2024-03-20T09:47:57.794Z",
-          updatedAt: "2024-03-20T09:47:57.794Z",
-        },
-      ],
-    },
-    {
-      hash: "0x3c34585257e816511b9516d9a095b03f989c92f9",
-      existing: [
-        {
-          id: "sim-0e22ae6d-00f7-4768-ba36-8c5b08e3ea0e",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "pixel",
-          affectedUserAvatarUrl:
-            "https://lh3.googleusercontent.com/WuVUEzf_r3qgz3cf4mtkXpLat5zNZbxKjoV-AldwfCQ8-_Y5yfWScMBEalpvbVgpt4ttXruxTD9GM983-UJBzMil5GRQF1qZ_aMY",
-          affectedUserFid: "4286",
-          castHash: "0x3c34585257e816511b9516d9a095b03f989c92f9",
-          castText: "I use /tmp a lot and I love it",
-          createdAt: "2024-03-20T09:47:58.820Z",
-          updatedAt: "2024-03-20T09:47:58.820Z",
-        },
-      ],
-      proposed: [
-        {
-          id: "sim-358306f9-41ae-44f1-8789-20c324b7be24",
-          channelId: "tmp",
-          action: "hideQuietly",
-          actor: "system",
-          reason: "Wallet does not hold ERC-721 token: 0xa449b4f43d9a33fcdcf397b9cc7aa909012709fd:",
-          affectedUsername: "pixel",
-          affectedUserAvatarUrl:
-            "https://lh3.googleusercontent.com/WuVUEzf_r3qgz3cf4mtkXpLat5zNZbxKjoV-AldwfCQ8-_Y5yfWScMBEalpvbVgpt4ttXruxTD9GM983-UJBzMil5GRQF1qZ_aMY",
-          affectedUserFid: "4286",
-          castHash: "0x3c34585257e816511b9516d9a095b03f989c92f9",
-          castText: "I use /tmp a lot and I love it",
-          createdAt: "2024-03-20T09:47:58.831Z",
-          updatedAt: "2024-03-20T09:47:58.831Z",
-        },
-      ],
-    },
-  ];
+  console.log(props.simulation);
   const actionCounts: Record<string, { proposed: number; existing: number }> = {};
 
   let proposedCastsActedOn = 0;
   let existingCastsActedOn = 0;
-  for (const result of results) {
+  for (const result of props.simulation) {
     for (const proposed of result.proposed) {
       actionCounts[proposed.action] = actionCounts[proposed.action] ?? { proposed: 0, existing: 0 };
 
