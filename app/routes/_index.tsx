@@ -66,6 +66,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id: {
           in: [
             "samantha",
+            "coop-recs",
+            "rainbow",
             "seaport",
             "degen",
             "fitness",
@@ -278,6 +280,20 @@ export default function Home() {
                   {totalModerationActions.toLocaleString()} automated actions taken
                 </p>
               </section>
+
+              <footer className="absolute bottom-5 text-center text-xs py-12 flex items-center gap-8 justify-between">
+                <p className="flex items-center gap-4">
+                  <Link to="/disclosure" className="text-white/20 no-underline">
+                    Disclosure
+                  </Link>
+                  <Link to="/privacy" className="text-white/20 no-underline">
+                    Privacy
+                  </Link>
+                  <Link to="/tos" className="text-white/20 no-underline">
+                    Terms
+                  </Link>
+                </p>
+              </footer>
             </>
           )}
         </div>

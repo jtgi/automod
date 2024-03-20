@@ -303,7 +303,7 @@ export async function parseMessage(payload: any) {
   }
 
   const host = new URL(message.action.url).host;
-  if (host !== new URL(getSharedEnv().hostUrl).host && host !== "glass.cx") {
+  if (host !== new URL(getSharedEnv().hostUrl).host && host !== "automod.sh") {
     throw new Error("No spoofs sir");
   }
 
