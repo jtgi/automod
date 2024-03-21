@@ -25,7 +25,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   const isNewChannel = session.get("newChannel") !== undefined || url.searchParams.get("newChannel") !== null;
 
-  console.log("loader", { isNewChannel });
   return typedjson(
     {
       user,

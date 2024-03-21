@@ -73,7 +73,12 @@ export default function FrameConfig() {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {channels.map((channel) => (
-              <Link to={`/~/channels/${channel.id}`} className="no-underline" key={channel.id}>
+              <Link
+                to={`/~/channels/${channel.id}`}
+                className="no-underline"
+                key={channel.id}
+                prefetch="intent"
+              >
                 <div className="flex gap-2 rounded-lg p-4 shadow border hover:border-orange-200 hover:shadow-orange-200 transition-all duration-300">
                   <img
                     src={channel.imageUrl ?? undefined}

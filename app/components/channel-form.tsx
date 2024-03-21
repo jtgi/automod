@@ -365,8 +365,8 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
               <DialogHeader>
                 <DialogTitle>Simulation</DialogTitle>
                 <DialogDescription>
-                  Run the last 100 casts in your channel through your new proposed ruleset. No real actions
-                  will be performed.
+                  Run the last 100 root casts in your channel through your new ruleset. No real actions will
+                  be performed.
                 </DialogDescription>
               </DialogHeader>
               {isError(submitJobFetcher.data) && (
@@ -872,6 +872,24 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number; ru
             required={argDef.required}
             placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as number | undefined}
+            {...register(`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`)}
+          />
+        </FieldLabel>
+      );
+    }
+
+    if (argDef.type === "textarea") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <Textarea
+            required={argDef.required}
+            placeholder={argDef.placeholder}
+            defaultValue={argDef.defaultValue as string | undefined}
             {...register(`ruleSets.${props.ruleSetIndex}.ruleParsed.${props.ruleIndex}.args.${argName}`)}
           />
         </FieldLabel>

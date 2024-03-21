@@ -14,6 +14,7 @@ import { ZodIssue, ZodError } from "zod";
 import { getChannelHosts } from "./warpcast.server";
 import { erc20Abi, erc721Abi, getAddress, getContract } from "viem";
 import { clientsByChainId } from "./viem.server";
+import { cache } from "./cache.server";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -429,4 +430,33 @@ export async function validateErc20({
   });
 
   return true;
+}
+
+export function formatHash(hash: string) {
+  return `${hash.slice(0, 3)}...${hash.slice(-3)}`;
+}
+
+export function isCastHash(value: string): boolean {
+  return value.match(/0x[a-fA-F0-9]{40}/) !== null;
+}
+
+export function isWarpcastCastUrl(value: string): boolean {
+  return value.match(/https:\/\/warpcast.com\/[a-zA-Z0-9]+\/0x[a-fA-F0-9]{8}/) !== null;
+}
+
+export async function getSetCache<T>(props: {
+  key: string;
+  ttlSeconds?: number;
+  get: () => Promise<T>;
+}): Promise<T> {
+  const { key, ttlSeconds, get } = props;
+  const cachedValue = await cache.get<T>(key);
+
+  if (cachedValue) {
+    return cachedValue;
+  }
+
+  const freshValue = await get();
+  cache.set(key, freshValue, ttlSeconds ?? 0);
+  return freshValue;
 }

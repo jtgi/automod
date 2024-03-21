@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
-import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Cast, CastResponse } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Cast as CastV1 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
 import RE2 from "re2";
 import { z } from "zod";
 import { ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
@@ -10,7 +11,14 @@ import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import { clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
-import { validateErc20, validateErc721 } from "./utils.server";
+import {
+  formatHash,
+  getSetCache,
+  isCastHash,
+  isWarpcastCastUrl,
+  validateErc20,
+  validateErc721,
+} from "./utils.server";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -65,6 +73,22 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "boolean",
         friendlyName: "Case Sensitive",
         description: "If checked, 'abc' is different from 'ABC'",
+      },
+    },
+  },
+
+  castInThread: {
+    friendlyName: "Cast is in Thread",
+    description: "Check if a cast is a part of a thread",
+    hidden: false,
+    invertable: true,
+    args: {
+      identifiers: {
+        type: "textarea",
+        friendlyName: "Warpcast Links or Thread Hashes",
+        required: true,
+        placeholder: "0x05cf...c9mdi\nhttps://warpcast.com/jtgi/0x05cf551b",
+        description: "The first cast in the thread. One per line.",
       },
     },
   },
@@ -429,6 +453,7 @@ export const ruleNames = [
   "or",
   "containsText",
   "containsEmbeds",
+  "castInThread",
   "textMatchesPattern",
   "containsTooManyMentions",
   "containsLinks",
@@ -460,7 +485,7 @@ export type ActionType = (typeof actionTypes)[number];
 
 export type CheckFunctionArgs = {
   channel: ModeratedChannel;
-  cast: Cast;
+  cast: Cast & { thread_hash: string };
   rule: Rule;
 };
 
@@ -482,6 +507,28 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
 })
+  .refine(
+    async (data) => {
+      if (data.name === "castInThread") {
+        const ids = data.args.identifiers.split(/\r?\n/);
+        if (!ids.length) {
+          return false;
+        }
+
+        for (const id of ids) {
+          const cast = await neynar
+            .lookUpCastByHashOrWarpcastUrl(id.trim(), isWarpcastCastUrl(id) ? "url" : "hash")
+            .catch(() => false);
+          return cast !== false;
+        }
+      } else {
+        return true;
+      }
+    },
+    {
+      message: "Couldn't find that cast. Double check your identifiers.",
+    }
+  )
   .refine(
     (data) => {
       if (data.name === "textMatchesPattern") {
@@ -529,7 +576,22 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
     {
       message: "Couldn't find that ERC-20 contract. Sure you got the right chain?",
     }
-  );
+  )
+  .transform(async (data) => {
+    if (data.name === "castInThread") {
+      const ids = data.args.identifiers.split(/\r?\n/).map((h: string) => h.trim());
+
+      return {
+        ...data,
+        args: {
+          ...data.args,
+          identifiers: ids.join("\n"),
+        },
+      };
+    } else {
+      return data;
+    }
+  });
 
 const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
@@ -578,6 +640,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
   containsEmbeds: containsEmbeds,
+  castInThread: castInThread,
   castLength: castLength,
   userProfileContainsText: userProfileContainsText,
   userIsCohost: userIsCohost,
@@ -632,6 +695,31 @@ export async function containsFrame(args: CheckFunctionArgs) {
     return `Contains frame: ${frameUrls.join(", ")}`;
   } else if (!hasFrame && rule.invert) {
     return `Does not contain any frames.`;
+  }
+}
+
+export async function castInThread(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { identifiers } = rule.args;
+
+  const hashes = await Promise.all(
+    identifiers.split(/\r?\n/).map((h: string) => {
+      if (isWarpcastCastUrl(h)) {
+        return getSetCache({
+          key: `cast:${h}`,
+          ttlSeconds: 60 * 60 * 24 * 365,
+          get: () => neynar.lookUpCastByHashOrWarpcastUrl(h, "url").then((c) => c.cast.hash.toLowerCase()),
+        });
+      } else {
+        return h.toLowerCase().trim();
+      }
+    })
+  );
+
+  if (!rule.invert && hashes.includes(cast.thread_hash.toLowerCase())) {
+    return `Cast found in thread: ${formatHash(cast.thread_hash)}`;
+  } else if (rule.invert && !hashes.includes(cast.hash)) {
+    return `Cast was not inside: ${formatHash(cast.hash)}`;
   }
 }
 

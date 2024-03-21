@@ -247,7 +247,6 @@ export async function validateCast({
     return logs;
   }
 
-  console.log("rulesets", moderatedChannel);
   for (const ruleSet of moderatedChannel.ruleSets) {
     if (!isRuleTargetApplicable(ruleSet.target, cast)) {
       continue;
@@ -256,7 +255,6 @@ export async function validateCast({
     const rule: Rule = JSON.parse(ruleSet.rule);
     const actions: Action[] = JSON.parse(ruleSet.actions);
 
-    console.log({ rule });
     const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
 
     if (ruleEvaluation.didViolateRule) {
