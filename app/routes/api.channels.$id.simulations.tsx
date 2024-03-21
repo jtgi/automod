@@ -1,16 +1,22 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { simulationQueue } from "~/lib/bullish.server";
-import { formatZodError, requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
+import { formatZodError, requireUser } from "~/lib/utils.server";
 import { FullModeratedChannel } from "./api.webhooks.neynar";
 import { ModeratedChannelSchema } from "~/lib/validations.server";
+import { db } from "~/lib/db.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
-  const user = await requireUser({ request });
-  const mChannel = await requireUserCanModerateChannel({
-    userId: user.id,
-    channelId: params.id,
+  await requireUser({ request });
+  const channel = await db.moderatedChannel.findUnique({
+    where: {
+      id: params.id,
+    },
+    include: {
+      ruleSets: true,
+      user: true,
+    },
   });
 
   const data = (await request.json()) as FullModeratedChannel;
@@ -23,10 +29,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  console.log("proposed moderated channel", channelResult.data);
-
   const proposedModeratedChannel = {
-    ...mChannel,
+    active: true,
+    banThreshold: channelResult.data.banThreshold,
+    excludeCohosts: channelResult.data.excludeCohosts,
+    excludeUsernames: JSON.stringify(channelResult.data.excludeUsernames),
+    ...channel,
     ruleSets: channelResult.data.ruleSets.map((ruleSet) => {
       return {
         target: ruleSet.target,
@@ -41,12 +49,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     {
       channelId: params.id,
       limit: 100,
-      moderatedChannel: mChannel,
+      moderatedChannel: channel,
       proposedModeratedChannel,
     },
     {
       removeOnComplete: {
         age: 60 * 60,
+        count: 1000,
       },
     }
   );

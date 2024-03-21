@@ -209,7 +209,7 @@ async function getSweepJob(channelId: string) {
 
 export type SimulateArgs = {
   channelId: string;
-  moderatedChannel: FullModeratedChannel;
+  moderatedChannel: FullModeratedChannel | null;
   proposedModeratedChannel: FullModeratedChannel;
   limit: number;
   onProgress?: (castsProcessed: number) => Promise<void>;
@@ -237,12 +237,14 @@ export async function simulate(args: SimulateArgs) {
       console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
 
       const [existing, proposed] = await Promise.all([
-        validateCast({
-          cast,
-          channel,
-          moderatedChannel: args.moderatedChannel,
-          simulation: true,
-        }),
+        args.moderatedChannel
+          ? validateCast({
+              cast,
+              channel,
+              moderatedChannel: args.moderatedChannel,
+              simulation: true,
+            })
+          : Promise.resolve([]),
         validateCast({
           cast,
           channel,

@@ -106,6 +106,9 @@ export function ChannelForm(props: {
     });
   };
 
+  // watch the "id" field with react-hook-form
+  const channelId = watch("id");
+
   return (
     <div className="w-full">
       <FormProvider {...methods}>
@@ -260,8 +263,16 @@ export function ChannelForm(props: {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            {props.defaultValues.id && (
-              <SimulateButton channelId={props.defaultValues.id} actionDefs={props.actionDefinitions} />
+            {props.defaultValues.id || channelId ? (
+              <SimulateButton
+                // @ts-ignore
+                channelId={props.defaultValues.id || channelId}
+                actionDefs={props.actionDefinitions}
+              />
+            ) : (
+              <Button variant={"secondary"} className="w-full" disabled>
+                Simulate
+              </Button>
             )}
 
             <Button type="submit" size={"lg"} className="w-full" disabled={fetcher.state === "submitting"}>
@@ -284,11 +295,11 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
   const [open, setIsOpen] = useState<boolean>(false);
   const [fetcherKey, setFetcherKey] = useState<string | null>(String(new Date().getTime()));
 
-  const fetcher = useFetcher<typeof action>({
+  const submitJobFetcher = useFetcher<typeof action>({
     key: `start-sim-${fetcherKey}`,
   });
 
-  const jobFetcher = useFetcher<typeof jobStatusLoader>({
+  const jobStatusFetcher = useFetcher<typeof jobStatusLoader>({
     key: `job-status-${fetcherKey}`,
   });
 
@@ -300,7 +311,7 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
   const onSubmit = () => {
     setSimulating(true);
     const data = form.getValues();
-    fetcher.submit(prepareFormValues(data), {
+    submitJobFetcher.submit(prepareFormValues(data), {
       encType: "application/json",
       method: "post",
       action: `/api/channels/${props.channelId}/simulations`,
@@ -308,10 +319,10 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
   };
 
   useEffect(() => {
-    if (fetcher.data && "jobId" in fetcher.data && fetcher.data.jobId) {
-      const jobId = fetcher.data.jobId;
+    if (submitJobFetcher.data && "jobId" in submitJobFetcher.data && submitJobFetcher.data.jobId) {
+      const jobId = submitJobFetcher.data.jobId;
       interval.current = setInterval(() => {
-        jobFetcher.load(`/api/channels/${props.channelId}/simulations/${jobId}`);
+        jobStatusFetcher.load(`/api/channels/${props.channelId}/simulations/${jobId}`);
       }, 2000);
     }
 
@@ -320,15 +331,15 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
         clearInterval(interval.current);
       }
     };
-  }, [fetcher.state]);
+  }, [submitJobFetcher.state]);
 
   useEffect(() => {
-    if (isFinished(jobFetcher.data)) {
+    if (isFinished(jobStatusFetcher.data)) {
       clearInterval(interval.current);
-      setResult(jobFetcher.data.result);
+      setResult(jobStatusFetcher.data.result);
       setSimulating(false);
     }
-  }, [jobFetcher.data]);
+  }, [jobStatusFetcher.data]);
 
   const teardown = () => {
     setResult(null);
@@ -358,28 +369,34 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
                   will be performed.
                 </DialogDescription>
               </DialogHeader>
-              {(fetcher.data || fetcher.state !== "idle") && (
-                <div>
-                  {isFinished(jobFetcher.data) && result && (
-                    <SimulationResultDisplay simulation={result} actionDefinitions={props.actionDefs} />
-                  )}
-
-                  {isFailure(jobFetcher.data) && (
-                    <div className="p-4 border rounded-md space-y-4">
-                      <ServerCrash className="w-12 h-12" />
-                      <p>Something went wrong. Sorry. Try again?</p>
-                    </div>
-                  )}
-
-                  {simulating && (
-                    <div className="flex flex-col items-center gap-4 p-8 border rounded-lg">
-                      <Bot className="w-12 h-12 animate-bounce" />
-                      <p className="text-center text-sm">Hang tight, this takes about 15 seconds...</p>
-                    </div>
-                  )}
-                </div>
+              {isError(submitJobFetcher.data) && (
+                <Alert>
+                  <p>{submitJobFetcher.data.message}</p>
+                </Alert>
               )}
-              {isFinished(jobFetcher.data) && (
+              {!isError(submitJobFetcher.data) &&
+                (submitJobFetcher.data || submitJobFetcher.state !== "idle") && (
+                  <div>
+                    {isFinished(jobStatusFetcher.data) && result && (
+                      <SimulationResultDisplay simulation={result} actionDefinitions={props.actionDefs} />
+                    )}
+
+                    {isFailure(jobStatusFetcher.data) && (
+                      <div className="flex flex-col items-center gap-4 p-8 border rounded-lg">
+                        <ServerCrash className="w-12 h-12" />
+                        <p className="text-center text-sm">Something went wrong. Sorry.</p>
+                      </div>
+                    )}
+
+                    {simulating && (
+                      <div className="flex flex-col items-center gap-4 p-8 border rounded-lg">
+                        <Bot className="w-12 h-12 animate-bounce" />
+                        <p className="text-center text-sm">Hang tight, this takes about 15 seconds...</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              {isFinished(jobStatusFetcher.data) && (
                 <>
                   <div className="py-2">
                     <hr />
@@ -396,7 +413,7 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
                 </>
               )}
 
-              {!simulating && !result && (
+              {!isFailure(jobStatusFetcher.data) && !simulating && !result && (
                 <Button type="button" onClick={() => onSubmit()}>
                   Start Simulation
                 </Button>
@@ -422,7 +439,6 @@ function SimulationResultDisplay(props: {
   simulation: SimulationResult;
   actionDefinitions: typeof actionDefinitions;
 }) {
-  console.log(props.simulation);
   const actionCounts: Record<string, { proposed: number; existing: number }> = {};
 
   let proposedCastsActedOn = 0;
@@ -482,16 +498,16 @@ type JobState = {
   result: SimulationResult | null;
 };
 
+function isError(data?: any): data is { message: string } {
+  return data && "message" in data;
+}
+
 function isFinished(data?: any): data is JobState {
   return data && "state" in data && (data.state === "completed" || data.state === "failed");
 }
 
 function isFailure(data?: any): data is JobState {
   return data && "state" in data && data.state === "failed";
-}
-
-function isInQueue(data?: any): data is JobState {
-  return data && "state" in data && (data.state === "waiting" || data.state === "active");
 }
 
 function prepareFormValues(data: FormValues) {

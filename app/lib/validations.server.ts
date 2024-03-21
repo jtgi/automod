@@ -549,7 +549,7 @@ export const RuleSetSchema = z.object({
   id: z.string().optional(),
   target: z.enum(["all", "root", "reply"]).default("all"),
   ruleParsed: RuleSchema,
-  actionsParsed: z.array(ActionSchema).min(1),
+  actionsParsed: z.array(ActionSchema).min(1, { message: "At least one action is required." }),
 });
 
 export const ModeratedChannelSchema = z.object({
