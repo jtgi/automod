@@ -10,6 +10,7 @@ import { requireValidSignature } from "~/lib/utils.server";
 import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
 import { castQueue } from "~/lib/bullish.server";
+import { WebhookCast } from "~/lib/types";
 
 export const userPlans = {
   basic: {
@@ -43,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const rawPayload = await request.text();
   const webhookNotif = JSON.parse(rawPayload) as {
     type: string;
-    data: Cast & { root_parent_url: string };
+    data: WebhookCast;
   };
 
   if (process.env.NODE_ENV === "development") {
@@ -65,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!channelName) {
     console.error(`Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`, webhookNotif.data);
-    return json({ message: "Invalid parent_url" }, { status: 200 });
+    return json({ message: "Invalid parent_url" }, { status: 400 });
   }
 
   const moderatedChannel = await db.moderatedChannel.findFirst({
@@ -85,19 +86,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!moderatedChannel) {
     console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
-    return json({ message: "Channel is not moderated" }, { status: 200 });
+    return json({ message: "Channel is not moderated" }, { status: 400 });
   }
 
   if (moderatedChannel.user.plan === "expired") {
     console.error(
       `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
     );
-    return json({ message: "User's plan is expired, moderation disabled" }, { status: 200 });
+    return json({ message: "User's plan is expired, moderation disabled" }, { status: 400 });
   }
 
   if (moderatedChannel.ruleSets.length === 0) {
     console.log(`Channel ${moderatedChannel.id} has no rules. Doing nothing.`);
-    return json({ message: "Channel has no rules" }, { status: 200 });
+    return json({ message: "Channel has no rules" });
   }
 
   const alreadyProcessed = await db.moderationLog.findFirst({
@@ -127,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 200 });
+    return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 400 });
   }
 
   const channel = await getChannel({ name: moderatedChannel.id }).catch(() => null);
@@ -135,7 +136,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(
       `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
     );
-    return json({ message: "Channel not found" }, { status: 200 });
+    return json({ message: "Channel not found" }, { status: 404 });
   }
 
   console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
@@ -167,7 +168,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export type ValidateCastArgs = {
   channel: Channel;
   moderatedChannel: FullModeratedChannel;
-  cast: Cast;
+  cast: WebhookCast;
   simulation?: boolean;
 };
 
@@ -410,7 +411,7 @@ async function logModerationAction(
 
 async function evaluateRules(
   moderatedChannel: ModeratedChannel,
-  cast: Cast,
+  cast: WebhookCast,
   rule: Rule
 ): Promise<
   | {
@@ -461,7 +462,7 @@ async function evaluateRules(
 
 async function evaluateRule(
   channel: ModeratedChannel,
-  cast: Cast,
+  cast: WebhookCast,
   rule: Rule
 ): Promise<
   | {
@@ -474,6 +475,10 @@ async function evaluateRule(
     }
 > {
   const check = ruleFunctions[rule.name];
+  if (!check) {
+    throw new Error(`No function for rule ${rule.name}`);
+  }
+
   const error = await check({ channel, cast, rule });
 
   if (error) {

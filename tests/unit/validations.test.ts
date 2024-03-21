@@ -20,7 +20,7 @@ import {
   userIsNotActive,
 } from "~/lib/validations.server";
 import RE2 from "re2";
-import { NeynarCastWithFrame } from "~/lib/types";
+import { NeynarCastWithFrame, WebhookCast } from "~/lib/types";
 import { neynar } from "~/lib/neynar.server";
 
 vi.mock("~/lib/neynar.server", () => {
@@ -112,10 +112,12 @@ export function neynarChannel(overrides?: Partial<NeynarChannel>): NeynarChannel
   };
 }
 
-export function cast(overrides?: Partial<NeynarCastWithFrame>): NeynarCastWithFrame {
+export function cast(overrides?: Partial<NeynarCastWithFrame>): WebhookCast {
   return {
     hash: faker.number.hex(42),
     parent_hash: null,
+    thread_hash: faker.number.hex(42),
+    root_parent_url: faker.number.hex(42),
     parent_url: faker.internet.url(),
     frames: [],
     parent_author: {

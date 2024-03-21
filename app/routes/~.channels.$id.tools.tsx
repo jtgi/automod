@@ -21,6 +21,8 @@ import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
 import { sweepQueue } from "~/lib/bullish.server";
 import { ModerationLog } from "@prisma/client";
+import { WebhookCast } from "~/lib/types";
+import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 const SWEEP_LIMIT = 1000;
 
@@ -183,7 +185,7 @@ export async function sweep(args: SweepArgs) {
       console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
 
       await validateCast({
-        cast,
+        cast: cast as unknown as WebhookCast,
         channel,
         moderatedChannel: args.moderatedChannel,
       });
@@ -239,14 +241,16 @@ export async function simulate(args: SimulateArgs) {
       const [existing, proposed] = await Promise.all([
         args.moderatedChannel
           ? validateCast({
-              cast,
+              // neynars typings are wrong, casts include root_parent_urls
+              cast: cast as unknown as WebhookCast,
               channel,
               moderatedChannel: args.moderatedChannel,
               simulation: true,
             })
           : Promise.resolve([]),
         validateCast({
-          cast,
+          // neynars typings are wrong
+          cast: cast as unknown as WebhookCast,
           channel,
           moderatedChannel: args.proposedModeratedChannel,
           simulation: true,

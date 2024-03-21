@@ -19,6 +19,7 @@ import {
   validateErc20,
   validateErc721,
 } from "./utils.server";
+import { WebhookCast } from "./types";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -485,7 +486,7 @@ export type ActionType = (typeof actionTypes)[number];
 
 export type CheckFunctionArgs = {
   channel: ModeratedChannel;
-  cast: Cast & { thread_hash: string };
+  cast: WebhookCast;
   rule: Rule;
 };
 
@@ -715,6 +716,10 @@ export async function castInThread(args: CheckFunctionArgs) {
       }
     })
   );
+
+  if (!cast.thread_hash) {
+    throw new Error(`Cast ${cast.hash} has not thread_hash`);
+  }
 
   if (!rule.invert && hashes.includes(cast.thread_hash.toLowerCase())) {
     return `Cast found in thread: ${formatHash(cast.thread_hash)}`;
@@ -982,15 +987,6 @@ export async function requiresErc721(args: CheckFunctionArgs) {
         break;
       }
     }
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    console.log("ERC-721 check", {
-      contractAddress,
-      tokenId,
-      isOwner,
-      invert: rule.invert,
-    });
   }
 
   if (!rule.invert && !isOwner) {
