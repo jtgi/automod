@@ -2,8 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
-import { Cast, CastResponse } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import { Cast as CastV1 } from "@neynar/nodejs-sdk/build/neynar-api/v1";
+import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
 import { ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
@@ -11,14 +10,7 @@ import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import { clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
-import {
-  formatHash,
-  getSetCache,
-  isCastHash,
-  isWarpcastCastUrl,
-  validateErc20,
-  validateErc721,
-} from "./utils.server";
+import { formatHash, getSetCache, isWarpcastCastUrl, validateErc20, validateErc721 } from "./utils.server";
 import { WebhookCast } from "./types";
 
 export type RuleDefinition = {
@@ -186,6 +178,22 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Max Links",
         description: "The maximum number of links allowed",
+      },
+    },
+  },
+
+  userDoesNotFollow: {
+    friendlyName: "User Does Not Follow",
+    description: "Check if the user does not follow a certain account",
+    hidden: false,
+    invertable: false,
+    args: {
+      username: {
+        type: "string",
+        required: true,
+        friendlyName: "Username",
+        pattern: "^[a-zA-Z0-9_\\.]+$",
+        description: "Drop the @ (it's cooler).",
       },
     },
   },
@@ -462,6 +470,7 @@ export const ruleNames = [
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
+  "userDoesNotFollow",
   "userIsNotActive",
   "userFidInRange",
   "userIsCohost",
@@ -644,6 +653,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   castInThread: castInThread,
   castLength: castLength,
   userProfileContainsText: userProfileContainsText,
+  userDoesNotFollow: userDoesNotFollow,
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
@@ -932,6 +942,27 @@ export function userFollowerCount(props: CheckFunctionArgs) {
     if (cast.author.follower_count > max) {
       return `Follower count greater than ${max}`;
     }
+  }
+}
+
+export async function userDoesNotFollow(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { username } = rule.args;
+
+  const user = await getSetCache({
+    key: `follows:${username}:${cast.author.fid}`,
+    ttlSeconds: 15,
+    get: () => neynar.lookupUserByUsername(username, cast.author.fid),
+  });
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`);
+  }
+
+  const isFollowing = user.result.user.viewerContext?.following;
+
+  if (!isFollowing) {
+    return `User does not follow @${username}`;
   }
 }
 
