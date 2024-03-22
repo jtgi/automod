@@ -396,15 +396,25 @@ export async function validateErc721(props: { chainId?: string; contractAddress?
   const client = clientsByChainId[props.chainId];
   const contract = getContract({
     address: getAddress(props.contractAddress),
-    abi: erc721Abi,
+    abi: [
+      {
+        constant: true,
+        inputs: [{ name: "interfaceId", type: "bytes4" }],
+        name: "supportsInterface",
+        outputs: [{ name: "", type: "bool" }],
+        payable: false,
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
     client,
   });
 
-  await contract.read.name().catch(() => {
-    return false;
-  });
+  const supportsInterface = await contract.read
+    .supportsInterface(["0x80ac58cd" as `0x${string}`])
+    .catch(() => false);
 
-  return true;
+  return supportsInterface;
 }
 
 export async function validateErc20({
@@ -425,11 +435,13 @@ export async function validateErc20({
     client,
   });
 
-  await contract.read.name().catch(() => {
-    return false;
-  });
+  const anyAllowance = await contract.read
+    .allowance([`0x704CF202792341d79A9Fd6DD97046aa7eF3F4319`, `0x704CF202792341d79A9Fd6DD97046aa7eF3F4319`])
+    .catch(() => {
+      return false;
+    });
 
-  return true;
+  return anyAllowance !== false;
 }
 
 export function formatHash(hash: string) {
