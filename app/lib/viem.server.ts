@@ -1,5 +1,5 @@
 import { createPublicClient, http } from "viem";
-import { arbitrum, base, mainnet, optimism } from "viem/chains";
+import { arbitrum, base, mainnet, zora, optimism } from "viem/chains";
 
 const mainnetClient = createPublicClient({
   chain: mainnet,
@@ -27,11 +27,21 @@ const arbitrumClient = createPublicClient({
   ),
 });
 
+const zoraClient = createPublicClient({
+  chain: zora,
+  transport: http(
+    `https://rpc.zora.energy`
+  ),
+});
+
+
+
 export const clientsByChainId = {
   [String(mainnet.id)]: mainnetClient,
   [String(optimism.id)]: optimismClient,
   [String(base.id)]: baseClient,
   [String(arbitrum.id)]: arbitrumClient,
+  [String(zora.id)]: zoraClient
 };
 
 export const chainByChainId = {
@@ -39,4 +49,5 @@ export const chainByChainId = {
   [String(optimism.id)]: optimism,
   [String(base.id)]: base,
   [String(arbitrum.id)]: arbitrum,
+  [String(zora.id)]: zora
 };
