@@ -388,6 +388,39 @@ export async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export async function validateErc1155(props: {
+  chainId?: string;
+  contractAddress?: string;
+  tokenId?: string;
+}) {
+  if (!props.chainId || !props.contractAddress || !props.tokenId) {
+    return false;
+  }
+
+  const client = clientsByChainId[props.chainId];
+  const contract = getContract({
+    address: getAddress(props.contractAddress),
+    abi: [
+      {
+        constant: true,
+        inputs: [{ name: "interfaceId", type: "bytes4" }],
+        name: "supportsInterface",
+        outputs: [{ name: "", type: "bool" }],
+        payable: false,
+        stateMutability: "view",
+        type: "function",
+      },
+    ],
+    client,
+  });
+
+  const supportsInterface = await contract.read
+    .supportsInterface(["0xd9b67a26" as `0x${string}`])
+    .catch(() => false);
+
+  return supportsInterface;
+}
+
 export async function validateErc721(props: { chainId?: string; contractAddress?: string }) {
   if (!props.chainId || !props.contractAddress) {
     return false;

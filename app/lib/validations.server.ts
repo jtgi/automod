@@ -10,8 +10,16 @@ import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import { clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
-import { formatHash, getSetCache, isWarpcastCastUrl, validateErc20, validateErc721 } from "./utils.server";
+import {
+  formatHash,
+  getSetCache,
+  isWarpcastCastUrl,
+  validateErc1155,
+  validateErc20,
+  validateErc721,
+} from "./utils.server";
 import { WebhookCast } from "./types";
+import { erc1155Abi } from "./abis";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -214,7 +222,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           { value: "1", label: "Ethereum" },
           { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
-          { value: "7777777", label: "Zora" }
+          { value: "7777777", label: "Zora" },
         ],
       },
       contractAddress: {
@@ -230,6 +238,44 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         required: false,
         placeholder: "Any Amount",
         friendlyName: "Minimum Balance (optional)",
+        description: "",
+      },
+    },
+  },
+
+  requiresErc1155: {
+    friendlyName: "User does not hold ERC-1155",
+    description: "Require users holds a certain ERC-1155 token",
+    invertedDescription: "Check for users who *do* hold the ERC-1155 token",
+    hidden: false,
+    invertable: true,
+    args: {
+      chainId: {
+        type: "select",
+        friendlyName: "Chain",
+        description: "",
+        required: true,
+        options: [
+          { value: "1", label: "Ethereum" },
+          { value: "10", label: "Optimism" },
+          { value: "8453", label: "Base" },
+          { value: "7777777", label: "Zora" },
+        ],
+      },
+      contractAddress: {
+        type: "string",
+        required: true,
+        pattern: "0x[a-fA-F0-9]{40}",
+        placeholder: "0xdead...",
+        friendlyName: "Contract Address",
+        description: "",
+      },
+      tokenId: {
+        type: "string",
+        required: true,
+        placeholder: "1",
+        pattern: "[0-9]+",
+        friendlyName: "Token ID",
         description: "",
       },
     },
@@ -476,6 +522,7 @@ export const ruleNames = [
   "userIsNotActive",
   "userFidInRange",
   "userIsCohost",
+  "requiresErc1155",
   "requiresErc721",
   "requiresErc20",
 ] as const;
@@ -576,6 +623,22 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   )
   .refine(
     async (data) => {
+      if (data.name === "requiresErc1155") {
+        return await validateErc1155({
+          chainId: data.args.chainId,
+          contractAddress: data.args.contractAddress,
+          tokenId: data.args.tokenId,
+        });
+      } else {
+        return true;
+      }
+    },
+    {
+      message: "Couldn't find that ERC-1155 contract. Sure you got the right chain?",
+    }
+  )
+  .refine(
+    async (data) => {
       if (data.name === "requiresErc20") {
         return await validateErc20({
           chainId: data.args.chainId,
@@ -663,6 +726,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userFidInRange: userFidInRange,
   requiresErc721: requiresErc721,
   requiresErc20: requiresErc20,
+  requiresErc1155: requiresErc1155,
 };
 
 export const actionFunctions: Record<ActionType, ActionFunction> = {
@@ -1026,6 +1090,41 @@ export async function requiresErc721(args: CheckFunctionArgs) {
     return `Wallet does not hold ERC-721 token: ${contractAddress}:${tokenId}`;
   } else if (rule.invert && isOwner) {
     return `Wallet holds ERC-721 token: ${contractAddress}:${tokenId}`;
+  }
+}
+
+export async function requiresErc1155(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { chainId, contractAddress, tokenId } = rule.args;
+  const client = clientsByChainId[chainId];
+
+  if (!client) {
+    throw new Error(`No client found for chainId: ${chainId}`);
+  }
+
+  if (!tokenId) {
+    throw new Error("Token ID required for ERC-1155 check");
+  }
+
+  const contract = getContract({
+    address: getAddress(contractAddress),
+    abi: erc1155Abi,
+    client,
+  });
+
+  let isOwner = false;
+  for (const address of cast.author.verifications) {
+    const balance = await contract.read.balanceOf([getAddress(address), BigInt(tokenId)]);
+    if (balance > 0) {
+      isOwner = true;
+      break;
+    }
+  }
+
+  if (!rule.invert && !isOwner) {
+    return `Wallet does not hold ERC-1155 token: ${contractAddress}:${tokenId}`;
+  } else if (rule.invert && isOwner) {
+    return `Wallet holds ERC-1155 token: ${contractAddress}:${tokenId}`;
   }
 }
 
