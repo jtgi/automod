@@ -327,6 +327,15 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
+  userDoesNotHoldPowerBadge: {
+    friendlyName: "User Does Not Hold Power Badge",
+    description: "Check if the user does not hold a power badge",
+    invertedDescription: "Check for users who *do* hold the power badge",
+    hidden: false,
+    invertable: true,
+    args: {},
+  },
+
   userIsCohost: {
     friendlyName: "User Is Cohost",
     description: "Check if the user is a cohost",
@@ -520,6 +529,7 @@ export const ruleNames = [
   "userFollowerCount",
   "userDoesNotFollow",
   "userIsNotActive",
+  "userDoesNotHoldPowerBadge",
   "userFidInRange",
   "userIsCohost",
   "requiresErc1155",
@@ -723,6 +733,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
   userIsNotActive: userIsNotActive,
+  userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
   userFidInRange: userFidInRange,
   requiresErc721: requiresErc721,
   requiresErc20: requiresErc20,
@@ -1054,6 +1065,17 @@ export function userIsNotActive(args: CheckFunctionArgs) {
     return `User is not active`;
   } else if (rule.invert && cast.author.active_status === "active") {
     return `User is active`;
+  }
+}
+
+export function userDoesNotHoldPowerBadge(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const author = cast.author as Cast["author"] & { power_badge: boolean };
+
+  if (!rule.invert && !author.power_badge) {
+    return `User does not have a power badge`;
+  } else if (rule.invert && author.power_badge) {
+    return `User has a power badge`;
   }
 }
 
