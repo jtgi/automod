@@ -6,10 +6,7 @@ import { createAppClient, viemConnector } from "@farcaster/auth-kit";
 import { db } from "./db.server";
 import { getSharedEnv } from "./utils.server";
 
-export class FarcasterStrategy extends Strategy<
-  User,
-  FarcasterUser & { request: Request }
-> {
+export class FarcasterStrategy extends Strategy<User, FarcasterUser & { request: Request }> {
   name = "farcaster";
 
   async authenticate(
@@ -21,12 +18,7 @@ export class FarcasterStrategy extends Strategy<
     const credentials = Object.fromEntries(url.searchParams.entries());
 
     if (!credentials.message || !credentials.signature || !credentials.nonce) {
-      return await this.failure(
-        "Missing message, signature or nonce",
-        request,
-        sessionStorage,
-        options
-      );
+      return await this.failure("Missing message, signature or nonce", request, sessionStorage, options);
     }
 
     const env = getSharedEnv();
@@ -44,77 +36,19 @@ export class FarcasterStrategy extends Strategy<
     const { success, fid, error } = verifyResponse;
 
     if (!success) {
-      return await this.failure(
-        "Invalid signature",
+      return await this.failure("Invalid signature", request, sessionStorage, options, error);
+    }
+
+    let user;
+    try {
+      user = await this.verify({
+        fid: fid.toString(),
+        username: credentials.username,
+        pfpUrl: credentials.pfpUrl,
         request,
-        sessionStorage,
-        options,
-        error
-      );
-    }
-
-    const inviteCode = url.searchParams.get("invite");
-    let invite: InviteCode | null = null;
-    if (inviteCode) {
-      invite = await db.inviteCode.findUnique({
-        where: {
-          id: inviteCode,
-        },
       });
-
-      if (!invite) {
-        return await this.failure(
-          "Invalid invite code",
-          request,
-          sessionStorage,
-          options
-        );
-      }
-
-      await db.order.upsert({
-        where: {
-          fid: fid.toString(),
-        },
-        create: {
-          fid: fid.toString(),
-        },
-        update: {
-          fid: fid.toString(),
-        },
-      });
-    } else {
-      const order = await db.order.findFirst({
-        where: {
-          fid: fid.toString(),
-        },
-      });
-
-      if (!order) {
-        return await this.failure(
-          "No access",
-          request,
-          sessionStorage,
-          options
-        );
-      }
-    }
-
-    const user = await this.verify({
-      fid: fid.toString(),
-      username: credentials.username,
-      pfpUrl: credentials.pfpUrl,
-      request,
-    });
-
-    if (invite && !user.inviteCodeId) {
-      await db.user.update({
-        where: {
-          id: user.id,
-        },
-        data: {
-          inviteCodeId: invite.id,
-        },
-      });
+    } catch (err) {
+      return await this.failure((err as Error).message, request, sessionStorage, options);
     }
 
     return this.success(user, request, sessionStorage, options);

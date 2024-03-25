@@ -11,21 +11,7 @@ import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
 import { castQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
-
-export const userPlans = {
-  basic: {
-    maxChannels: 1,
-    maxRules: 1,
-  },
-  pro: {
-    maxChannels: 4,
-    maxRules: 4,
-  },
-  elite: {
-    maxChannels: 10,
-    maxRules: 10,
-  },
-};
+import { PlanType, userPlans } from "~/lib/auth.server";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -89,6 +75,11 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel is not moderated" }, { status: 400 });
   }
 
+  if (await isUserOverUsage(moderatedChannel, 0.15)) {
+    console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
+    return json({ message: "User is over usage limit" }, { status: 400 });
+  }
+
   if (moderatedChannel.user.plan === "expired") {
     console.error(
       `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
@@ -140,6 +131,26 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
+
+  await db.usage.upsert({
+    where: {
+      channelId_monthYear: {
+        channelId: moderatedChannel.id,
+        monthYear: new Date().toISOString().substring(0, 7),
+      },
+    },
+    create: {
+      channelId: moderatedChannel.id,
+      monthYear: new Date().toISOString().substring(0, 7),
+      userId: moderatedChannel.userId,
+      castsProcessed: 1,
+    },
+    update: {
+      castsProcessed: {
+        increment: 1,
+      },
+    },
+  });
 
   await castQueue.add(
     "processCast",
@@ -503,4 +514,25 @@ function isRuleTargetApplicable(target: string, cast: Cast) {
     default:
       return true;
   }
+}
+
+async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
+  const plan = userPlans[moderatedChannel.user.plan as PlanType];
+  const usage = await db.usage.findFirst({
+    where: {
+      userId: moderatedChannel.userId,
+      monthYear: new Date().toISOString().substring(0, 7),
+    },
+  });
+
+  if (!usage) {
+    return false;
+  }
+
+  const maxCastsWithBuffer = plan.maxCasts * (1 + buffer);
+  if (usage.castsProcessed >= maxCastsWithBuffer) {
+    return true;
+  }
+
+  return false;
 }
