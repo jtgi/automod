@@ -43,12 +43,15 @@ model Otp {
 }
 
 model User {
-  id        String  @id
-  name      String
-  avatarUrl String?
-  email     String? @unique
-  plan      String  @default("basic")
-  role      String  @default("user")
+  id          String    @id
+  name        String
+  avatarUrl   String?
+  email       String?   @unique
+  plan        String    @default("basic")
+  planExpiry  DateTime?
+  planTokenId String?
+
+  role String @default("user")
 
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -56,6 +59,7 @@ model User {
   invite            InviteCode?        @relation(fields: [inviteCodeId], references: [id])
   inviteCodeId      String?
   otps              Otp[]
+  usage             Usage[]
 }
 
 model ModeratedChannel {
@@ -74,6 +78,7 @@ model ModeratedChannel {
   moderationLogs   ModerationLog[]
   cooldowns        Cooldown[]
   comods           Comods[]
+  Usage            Usage[]
 }
 
 model Comods {
@@ -139,4 +144,17 @@ model Cooldown {
   expiresAt      DateTime?
 
   @@unique([affectedUserId, channelId])
+}
+
+model Usage {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+  channel        ModeratedChannel @relation(fields: [channelId], references: [id])
+  channelId      String
+  castsProcessed Int              @default(0)
+  monthYear      String // Format: "MM-YYYY"
+
+  @@unique([channelId, monthYear])
+  @@index([channelId, monthYear])
 }
