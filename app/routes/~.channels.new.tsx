@@ -26,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (process.env.NODE_ENV !== "development") {
     let isCohostOverride = false;
-    if (data.id === "rainbow" || data.id === "coop-recs") {
+    if (data.id === "rainbow" || data.id === "coop-recs" || data.id === "9dcc") {
       const cohosts = await getChannelHosts({ channel: data.id });
       isCohostOverride = cohosts.result.hosts.some((host) => String(host.fid) === user.id);
     }
