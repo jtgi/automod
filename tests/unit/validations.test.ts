@@ -53,6 +53,8 @@ export function user(data?: Partial<User>): User {
     name: faker.person.firstName(),
     email: faker.internet.email(),
     avatarUrl: faker.image.avatar(),
+    planExpiry: null,
+    planTokenId: null,
     role: "admin",
     plan: "basic",
     inviteCodeId: null,
