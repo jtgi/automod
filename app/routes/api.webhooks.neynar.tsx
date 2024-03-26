@@ -518,6 +518,10 @@ function isRuleTargetApplicable(target: string, cast: Cast) {
 
 async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
   const plan = userPlans[moderatedChannel.user.plan as PlanType];
+  if (!plan) {
+    return false;
+  }
+
   const usage = await db.usage.findFirst({
     where: {
       userId: moderatedChannel.userId,

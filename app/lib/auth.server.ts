@@ -123,7 +123,7 @@ export async function verifyFarcasterUser(args: FarcasterUser & { request: Reque
   return user;
 }
 
-export const planTypes = ["basic", "power", "ultra", "vip"] as const;
+export const planTypes = ["basic", "prime", "ultra", "vip"] as const;
 export type PlanType = (typeof planTypes)[number];
 
 export const userPlans = {
@@ -131,9 +131,9 @@ export const userPlans = {
     maxChannels: 3,
     maxCasts: 1000,
   },
-  power: {
+  prime: {
     maxChannels: 5,
-    maxCasts: 100_000,
+    maxCasts: 10_000,
   },
   ultra: {
     maxChannels: Infinity,
@@ -198,7 +198,7 @@ async function getSubscriptionPlan(args: { fid: string }): Promise<{
       const tokenId = subInfo[0];
 
       return {
-        plan: "power",
+        plan: "prime",
         tokenId: tokenId.toString(),
         expiresAt: new Date(Date.now() + Number(powerSecondsRemaining * 1000n)),
       };
