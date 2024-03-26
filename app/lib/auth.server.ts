@@ -88,31 +88,37 @@ export async function verifyFarcasterUser(args: FarcasterUser & { request: Reque
     },
   });
 
-  const subscription = await getSubscriptionPlan({ fid: args.fid }).catch(console.error);
-  console.log(subscription);
-
   if (!user) {
-    const subscription = await getSubscriptionPlan({ fid: args.fid });
+    const order = await db.order.findFirst({
+      where: {
+        fid: args.fid,
+      },
+    });
 
-    if (subscription.tokenId) {
-      const existingUser = await db.user.findFirst({
-        where: {
-          planTokenId: subscription.tokenId,
-        },
-      });
+    let subscription: Awaited<ReturnType<typeof getSubscriptionPlan>> | undefined;
+    if (!order) {
+      subscription = await getSubscriptionPlan({ fid: args.fid });
 
-      if (existingUser) {
-        Sentry.captureMessage(`Token ${subscription.tokenId} already in use.`);
-        throw new Error(`Token already in use. Contact support.`);
+      if (subscription.tokenId) {
+        const existingUser = await db.user.findFirst({
+          where: {
+            planTokenId: subscription.tokenId,
+          },
+        });
+
+        if (existingUser) {
+          Sentry.captureMessage(`Token ${subscription.tokenId} already in use.`);
+          throw new Error(`Token already in use. Contact support.`);
+        }
       }
     }
 
     return await db.user.create({
       data: {
         id: args.fid,
-        plan: subscription.plan,
-        planExpiry: subscription.expiresAt,
-        planTokenId: subscription.tokenId,
+        plan: subscription?.plan || "basic",
+        planExpiry: subscription?.expiresAt,
+        planTokenId: subscription?.tokenId,
         name: args.username || args.fid,
         avatarUrl: args.pfpUrl,
         inviteCodeId: args.inviteCodeId,
@@ -156,7 +162,7 @@ async function getSubscriptionPlan(args: { fid: string }): Promise<{
   expiresAt: Date | null;
 }> {
   const client = clientsByChainId[base.id];
-  const powerContractAddress = process.env.POWER_CONTRACT_ADDRESS!;
+  const powerContractAddress = process.env.PRIME_CONTRACT_ADDRESS!;
   const ultraContractAddress = process.env.ULTRA_CONTRACT_ADDRESS!;
 
   const powerContract = getContract({
