@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { commitSession, getSession } from "~/lib/auth.server";
+import { db } from "~/lib/db.server";
 import { cn } from "~/lib/utils";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 
@@ -24,11 +25,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (session.get("message") as { id: string; type: string; message: string } | null) ?? undefined;
   const impersonateAs = session.get("impersonateAs") ?? undefined;
 
+  const status = await db.status.findFirst({
+    where: {
+      active: true,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
   return typedjson(
     {
       user,
       impersonateAs,
       message,
+      status,
       env: getSharedEnv(),
     },
     {
@@ -40,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Index() {
-  const { env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
+  const { status, env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
     if (message) {
@@ -60,11 +72,24 @@ export default function Index() {
 
   return (
     <AuthKitProvider config={farcasterConfig}>
+      {status && (
+        <div
+          className={cn(
+            "fixed top-0 left-0 w-full text-white text-center py-2",
+            status.type === "warning" ? "bg-yellow-400" : "",
+            status.type === "info" ? "bg-primary" : ""
+          )}
+        >
+          {status.message}
+        </div>
+      )}
+
       {impersonateAs && (
         <div className="fixed top-0 left-0 w-full bg-primary/75 text-white text-center py-2">
           Impersonating as <span className="font-mono">{impersonateAs}</span>.
         </div>
       )}
+
       <main
         className={cn(
           "w-full max-w-4xl px-8 mx-auto min-h-screen flex flex-col pb-[200px]",

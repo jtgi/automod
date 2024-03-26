@@ -118,6 +118,16 @@ model ModerationLog {
   channelId             String
 }
 
+model Status {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  active    Boolean   @default(true)
+  message   String
+  expiresAt DateTime?
+  type      String
+}
+
 model Cooldown {
   id             String           @id @default(cuid())
   createdAt      DateTime         @default(now())
