@@ -19,22 +19,14 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
   const data = await request.json();
 
-  const { isLead, lead } = await isChannelLead({
-    userId: user.id,
-    channelId: data.id,
-  });
-
   if (process.env.NODE_ENV !== "development") {
-    let isCohostOverride = false;
-    if (data.id === "rainbow" || data.id === "coop-recs" || data.id === "9dcc") {
-      const cohosts = await getChannelHosts({ channel: data.id });
-      isCohostOverride = cohosts.result.hosts.some((host) => String(host.fid) === user.id);
-    }
+    const cohosts = await getChannelHosts({ channel: data.id });
+    const isCohost = cohosts.result.hosts.some((host) => String(host.fid) === user.id);
 
-    if (!isLead && !isCohostOverride) {
+    if (!isCohost) {
       return errorResponse({
         request,
-        message: `Only the channel lead${lead ? ` (@${lead.username})` : ""} can setup a bot`,
+        message: `You must be a cohost to setup a bot.`,
       });
     }
   }

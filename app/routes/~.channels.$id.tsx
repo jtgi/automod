@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChannelRoot() {
-  const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
+  const { channel, isNewChannel } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
 
   return (
@@ -87,12 +87,10 @@ export default function ChannelRoot() {
               [
                 { to: `/~/channels/${channel.id}`, title: "Logs" },
                 { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
-                channel.userId === user.id
-                  ? {
-                      to: `/~/channels/${channel.id}/collaborators`,
-                      title: "Collaborators",
-                    }
-                  : undefined,
+                {
+                  to: `/~/channels/${channel.id}/collaborators`,
+                  title: "Collaborators",
+                },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]
             }
