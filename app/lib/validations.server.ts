@@ -146,6 +146,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   textMatchesLanguage: {
     friendlyName: "Text Matches Language",
     description: "Check if the text matches a specific language",
+    invertedDescription: "Check if the text is any language *but* the one specified.",
     hidden: false,
     invertable: true,
     args: {
