@@ -90,17 +90,16 @@ export default function FrameConfig() {
 
       {channels.length > 0 && (
         <div className="space-y-12">
-          {isNearUsage && (
+          {isNearUsage && !isOverUsage && (
             <Alert variant="destructive">
               You're nearing your monthly usage limit. Reach out to{" "}
-              <a href="https://warpcast.com/jtgi">@jtgi</a>
-              to avoid interruptions.
+              <a href="https://warpcast.com/jtgi">@jtgi</a> to avoid interruptions.
             </Alert>
           )}
 
           {isOverUsage && (
             <Alert variant="destructive">
-              You're over your monthly usage limit. Reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>
+              You're over your monthly usage limit. Reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>{" "}
               to avoid interruptions.
             </Alert>
           )}
