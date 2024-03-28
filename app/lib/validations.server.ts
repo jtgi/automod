@@ -170,13 +170,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {
       min: {
         type: "number",
-        friendlyName: "Less than",
+        friendlyName: "At least",
         placeholder: "No Minimum",
         description: "Setting a value of 5 would require the cast to be at least 5 characters.",
       },
       max: {
         type: "number",
-        friendlyName: "Greater than",
+        friendlyName: "At most",
         placeholder: "∞",
         description: "Setting a value of 10 would require the cast to be less than 10 characters.",
       },
