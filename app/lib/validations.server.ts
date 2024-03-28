@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { detect } from "tinyld";
 import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
@@ -20,6 +21,7 @@ import {
 } from "./utils.server";
 import { WebhookCast } from "./types";
 import { erc1155Abi } from "./abis";
+import { languages } from "./languages";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -137,6 +139,24 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "string",
         friendlyName: "Pattern",
         description: "The regular expression to match against. No leading or trailing slashes.",
+      },
+    },
+  },
+
+  textMatchesLanguage: {
+    friendlyName: "Text Matches Language",
+    description: "Check if the text matches a specific language",
+    hidden: false,
+    invertable: true,
+    args: {
+      language: {
+        type: "select",
+        friendlyName: "Language",
+        description: "The language to check for",
+        options: languages.map((l) => ({
+          label: l.name,
+          value: l.code,
+        })),
       },
     },
   },
@@ -521,6 +541,7 @@ export const ruleNames = [
   "containsEmbeds",
   "castInThread",
   "textMatchesPattern",
+  "textMatchesLanguage",
   "containsTooManyMentions",
   "containsLinks",
   "castLength",
@@ -528,8 +549,8 @@ export const ruleNames = [
   "userDisplayNameContainsText",
   "userFollowerCount",
   "userDoesNotFollow",
-  "userIsNotActive",
   "userDoesNotHoldPowerBadge",
+  "userIsNotActive",
   "userFidInRange",
   "userIsCohost",
   "requiresErc1155",
@@ -721,6 +742,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   and: () => undefined,
   or: () => undefined, // TODO
   textMatchesPattern: textMatchesPattern,
+  textMatchesLanguage: textMatchesLanguage,
   containsText: containsText,
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
@@ -938,6 +960,19 @@ export function textMatchesPattern(args: CheckFunctionArgs) {
     return `Text matches pattern: ${pattern}`;
   } else if (!isMatch && rule.invert) {
     return `Text does not match pattern: ${pattern}`;
+  }
+}
+
+export function textMatchesLanguage(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { language } = rule.args;
+
+  const isLanguage = detect(cast.text, { only: [language] }) !== "";
+
+  if (isLanguage && !rule.invert) {
+    return `Text matches language: ${language}`;
+  } else if (!isLanguage && rule.invert) {
+    return `Text does not match language: ${language}`;
   }
 }
 
