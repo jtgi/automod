@@ -1,4 +1,5 @@
 import { InviteCode, User } from "@prisma/client";
+import * as Sentry from "@sentry/remix";
 import { FarcasterUser } from "./auth.server";
 import { AuthenticateOptions, Strategy } from "remix-auth";
 import { SessionStorage } from "@remix-run/node";
@@ -48,6 +49,15 @@ export class FarcasterStrategy extends Strategy<User, FarcasterUser & { request:
         request,
       });
     } catch (err) {
+      console.error(err);
+      Sentry.captureException(err, {
+        extra: {
+          fid,
+          username: credentials.username,
+          pfpUrl: credentials.pfpUrl,
+        },
+      });
+
       return await this.failure((err as Error).message, request, sessionStorage, options);
     }
 

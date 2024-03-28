@@ -1,8 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, Outlet, useFetcher, useNavigation } from "@remix-run/react";
-import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Link, Outlet, useFetcher } from "@remix-run/react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { SidebarNav, SidebarNavProps } from "~/components/sub-nav";
