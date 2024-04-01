@@ -968,6 +968,17 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { language } = rule.args;
 
+  if (!cast.text.length) {
+    return;
+  }
+
+  try {
+    new URL(cast.text);
+    return;
+  } catch (e) {
+    // not a url
+  }
+
   const isLanguage = detect(cast.text, { only: [language] }) !== "";
 
   if (isLanguage && !rule.invert) {
