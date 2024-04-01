@@ -54,6 +54,7 @@ async function seed() {
     id: "jtgi",
     banThreshold: 3,
     userId: user.id,
+    url: "https://warpcast.com/~/channel/jtgi",
   };
 
   const modChannel = await db.moderatedChannel.upsert({

@@ -1,6 +1,7 @@
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
+import { registerWebhook, unregisterWebhook } from "~/lib/neynar.server";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -11,14 +12,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     channelId: params.id,
   });
 
-  const updatedChannel = await db.moderatedChannel.update({
+  const updatedChannel = await toggleWebhook({ channelId: params.id, active: !mChannel.active });
+  return json(updatedChannel);
+}
+
+export async function toggleWebhook(args: { channelId: string; active: boolean }) {
+  const channel = await db.moderatedChannel.findUniqueOrThrow({
     where: {
-      id: mChannel.id,
-    },
-    data: {
-      active: !mChannel.active,
+      id: args.channelId,
     },
   });
 
-  return json(updatedChannel);
+  const [updatedChannel] = await Promise.all([
+    db.moderatedChannel.update({
+      where: {
+        id: args.channelId,
+      },
+      data: {
+        active: args.active,
+      },
+    }),
+    args.active
+      ? registerWebhook({ rootParentUrl: channel.url! })
+      : unregisterWebhook({ rootParentUrl: channel.url! }),
+  ]);
+
+  return updatedChannel;
 }

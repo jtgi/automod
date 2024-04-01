@@ -1,23 +1,15 @@
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 
 import { cache } from "./cache.server";
-import {
-  FollowResponseUser,
-  Reaction,
-} from "@neynar/nodejs-sdk/build/neynar-api/v1";
+import { FollowResponseUser, Reaction } from "@neynar/nodejs-sdk/build/neynar-api/v1";
 import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
 
-export async function registerWebhook({
-  rootParentUrl,
-}: {
-  rootParentUrl: string;
-}) {
+export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string }) {
   const webhook = await axios.get(
-    `https://api.neynar.com/v2/farcaster/webhook?webhook_id=${process.env
-      .NEYNAR_WEBHOOK_ID!}`,
+    `https://api.neynar.com/v2/farcaster/webhook?webhook_id=${process.env.NEYNAR_WEBHOOK_ID!}`,
     {
       headers: {
         api_key: process.env.NEYNAR_API_KEY!,
@@ -25,14 +17,56 @@ export async function registerWebhook({
     }
   );
   const webhooks =
-    (webhook.data.webhook?.subscription?.filters?.["cast.created"]
-      ?.root_parent_urls as string[]) || [];
+    (webhook.data.webhook?.subscription?.filters?.["cast.created"]?.root_parent_urls as string[]) || [];
 
   if (webhooks.includes(rootParentUrl)) {
     return;
   }
 
   webhooks.push(rootParentUrl);
+
+  return axios.put(
+    `https://api.neynar.com/v2/farcaster/webhook/`,
+    {
+      webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
+      name: "automod",
+      url: `${getSharedEnv().hostUrl}/api/webhooks/neynar`,
+      description: "automod webhook",
+      subscription: {
+        "cast.created": {
+          author_fids: [],
+          root_parent_urls: webhooks,
+          parent_urls: [],
+          mentioned_fids: [],
+        },
+      },
+    },
+    {
+      headers: {
+        api_key: process.env.NEYNAR_API_KEY!,
+      },
+    }
+  );
+}
+
+export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: string }) {
+  const webhook = await axios.get(
+    `https://api.neynar.com/v2/farcaster/webhook?webhook_id=${process.env.NEYNAR_WEBHOOK_ID!}`,
+    {
+      headers: {
+        api_key: process.env.NEYNAR_API_KEY!,
+      },
+    }
+  );
+  const webhooks =
+    (webhook.data.webhook?.subscription?.filters?.["cast.created"]?.root_parent_urls as string[]) || [];
+
+  console.log({ webhooks });
+  if (!webhooks.includes(rootParentUrl)) {
+    return;
+  }
+
+  webhooks.splice(webhooks.indexOf(rootParentUrl), 1);
 
   return axios.put(
     `https://api.neynar.com/v2/farcaster/webhook/`,
@@ -81,11 +115,7 @@ export async function getChannel(props: { name: string }) {
   }
 
   const response = await neynar.lookupChannel(props.name);
-  cache.set(
-    cacheKey,
-    response.channel,
-    process.env.NODE_ENV === "development" ? 0 : 60 * 60 * 24
-  );
+  cache.set(cacheKey, response.channel, process.env.NODE_ENV === "development" ? 0 : 60 * 60 * 24);
 
   return response.channel;
 }
@@ -99,11 +129,7 @@ export async function getUser(props: { fid: string }) {
   }
 
   const response = await neynar.fetchBulkUsers([+props.fid], {});
-  cache.set(
-    cacheKey,
-    response.users[0],
-    process.env.NODE_ENV === "development" ? 0 : 60 * 60
-  );
+  cache.set(cacheKey, response.users[0], process.env.NODE_ENV === "development" ? 0 : 60 * 60);
 
   return response.users[0];
 }
@@ -151,10 +177,7 @@ export async function pageFollowersDeep(props: { fid: number }) {
     });
 
     results = results.concat(response.result.users);
-    cursor =
-      cursor !== response.result.next.cursor
-        ? response.result.next.cursor
-        : null;
+    cursor = cursor !== response.result.next.cursor ? response.result.next.cursor : null;
   }
 
   cache.set(cacheKey, results);

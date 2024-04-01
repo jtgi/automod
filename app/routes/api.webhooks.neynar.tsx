@@ -12,6 +12,7 @@ import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
 import { castQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
+import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -75,8 +76,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel is not moderated" }, { status: 400 });
   }
 
-  if (await isUserOverUsage(moderatedChannel, 0.15)) {
+  if (await isUserOverUsage(moderatedChannel, 0.1)) {
     console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
+    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
     return json({ message: "User is over usage limit" }, { status: 400 });
   }
 
@@ -84,6 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
     console.error(
       `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
     );
+    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
     return json({ message: "User's plan is expired, moderation disabled" }, { status: 400 });
   }
 
