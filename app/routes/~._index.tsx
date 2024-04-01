@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { BatteryWarningIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -64,11 +65,9 @@ export default function FrameConfig() {
   const { channels, user, usage, createdChannels, plans } = useTypedLoaderData<typeof loader>();
 
   const plan = plans[user.plan as PlanType];
-  const isNearUsage = usage && usage.castsProcessed >= plan.maxCasts - plan.maxCasts * 0.1;
+  const isNearUsage = usage && usage.castsProcessed >= plan.maxCasts - plan.maxCasts * 0.15;
   const isOverUsage = usage && usage.castsProcessed >= plan.maxCasts;
   const isMaxChannels = createdChannels >= plan.maxChannels;
-
-  console.log({ isNearUsage, isOverUsage, isMaxChannels });
 
   return (
     <div className="space-y-4">
@@ -91,16 +90,58 @@ export default function FrameConfig() {
       {channels.length > 0 && (
         <div className="space-y-12">
           {isNearUsage && !isOverUsage && (
-            <Alert variant="destructive">
-              You're nearing your monthly usage limit. Reach out to{" "}
-              <a href="https://warpcast.com/jtgi">@jtgi</a> to avoid interruptions.
+            <Alert>
+              <>
+                <p>
+                  You're nearing your monthly usage limit. Upgrade to{" "}
+                  <a
+                    href="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Prime
+                  </a>{" "}
+                  or{" "}
+                  <a
+                    href="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Ultra
+                  </a>{" "}
+                  to avoid any disruptions.
+                </p>
+                <p>
+                  If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
+                </p>
+              </>
             </Alert>
           )}
 
           {isOverUsage && (
-            <Alert variant="destructive">
-              You're over your monthly usage limit. Reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>{" "}
-              to avoid interruptions.
+            <Alert>
+              <>
+                <p>You're over your monthly usage limit. Moderation is currently paused.</p>
+                <p>
+                  Upgrade to{" "}
+                  <a
+                    href="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Prime
+                  </a>{" "}
+                  or{" "}
+                  <a
+                    href="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Ultra
+                  </a>
+                  . If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
+                </p>
+              </>
             </Alert>
           )}
 
