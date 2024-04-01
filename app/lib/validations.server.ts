@@ -979,6 +979,11 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
     // not a url
   }
 
+  if (cast.text.length < 20) {
+    // model not reliable here
+    return;
+  }
+
   const isLanguage = detect(cast.text, { only: [language] }) !== "";
 
   if (isLanguage && !rule.invert) {
