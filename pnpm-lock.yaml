@@ -86,6 +86,9 @@ dependencies:
   '@standard-crypto/farcaster-js-hub-rest':
     specifier: ^1.2.1
     version: 1.2.1(axios@1.6.7)(typescript@5.3.3)(zod@3.22.4)
+  '@types/emoji-strip':
+    specifier: ^1.0.2
+    version: 1.0.2
   '@types/express':
     specifier: ^4.17.21
     version: 4.17.21
@@ -113,6 +116,9 @@ dependencies:
   clsx:
     specifier: ^2.1.0
     version: 2.1.0
+  emoji-strip:
+    specifier: ^1.0.1
+    version: 1.0.1
   express:
     specifier: ^4.18.3
     version: 4.18.3
@@ -3985,6 +3991,10 @@ packages:
       '@types/ms': 0.7.34
     dev: true
 
+  /@types/emoji-strip@1.0.2:
+    resolution: {integrity: sha512-/aN5Vm6hPvNi8W/GUl+jSucW3pIDQz1/1zvvRG+X2waaEM0GpvTYEm7ng7AUSttusRd71TSPcRZrQY44UCpKAg==}
+    dev: false
+
   /@types/estree-jsx@1.0.3:
     resolution: {integrity: sha512-pvQ+TKeRHeiUGRhvYwRrQ/ISnohKkSJR14fT2yqyZ4e9K5vqc7hrtY2Y1Dw0ZwAzQ6DQsxsaCUuSIIi8v0Cq6w==}
     dependencies:
@@ -5536,11 +5546,21 @@ packages:
     resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
     dev: false
 
+  /emoji-regex@6.5.1:
+    resolution: {integrity: sha512-PAHp6TxrCy7MGMFidro8uikr+zlJJKJ/Q6mm2ExZ7HwkyR9lSVFfE3kt36qcwa24BQL7y0G9axycGjK1A/0uNQ==}
+    dev: false
+
   /emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
 
   /emoji-regex@9.2.2:
     resolution: {integrity: sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==}
+
+  /emoji-strip@1.0.1:
+    resolution: {integrity: sha512-1iU1Bz98ziALBnMTzQHKB104vntCokqgdmJIP9p1eM0Musc3WQ4y8C5noIckorxJ1vihZCTv2lyXMTM1UsemPg==}
+    dependencies:
+      emoji-regex: 6.5.1
+    dev: false
 
   /encode-utf8@1.0.3:
     resolution: {integrity: sha512-ucAnuBEhUK4boH2HjVYG5Q2mQyPorvv0u/ocS+zhdw0S8AlHYY+GOFhP1Gio5z4icpP2ivFSvhtFjQi8+T9ppw==}

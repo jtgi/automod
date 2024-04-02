@@ -22,6 +22,7 @@ import {
 import { WebhookCast } from "./types";
 import { erc1155Abi } from "./abis";
 import { languages } from "./languages";
+import emojiStrip from "emoji-strip";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -984,7 +985,8 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
     return;
   }
 
-  const isLanguage = detect(cast.text, { only: [language] }) !== "";
+  const withoutEmojis = emojiStrip(cast.text);
+  const isLanguage = detect(withoutEmojis, { only: [language] }) !== "";
 
   if (isLanguage && !rule.invert) {
     return `Text matches language: ${language}`;
