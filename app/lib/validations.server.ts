@@ -23,7 +23,6 @@ import {
 import { WebhookCast } from "./types";
 import { erc1155Abi } from "./abis";
 import { languages } from "./languages";
-import emojiStrip from "emoji-strip";
 
 export type RuleDefinition = {
   friendlyName: string;
