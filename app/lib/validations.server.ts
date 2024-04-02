@@ -9,6 +9,7 @@ import { z } from "zod";
 import { ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
+import emojiRegex from "emoji-regex";
 import { clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 import {
@@ -980,12 +981,14 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
     // not a url
   }
 
+  const regex = emojiRegex();
+  const withoutEmojis = cast.text.replaceAll(regex, "");
+
   if (cast.text.length < 20) {
     // model not reliable here
     return;
   }
 
-  const withoutEmojis = emojiStrip(cast.text);
   const isLanguage = detect(withoutEmojis, { only: [language] }) !== "";
 
   if (isLanguage && !rule.invert) {
