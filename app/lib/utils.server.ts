@@ -423,7 +423,7 @@ export async function validateErc1155(props: {
 
 export async function validateErc721(props: { chainId?: string; contractAddress?: string }) {
   // @deployers 721a is a special case heh
-  if (props.contractAddress === "0x8ce608ce2b5004397faef1556bfe33bdfbe4696d") {
+  if (props.contractAddress?.toLowerCase() === "0x8ce608ce2b5004397faef1556bfe33bdfbe4696d".toLowerCase()) {
     return true;
   }
 
