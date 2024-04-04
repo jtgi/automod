@@ -47,7 +47,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const userFid = message.action.interactor.fid;
 
-  console.log(message.action.cast);
   const channel = await db.moderatedChannel.findFirst({
     where: {
       url: message.action.cast.root_parent_url,

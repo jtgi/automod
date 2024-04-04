@@ -1,8 +1,4 @@
-import {
-  AuthKitProvider,
-  SignInButton,
-  StatusAPIResponse,
-} from "@farcaster/auth-kit";
+import { AuthKitProvider, SignInButton, StatusAPIResponse } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { useNavigate } from "@remix-run/react";
 import { useCallback } from "react";
@@ -75,14 +71,7 @@ export default function Login() {
 
           {error && (
             <Alert className="mb-8" variant="destructive">
-              {error === "no-access" ? (
-                <p>
-                  automod is currently in private beta, reach out{" "}
-                  <a href="https://warpcast.com/jtgi">for access</a>
-                </p>
-              ) : (
-                error
-              )}
+              {error}
             </Alert>
           )}
 

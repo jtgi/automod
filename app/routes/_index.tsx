@@ -223,18 +223,6 @@ export default function Home() {
                     );
                   }}
                 </ClientOnly>
-                <div className="text-white opacity-60 text-sm mt-2">
-                  Now in private beta.{" "}
-                  <a
-                    className="text-white opacity-90 hover:opacity-100 transition-all"
-                    href="https://tally.so/r/woMkMb"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Join the waitlist
-                  </a>
-                  <ArrowUpRight className="inline w-4 h-4" />
-                </div>
               </div>
 
               <section className="flex flex-col items-center mt-8">
