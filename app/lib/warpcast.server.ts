@@ -165,6 +165,34 @@ export async function unhide({ castHash }: { castHash: string }) {
   );
 }
 
+export async function addToBypass({
+  channel,
+  cast,
+  action,
+}: {
+  channel: string;
+  cast: Cast;
+  action: Action;
+}) {
+  const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
+    where: {
+      id: channel,
+    },
+  });
+
+  const username = cast.author.username;
+  const uniqueNames = Array.from(new Set([...moderatedChannel.excludeUsernamesParsed, username]));
+
+  return db.moderatedChannel.update({
+    where: {
+      id: channel,
+    },
+    data: {
+      excludeUsernames: JSON.stringify(uniqueNames),
+    },
+  });
+}
+
 export async function ban({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
   const isCohostCheck = await isCohost({ fid: cast.author.fid, channel });
 

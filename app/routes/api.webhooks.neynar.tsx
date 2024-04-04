@@ -384,7 +384,7 @@ export async function validateCast({
   return logs;
 }
 
-async function logModerationAction(
+export async function logModerationAction(
   moderatedChannelId: string,
   actionType: string,
   reason: string,

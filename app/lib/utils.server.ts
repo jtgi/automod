@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import sharp from "sharp";
 import { v4 as uuid } from "uuid";
 import * as Sentry from "@sentry/remix";
@@ -6,7 +7,7 @@ import { authenticator, commitSession, getSession } from "./auth.server";
 import { generateFrameSvg } from "./utils";
 import axios from "axios";
 import { MessageResponse } from "./types";
-import { getChannel } from "./neynar.server";
+import { getChannel, neynar } from "./neynar.server";
 import { redirect, typedjson } from "remix-typedjson";
 import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
@@ -106,6 +107,19 @@ export async function requireUserIsChannelLead(props: { userId: string; channelI
  * a comod. This is a local check, not remotely.
  */
 export async function requireUserCanModerateChannel(props: { userId: string; channelId: string }) {
+  const { result, channel } = await canUserModerateChannel({
+    userId: props.userId,
+    channelId: props.channelId,
+  });
+
+  if (!result || !channel) {
+    throw redirect(`/`, { status: 403 });
+  }
+
+  return channel;
+}
+
+export async function canUserModerateChannel(props: { userId: string; channelId: string }) {
   const channel = await db.moderatedChannel.findUnique({
     where: {
       id: props.channelId,
@@ -129,11 +143,16 @@ export async function requireUserCanModerateChannel(props: { userId: string; cha
     },
   });
 
-  if (!channel) {
-    throw redirect(`/`, { status: 403 });
+  if (channel) {
+    return {
+      result: true,
+      channel,
+    };
+  } else {
+    return {
+      result: false,
+    };
   }
-
-  return channel;
 }
 
 export async function requireUserIsCohost(props: { fid: number; channelId: string }) {
@@ -303,9 +322,11 @@ export async function parseMessage(payload: any) {
     throw new Error("Invalid message");
   }
 
-  const host = new URL(message.action.url).host;
-  if (host !== new URL(getSharedEnv().hostUrl).host && host !== "automod.sh") {
-    throw new Error("No spoofs sir");
+  if (process.env.NODE_ENV === "production") {
+    const host = new URL(message.action.url).host;
+    if (host !== new URL(getSharedEnv().hostUrl).host && host !== "automod.sh") {
+      throw new Error("No spoofs sir");
+    }
   }
 
   return message;

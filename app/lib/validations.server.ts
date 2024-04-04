@@ -6,7 +6,7 @@ import mimeType from "mime-types";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
-import { ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
+import { addToBypass, ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
@@ -482,6 +482,13 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
     description: "Hide the cast without notifying the user",
     args: {},
   },
+  addToBypass: {
+    friendlyName: "Add to Bypass",
+    isWarpcast: false,
+    hidden: true,
+    description: "Add the user to the bypass list. This will exclude them from all moderation rules.",
+    args: {},
+  },
   bypass: {
     friendlyName: "Bypass",
     isWarpcast: false,
@@ -562,6 +569,7 @@ export const ruleNames = [
 
 export const actionTypes = [
   "bypass",
+  "addToBypass",
   "hideQuietly",
   "ban",
   "mute",
@@ -701,10 +709,11 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
     }
   });
 
-const ActionSchema = z.discriminatedUnion("type", [
+export const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
   z.object({ type: z.literal("hideQuietly") }),
   z.object({ type: z.literal("ban") }),
+  z.object({ type: z.literal("addToBypass") }),
   z.object({ type: z.literal("warnAndHide") }),
   z.object({ type: z.literal("mute") }),
   z.object({
@@ -768,6 +777,7 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   hideQuietly: hideQuietly,
   mute: mute,
   bypass: () => Promise.resolve(),
+  addToBypass: addToBypass,
   cooldownEnded: () => Promise.resolve(),
   unmuted: () => Promise.resolve(),
   unhide: () => Promise.resolve(),
