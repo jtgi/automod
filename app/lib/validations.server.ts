@@ -1058,6 +1058,8 @@ export function userDisplayNameContainsText(args: CheckFunctionArgs) {
         cast,
       },
     });
+
+    return;
   }
 
   const containsText = !caseSensitive
