@@ -90,6 +90,10 @@ export default function ChannelRoot() {
                   to: `/~/channels/${channel.id}/collaborators`,
                   title: "Collaborators",
                 },
+                {
+                  to: `/~/channels/${channel.id}/roles`,
+                  title: "Roles",
+                },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]
             }

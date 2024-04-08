@@ -139,6 +139,11 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
     include: {
       ruleSets: true,
       user: true,
+      roles: {
+        include: {
+          delegates: true,
+        },
+      },
       comods: true,
     },
   });

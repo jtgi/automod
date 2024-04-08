@@ -62,6 +62,7 @@
     "mime-types": "^2.1.35",
     "next-themes": "^0.2.1",
     "node-cache": "^5.1.2",
+    "plur": "^5.1.0",
     "posthog-js": "^1.110.0",
     "posthog-node": "^3.6.3",
     "re2": "^1.20.9",
