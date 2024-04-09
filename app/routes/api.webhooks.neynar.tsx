@@ -194,7 +194,23 @@ export async function validateCast({
 }: ValidateCastArgs): Promise<Array<ModerationLog>> {
   const logs: Array<ModerationLog> = [];
 
-  // TODO: try and rehydrate cast if possible
+  // dear future, some casts are missing an author, assuming a
+  // race/error with cast hydration and webhooks.
+  // refetch, if it fails throw w/exponential backoff.
+  if (!cast.author) {
+    Sentry.captureMessage(`Cast ${cast.hash} has no author`);
+    // typings are wrong, root_parent_url exists on actual response
+    const refreshedCast = (await neynar
+      .fetchBulkCasts([cast.hash])
+      .then((r) => r.result.casts[0])) as WebhookCast;
+
+    if (!refreshedCast.author) {
+      Sentry.captureMessage(`Retried, cast ${cast.hash} still has no author`);
+      throw new Error(`Cast ${cast.hash} has no author`);
+    } else {
+      cast = refreshedCast;
+    }
+  }
 
   const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(cast.author.username);
 

@@ -24,8 +24,8 @@ dependencies:
     specifier: ^0.10.23
     version: 0.10.23(typescript@5.3.3)(zod@3.22.4)
   '@neynar/nodejs-sdk':
-    specifier: ^1.12.0
-    version: 1.12.0(typescript@5.3.3)(zod@3.22.4)
+    specifier: ^1.16.0
+    version: 1.16.0(typescript@5.3.3)(zod@3.22.4)
   '@prisma/client':
     specifier: ^5.8.1
     version: 5.8.1(prisma@5.8.1)
@@ -2215,8 +2215,8 @@ packages:
     dev: false
     optional: true
 
-  /@neynar/nodejs-sdk@1.12.0(typescript@5.3.3)(zod@3.22.4):
-    resolution: {integrity: sha512-dnKjBLHzkM41ozCHAKfsBY9gJHKkdImaQHIcURO2roQKtY/spvR5qGjy5gm2bkWgmeOIQ4K5T1+AFSO9L5cEMw==}
+  /@neynar/nodejs-sdk@1.16.0(typescript@5.3.3)(zod@3.22.4):
+    resolution: {integrity: sha512-VVo2fGxkrpkbckkGr/xDcvvFQ4j7Dk6xI/LqTJBw0EVowWOa5mr5+u8YdxGefTDB/ZCZoirJQgtugZtHFbFrrg==}
     dependencies:
       '@openapitools/openapi-generator-cli': 2.9.0
       axios: 1.6.7
