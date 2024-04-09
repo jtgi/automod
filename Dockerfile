@@ -16,7 +16,6 @@ ENV DATABASE_URL=file:/data/sqlite.db
 
 # Install pnpm
 ARG PNPM_VERSION=8.10.2
-ARG PNPM_VERSION=8.10.2
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y openssl sqlite3 && \
     npm install -g pnpm@$PNPM_VERSION
