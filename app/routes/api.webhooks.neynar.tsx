@@ -4,7 +4,7 @@ import { ModeratedChannel, ModerationLog, Prisma } from "@prisma/client";
 import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
-import { getChannel } from "~/lib/neynar.server";
+import { getChannel, neynar } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
@@ -193,6 +193,8 @@ export async function validateCast({
   simulation = false,
 }: ValidateCastArgs): Promise<Array<ModerationLog>> {
   const logs: Array<ModerationLog> = [];
+
+  // TODO: try and rehydrate cast if possible
 
   const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(cast.author.username);
 
