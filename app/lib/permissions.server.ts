@@ -3,13 +3,33 @@ import { ActionType, actionDefinitions } from "./validations.server";
 export type Permission = {
   name: string;
   description: string;
-  id: ActionType;
+  id: `action:${ActionType}`;
 };
 
-export const permissions = (["ban", "hideQuietly", "warnAndHide", "mute", "cooldown"] as const).map(
-  (action) => ({
-    id: `action.${action}`,
-    name: actionDefinitions[action].friendlyName,
-    description: actionDefinitions[action].description,
-  })
-);
+export const permissionDefs = [
+  {
+    id: `action:ban`,
+    name: actionDefinitions["ban"].friendlyName,
+    description: actionDefinitions["ban"].description,
+  },
+  {
+    id: `action:hideQuietly`,
+    name: actionDefinitions["hideQuietly"].friendlyName,
+    description: actionDefinitions["hideQuietly"].description,
+  },
+  {
+    id: `action:warnAndHide`,
+    name: actionDefinitions["warnAndHide"].friendlyName,
+    description: actionDefinitions["warnAndHide"].description,
+  },
+  {
+    id: `action:mute`,
+    name: actionDefinitions["mute"].friendlyName,
+    description: actionDefinitions["mute"].description,
+  },
+  {
+    id: `action:cooldown`,
+    name: actionDefinitions["cooldown"].friendlyName,
+    description: actionDefinitions["cooldown"].description,
+  },
+] as const satisfies Permission[];

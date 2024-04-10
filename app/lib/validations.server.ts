@@ -468,8 +468,7 @@ export type ActionDefinition = {
   >;
 };
 
-// TODO: Action Args!
-export const actionDefinitions: Record<ActionType, ActionDefinition> = {
+export const actionDefinitions = {
   mute: {
     friendlyName: "Mute",
     isWarpcast: true,
@@ -541,7 +540,7 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
       },
     },
   },
-} as const;
+} as const satisfies Record<ActionType, ActionDefinition>;
 
 export const ruleNames = [
   "and",

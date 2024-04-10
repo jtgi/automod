@@ -55,6 +55,7 @@ export default function Index() {
   const { status, env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
+    console.log("rendering ~.tsx");
     if (message) {
       if (message.type === "success") {
         toast(message.message);

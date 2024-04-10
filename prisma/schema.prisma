@@ -88,33 +88,25 @@ model Delegate {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   fid       String
+  username  String
+  avatarUrl String?
   channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId String
   role      Role             @relation(fields: [roleId], references: [id])
   roleId    String
 
-  @@unique([fid, channelId])
+  @@unique([fid, roleId, channelId])
 }
 
 model Role {
-  id           String           @id @default(cuid())
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  name         String
-  channelId    String
-  channel      ModeratedChannel @relation(fields: [channelId], references: [id])
-  permissions  Permission       @relation(fields: [permissionId], references: [id])
-  permissionId String
-  delegates    Delegate[]
-}
-
-model Permission {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String   @unique
-  description String
-  roles       Role[]
+  id          String           @id @default(cuid())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  name        String
+  channelId   String
+  channel     ModeratedChannel @relation(fields: [channelId], references: [id])
+  permissions String
+  delegates   Delegate[]
 }
 
 model Comods {

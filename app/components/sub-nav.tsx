@@ -8,6 +8,7 @@ export interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
   items: {
     to: string;
     title: string;
+    end?: boolean;
   }[];
 }
 
@@ -18,8 +19,8 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
         <NavLink
           key={item.to}
           to={item.to}
+          end={item.end || false}
           prefetch="intent"
-          end
           className={({ isActive, isPending }) =>
             cn(
               isActive || isPending ? " bg-orange-50 hover:bg-orange-50" : "hover:bg-orange-50/50",
