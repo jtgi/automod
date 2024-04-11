@@ -119,6 +119,7 @@ export function cast(overrides?: Partial<NeynarCastWithFrame>): WebhookCast {
     hash: faker.number.hex(42),
     parent_hash: null,
     thread_hash: faker.number.hex(42),
+    // @ts-ignore
     root_parent_url: faker.number.hex(42),
     parent_url: faker.internet.url(),
     frames: [],
