@@ -207,7 +207,7 @@ export default function Screen() {
     <div>
       <div className="flex justify-between border-b">
         <div id="log-top">
-          <p className="text-lg font-semibold">Logs</p>
+          <p className="font-semibold">Logs</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

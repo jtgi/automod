@@ -407,14 +407,17 @@ export async function logModerationAction(
   actionType: string,
   reason: string,
   cast: Cast,
-  simulation: boolean
+  simulation: boolean,
+  options?: {
+    actor?: string;
+  }
 ): Promise<ModerationLog> {
   if (!simulation) {
     return db.moderationLog.create({
       data: {
         channelId: moderatedChannelId,
         action: actionType,
-        actor: "system",
+        actor: options?.actor || "system",
         reason,
         affectedUsername: cast.author.username || String(cast.author.fid) || "unknown",
         affectedUserAvatarUrl: cast.author.pfp_url,

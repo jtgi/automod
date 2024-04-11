@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChannelRoot() {
-  const { channel, isNewChannel } = useTypedLoaderData<typeof loader>();
+  const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
 
   return (
@@ -79,16 +79,20 @@ export default function ChannelRoot() {
         <hr />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 relative">
         <div className="shrink-0 sm:min-w-[200px]">
           <SidebarNav
             items={
               [
-                { to: `/~/channels/${channel.id}`, title: "Logs" },
+                { to: `/~/channels/${channel.id}`, title: "Logs", end: true },
                 { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
                 {
                   to: `/~/channels/${channel.id}/collaborators`,
                   title: "Collaborators",
+                },
+                {
+                  to: `/~/channels/${channel.id}/roles`,
+                  title: "Community Roles",
                 },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]

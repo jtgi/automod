@@ -6,7 +6,16 @@ import mimeType from "mime-types";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
-import { addToBypass, ban, cooldown, hideQuietly, isCohost, mute, warnAndHide } from "./warpcast.server";
+import {
+  addToBypass,
+  ban,
+  cooldown,
+  grantRole,
+  hideQuietly,
+  isCohost,
+  mute,
+  warnAndHide,
+} from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
@@ -468,8 +477,7 @@ export type ActionDefinition = {
   >;
 };
 
-// TODO: Action Args!
-export const actionDefinitions: Record<ActionType, ActionDefinition> = {
+export const actionDefinitions = {
   mute: {
     friendlyName: "Mute",
     isWarpcast: true,
@@ -541,7 +549,21 @@ export const actionDefinitions: Record<ActionType, ActionDefinition> = {
       },
     },
   },
-} as const;
+  grantRole: {
+    friendlyName: "Grant Role",
+    isWarpcast: false,
+    hidden: true,
+    description: "Grant a role to a user",
+    args: {
+      // TODO: this needs to be dynamic, rip.
+      role: {
+        type: "string",
+        friendlyName: "Role",
+        description: "The role to grant",
+      },
+    },
+  },
+} as const satisfies Record<ActionType, ActionDefinition>;
 
 export const ruleNames = [
   "and",
@@ -578,6 +600,7 @@ export const actionTypes = [
   "cooldownEnded",
   "unhide",
   "unmuted",
+  "grantRole",
 ] as const;
 
 export type RuleName = (typeof ruleNames)[number];
@@ -716,6 +739,13 @@ export const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("addToBypass") }),
   z.object({ type: z.literal("warnAndHide") }),
   z.object({ type: z.literal("mute") }),
+  z.object({ type: z.literal("cooldownEnded") }),
+  z.object({ type: z.literal("unmuted") }),
+  z.object({ type: z.literal("unhide") }),
+  z.object({
+    type: z.literal("grantRole"),
+    args: z.object({ role: z.string() }),
+  }),
   z.object({
     type: z.literal("cooldown"),
     args: z.object({ duration: z.coerce.number() }),
@@ -784,6 +814,7 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   ban: ban,
   warnAndHide: warnAndHide,
   cooldown: cooldown,
+  grantRole: grantRole,
 } as const;
 
 // Rule: contains text, option to ignore case

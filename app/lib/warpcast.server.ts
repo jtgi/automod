@@ -5,6 +5,7 @@ import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { cache } from "./cache.server";
 import { db } from "./db.server";
 import { Action } from "./validations.server";
+import { neynar } from "./neynar.server";
 
 const token = process.env.WARPCAST_TOKEN!;
 const http = axiosFactory.create();
@@ -191,6 +192,45 @@ export async function addToBypass({
       excludeUsernames: JSON.stringify(uniqueNames),
     },
   });
+}
+
+/**
+ * This does not check permissions
+ */
+export async function grantRole({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
+  try {
+    const { roleId } = (action as any).args;
+    await db.role.findFirstOrThrow({
+      where: {
+        channelId: channel,
+        id: roleId,
+      },
+    });
+
+    const user = await neynar.lookupUserByUsername(cast.author.username);
+
+    return db.delegate.upsert({
+      where: {
+        fid_roleId_channelId: {
+          fid: String(cast.author.fid),
+          roleId,
+          channelId: channel,
+        },
+      },
+      update: {},
+      create: {
+        fid: String(cast.author.fid),
+        roleId,
+        channelId: channel,
+        avatarUrl: user.result.user.pfp.url,
+        username: cast.author.username,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+
+    throw e;
+  }
 }
 
 export async function ban({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {

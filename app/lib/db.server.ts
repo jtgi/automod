@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 import { singleton } from "./singleton.server";
 import { Action, Rule } from "./validations.server";
+import { Permission } from "./permissions.server";
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
 const db = singleton("prisma", () =>
@@ -34,6 +35,16 @@ const db = singleton("prisma", () =>
           compute(data): Action {
             return JSON.parse(data.actions);
             // return ActionSchema.parse(JSON.parse(data.actions));
+          },
+        },
+      },
+      role: {
+        permissionsParsed: {
+          needs: {
+            permissions: true,
+          },
+          compute(data): Array<Permission["id"]> {
+            return JSON.parse(data.permissions);
           },
         },
       },

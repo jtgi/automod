@@ -78,7 +78,35 @@ model ModeratedChannel {
   moderationLogs   ModerationLog[]
   cooldowns        Cooldown[]
   comods           Comods[]
-  Usage            Usage[]
+  usage            Usage[]
+  delegates        Delegate[]
+  roles            Role[]
+}
+
+model Delegate {
+  id        String           @id @default(cuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  fid       String
+  username  String
+  avatarUrl String?
+  channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channelId String
+  role      Role             @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  roleId    String
+
+  @@unique([fid, roleId, channelId])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  name        String
+  channelId   String
+  channel     ModeratedChannel @relation(fields: [channelId], references: [id])
+  permissions String
+  delegates   Delegate[]
 }
 
 model Comods {
