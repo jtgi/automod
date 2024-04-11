@@ -110,7 +110,7 @@ export default function Screen() {
   return (
     <main className="space-y-6">
       <div>
-        <p className="text-lg font-semibold">Tools</p>
+        <p className="font-semibold">Tools</p>
       </div>
       <hr />
       <div className="space-y-3">

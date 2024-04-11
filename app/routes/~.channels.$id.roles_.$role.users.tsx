@@ -16,6 +16,7 @@ import { Input } from "~/components/ui/input";
 import { neynar } from "~/lib/neynar.server";
 import { Loader } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useEffect, useRef, useTransition } from "react";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -94,7 +95,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!user) {
       return errorResponse({
         request,
-        message: `Couldn't find @${username}, got the right name?`,
+        message: `Couldn't find @${username}, sure that's right?`,
       });
     }
 
@@ -149,15 +150,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { user, delegates } = useTypedLoaderData<typeof loader>();
+  const { delegates } = useTypedLoaderData<typeof loader>();
   const nav = useNavigation();
   const submit = useSubmit();
 
+  const isAdding = nav.state === "submitting" && nav.formData?.get("intent") === "add";
+  const formRef = useRef<HTMLFormElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isAdding) {
+      formRef.current?.reset();
+      usernameRef.current?.focus();
+    }
+  }, [isAdding]);
+
   return (
     <div className="space-y-4">
-      <Form method="post" className="flex items-center gap-2">
+      <Form method="post" className="flex items-center gap-2" ref={formRef}>
         <input type="hidden" name="intent" value="add" />
         <Input
+          ref={usernameRef}
           name="username"
           disabled={nav.state === "submitting"}
           className={cn(nav.state === "submitting" && "animate-pulse")}
@@ -169,33 +182,35 @@ export default function Screen() {
             }
           }}
         />
-        <Button disabled={nav.state === "submitting"} type="submit">
-          {nav.state === "submitting" ? <Loader className="w-4 h-4 animate-spin" /> : "+ Add"}
+        <Button disabled={nav.state === "submitting"} type="submit" className="min-w-[100px]">
+          {nav.state === "submitting" ? <Loader className="w-4 h-4 animate-spin" /> : "Add"}
         </Button>
       </Form>
-      <div className="divide-y border-t border-b">
-        {delegates.map((member) => (
-          <Form key={member.fid} method="post" className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-2">
-              <Avatar className="w-9 h-9">
-                <AvatarImage src={member.avatarUrl ?? undefined} alt={"@" + member.username} />
-                <AvatarFallback>{member.username.slice(0, 2).toLocaleUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className=" font-medium">{member.username}</p>
-                <p className="text-gray-400 text-xs">#{member.fid}</p>
+      {delegates.length > 0 && (
+        <div className="divide-y border-t border-b">
+          {delegates.map((member) => (
+            <Form key={member.fid} method="post" className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-9 h-9">
+                  <AvatarImage src={member.avatarUrl ?? undefined} alt={"@" + member.username} />
+                  <AvatarFallback>{member.username.slice(0, 2).toLocaleUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className=" font-medium">{member.username}</p>
+                  <p className="text-gray-400 text-xs">#{member.fid}</p>
+                </div>
               </div>
-            </div>
-            <div>
-              <input type="hidden" name="intent" value="revoke" />
-              <input type="hidden" name="fid" value={member.fid} />
-              <Button variant="ghost" size="sm">
-                Revoke
-              </Button>
-            </div>
-          </Form>
-        ))}
-      </div>
+              <div>
+                <input type="hidden" name="intent" value="revoke" />
+                <input type="hidden" name="fid" value={member.fid} />
+                <Button variant="ghost" size="sm" disabled={nav.state === "submitting"}>
+                  Revoke
+                </Button>
+              </div>
+            </Form>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

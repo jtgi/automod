@@ -7,15 +7,17 @@ import { authenticator, commitSession, getSession } from "./auth.server";
 import { generateFrameSvg } from "./utils";
 import axios from "axios";
 import { MessageResponse } from "./types";
-import { getChannel, neynar } from "./neynar.server";
+import { getChannel } from "./neynar.server";
 import { redirect, typedjson } from "remix-typedjson";
 import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
 import { getChannelHosts } from "./warpcast.server";
-import { erc20Abi, erc721Abi, getAddress, getContract } from "viem";
+import { erc20Abi, getAddress, getContract } from "viem";
 import { clientsByChainId } from "./viem.server";
 import { cache } from "./cache.server";
+import { ActionType } from "./validations.server";
+import { actionToPermission } from "./permissions.server";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -117,6 +119,29 @@ export async function requireUserCanModerateChannel(props: { userId: string; cha
   }
 
   return channel;
+}
+
+export async function canUserExecuteAction(props: { userId: string; channelId: string; action: ActionType }) {
+  const { result: isModerator } = await canUserModerateChannel(props);
+
+  if (isModerator) {
+    return true;
+  }
+
+  const actionPermission = actionToPermission(props.action);
+  const isDelegate = await db.delegate.findFirst({
+    where: {
+      channelId: props.channelId,
+      fid: props.userId,
+      role: {
+        permissions: {
+          contains: actionPermission,
+        },
+      },
+    },
+  });
+
+  return isDelegate !== null;
 }
 
 export async function canUserModerateChannel(props: { userId: string; channelId: string }) {

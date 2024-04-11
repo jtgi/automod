@@ -97,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   return successResponse({
     request,
-    message: "Updated!",
+    message: "Saved",
   });
 }
 
@@ -142,27 +142,33 @@ export default function Screen() {
   };
 
   return (
-    <FormProvider {...methods}>
-      <form method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
-        <div>
-          <div className="space-y-4">
-            {permissionDefs.map((permission) => (
-              <SliderField key={permission.id} label={permission.name} description={permission.description}>
-                <Controller
-                  name={`permissions.${permission.id}`}
-                  control={control}
-                  render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
-                />
-              </SliderField>
-            ))}
+    <div className="space-y-4">
+      <div>
+        <p className="font-medium">Actions</p>
+        <p className="text-sm">Choose what actions this role will be able to take.</p>
+      </div>
+      <FormProvider {...methods}>
+        <form method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
+          <div>
+            <div className="space-y-4">
+              {permissionDefs.map((permission) => (
+                <SliderField key={permission.id} label={permission.name} description={permission.description}>
+                  <Controller
+                    name={`permissions.${permission.id}`}
+                    control={control}
+                    render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+                  />
+                </SliderField>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col items-end w-full">
-          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto min-w-[100px]">
-            {isSubmitting ? "Saving..." : "Save"}
-          </Button>
-        </div>
-      </form>
-    </FormProvider>
+          <div className="flex flex-col items-end w-full">
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto min-w-[100px]">
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          </div>
+        </form>
+      </FormProvider>
+    </div>
   );
 }

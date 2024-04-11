@@ -147,7 +147,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-medium">Rule Sets</p>
+              <p className="font-semibold">Rule Sets</p>
               <p className="text-gray-500 text-sm">
                 Configure rules and actions to take whenever a cast comes in to your channel.
               </p>

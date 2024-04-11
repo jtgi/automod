@@ -7,31 +7,78 @@ import { CSSProperties } from "react";
 import sharp from "sharp";
 import { actions } from "~/lib/cast-actions.server";
 import { ActionFunctionArgs } from "@remix-run/node";
+import { db } from "~/lib/db.server";
 import { actionToInstallLink } from "~/lib/utils";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const env = getSharedEnv();
-  const url = new URL(request.url);
-  const currentIndex = parseInt(url.searchParams.get("index") ?? "1");
-  const currentAction = actions[currentIndex];
-  const nextIndex = (currentIndex + 1) % actions.length;
+  try {
+    const env = getSharedEnv();
+    const url = new URL(request.url);
+    const data = await request.json();
+    console.log({ data });
+    const fid = data.untrustedData.fid;
 
-  return frameResponse({
-    title: "Automod Cast Actions",
-    description: "Install automod cast actions",
-    image: currentAction.image,
-    cacheTtlSeconds: 0,
-    postUrl: `${env.hostUrl}/install?index=${nextIndex}`,
-    buttons: [
-      {
-        text: "Install",
-        link: actionToInstallLink(currentAction),
+    const delegations = await db.delegate.findMany({
+      where: {
+        fid: String(fid),
       },
-      {
-        text: "Next",
+      include: {
+        role: true,
       },
-    ],
-  });
+    });
+
+    if (delegations.length === 0) {
+      return frameResponse({
+        title: "Automod Cast Actions",
+        description: "You do not have any automod cast actions installed",
+        image: `${env.hostUrl}/no-actions-available.png`,
+      });
+    }
+
+    const actionPermissions = Array.from(
+      new Set(
+        delegations
+          .flatMap((d) => d.role.permissionsParsed)
+          .filter((p) => p.includes("action:"))
+          .map((p) => p.replace("action:", ""))
+      )
+    );
+
+    //TODO: get cast action definitions using the available actions
+    // based on the index show the next cast action
+    const availableActions = actions.filter((a) => actionPermissions.includes(a.actionType));
+    console.log({ availableActions, actionPermissions });
+    if (!availableActions.length) {
+      return frameResponse({
+        title: "Automod Cast Actions",
+        description: "You do not have any automod cast actions installed",
+        image: `${env.hostUrl}/no-actions-available.png`,
+      });
+    }
+
+    const currentIndex = parseInt(url.searchParams.get("index") ?? "1");
+    const currentAction = availableActions[currentIndex];
+    const nextIndex = (currentIndex + 1) % availableActions.length;
+
+    return frameResponse({
+      title: "Automod Cast Actions",
+      description: "Install scoped automod cast actions",
+      image: currentAction.image,
+      cacheTtlSeconds: 0,
+      postUrl: `${env.hostUrl}/install-scoped?index=${nextIndex}`,
+      buttons: [
+        {
+          text: "Install",
+          link: actionToInstallLink(currentAction),
+        },
+        {
+          text: "Next",
+        },
+      ],
+    });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 export async function loader() {
@@ -41,20 +88,14 @@ export async function loader() {
   return frameResponse({
     title: "Automod Cast Actions",
     description: "Install automod cast actions",
-    postUrl: `${env.hostUrl}/install?index=1`,
+    postUrl: `${env.hostUrl}/install-scoped?index=1`,
     image: action.image,
     cacheTtlSeconds: 0,
     buttons: [
       {
-        text: "Install",
-        link: actionToInstallLink(action),
+        text: "Show Installable Actions",
       },
-      actions.length > 1
-        ? {
-            text: "Next",
-          }
-        : null,
-    ].filter(Boolean) as any[],
+    ],
   });
 }
 

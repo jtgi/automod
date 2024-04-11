@@ -55,7 +55,6 @@ export default function Index() {
   const { status, env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
 
   useEffect(() => {
-    console.log("rendering ~.tsx");
     if (message) {
       if (message.type === "success") {
         toast(message.message);
@@ -93,7 +92,7 @@ export default function Index() {
 
       <main
         className={cn(
-          "w-full max-w-4xl px-8 mx-auto min-h-screen flex flex-col pb-[200px]",
+          "w-full max-w-4xl px-8 mx-auto min-h-screen flex flex-col pb-[200px] overflow-hidden",
           impersonateAs ? "pt-[40px]" : ""
         )}
       >

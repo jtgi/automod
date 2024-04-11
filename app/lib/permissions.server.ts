@@ -6,6 +6,10 @@ export type Permission = {
   id: `action:${ActionType}`;
 };
 
+export function actionToPermission(action: ActionType): Permission["id"] {
+  return `action:${action}`;
+}
+
 export const permissionDefs = [
   {
     id: `action:ban`,

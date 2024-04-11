@@ -3,6 +3,7 @@ import { type ClassValue, clsx } from "clsx";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import satori from "satori";
 import { twMerge } from "tailwind-merge";
+import { CastAction } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -116,4 +117,13 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   };
 
   return [storedValue, setValue, removeValue] as const;
+}
+
+export function actionToInstallLink(action: CastAction) {
+  const wcUrl = new URL(`https://warpcast.com/~/add-cast-action`);
+  wcUrl.searchParams.append("actionType", action.actionType);
+  wcUrl.searchParams.append("name", action.name);
+  wcUrl.searchParams.append("icon", action.icon);
+  wcUrl.searchParams.append("postUrl", action.postUrl);
+  return wcUrl.toString();
 }

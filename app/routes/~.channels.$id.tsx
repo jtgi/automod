@@ -79,7 +79,7 @@ export default function ChannelRoot() {
         <hr />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-8">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 relative">
         <div className="shrink-0 sm:min-w-[200px]">
           <SidebarNav
             items={
@@ -90,9 +90,9 @@ export default function ChannelRoot() {
                   to: `/~/channels/${channel.id}/collaborators`,
                   title: "Collaborators",
                 },
-                user.id === "5179" && {
+                {
                   to: `/~/channels/${channel.id}/roles`,
-                  title: "Roles",
+                  title: "Community Roles",
                 },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]

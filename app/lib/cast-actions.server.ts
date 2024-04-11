@@ -1,4 +1,6 @@
+import { CastAction } from "./types";
 import { getSharedEnv } from "./utils.server";
+import { actionDefinitions } from "./validations.server";
 
 const env = getSharedEnv();
 
@@ -6,6 +8,7 @@ export const actions = [
   {
     actionType: "post",
     description: "Hide all messages from a user indefinitely",
+    automodAction: "mute",
     name: "Mute",
     icon: "mute",
     postUrl: `${env.hostUrl}/api/actions/mute`,
@@ -14,6 +17,7 @@ export const actions = [
   {
     actionType: "post",
     description: "Hide all messages from a user for 24 hours",
+    automodAction: "cooldown",
     name: "24h Cooldown",
     icon: "no-entry",
     postUrl: `${env.hostUrl}/api/actions/cooldown`,
@@ -23,8 +27,36 @@ export const actions = [
     actionType: "post",
     description: "Exclude the user from all moderation",
     name: "Bypass",
+    automodAction: "addToBypass",
     icon: "shield-check",
     postUrl: `${env.hostUrl}/api/actions/addToBypass`,
     image: `${env.hostUrl}/actions/bypass.png`,
   },
-] as const;
+  {
+    automodAction: "hideQuietly",
+    actionType: "post",
+    name: actionDefinitions["hideQuietly"].friendlyName,
+    description: actionDefinitions["hideQuietly"].description,
+    icon: "eye-slash",
+    postUrl: `${env.hostUrl}/api/actions/hideQuietly`,
+    image: `${env.hostUrl}/actions/hideQuietly.png`,
+  },
+  {
+    automodAction: "ban",
+    actionType: "post",
+    name: actionDefinitions["ban"].friendlyName,
+    description: actionDefinitions["ban"].description,
+    icon: "ban",
+    postUrl: `${env.hostUrl}/api/actions/ban`,
+    image: `${env.hostUrl}/actions/ban.png`,
+  },
+  {
+    automodAction: "warnAndHide",
+    actionType: "post",
+    name: actionDefinitions["warnAndHide"].friendlyName,
+    description: actionDefinitions["warnAndHide"].description,
+    icon: "exclamation-triangle",
+    postUrl: `${env.hostUrl}/api/actions/warnAndHide`,
+    image: `${env.hostUrl}/actions/warnAndHide.png`,
+  },
+] as const satisfies Array<CastAction>;

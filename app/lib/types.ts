@@ -1,4 +1,15 @@
 import { Cast as NeynarCast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { ActionType } from "./validations.server";
+
+export type CastAction = {
+  actionType: "post";
+  automodAction: ActionType;
+  description: string;
+  name: string;
+  icon: string;
+  postUrl: string;
+  image: string;
+};
 
 // neynar gaps
 

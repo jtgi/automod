@@ -138,7 +138,7 @@ export default function Screen() {
     <div>
       <p className="font-semibold">Add Cohosts to Automod</p>
       <p className="text-gray-500">
-        Collaborators can manage all moderation settings except for adding or removing other collaborators.
+        Collaborators have access to automod and can manage all moderation settings.
       </p>
 
       <div className="divide-y border-t border-b mt-8">
