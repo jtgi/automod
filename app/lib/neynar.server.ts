@@ -25,28 +25,35 @@ export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string
 
   webhooks.push(rootParentUrl);
 
-  return axios.put(
-    `https://api.neynar.com/v2/farcaster/webhook/`,
-    {
-      webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
-      name: "automod",
-      url: `${getSharedEnv().hostUrl}/api/webhooks/neynar`,
-      description: "automod webhook",
-      subscription: {
-        "cast.created": {
-          author_fids: [],
-          root_parent_urls: webhooks,
-          parent_urls: [],
-          mentioned_fids: [],
+  return axios
+    .put(
+      `https://api.neynar.com/v2/farcaster/webhook/`,
+      {
+        webhook_id: process.env.NEYNAR_WEBHOOK_ID!,
+        name: "automod",
+        url: `${getSharedEnv().hostUrl}/api/webhooks/neynar`,
+        description: "automod webhook",
+        subscription: {
+          "cast.created": {
+            author_fids: [],
+            root_parent_urls: webhooks,
+            parent_urls: [],
+            mentioned_fids: [],
+          },
         },
       },
-    },
-    {
-      headers: {
-        api_key: process.env.NEYNAR_API_KEY!,
-      },
-    }
-  );
+      {
+        headers: {
+          api_key: process.env.NEYNAR_API_KEY!,
+        },
+      }
+    )
+    .catch((e) => {
+      if (e.response) {
+        console.error(e.response.data);
+      }
+      throw e;
+    });
 }
 
 export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: string }) {
