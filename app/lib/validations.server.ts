@@ -481,11 +481,13 @@ export const actionDefinitions = {
   mute: {
     friendlyName: "Mute",
     isWarpcast: true,
+    hidden: false,
     description: "All this user's casts will be silently hidden from the channel until you unmute.",
     args: {},
   },
   hideQuietly: {
     friendlyName: "Hide Quietly",
+    hidden: false,
     isWarpcast: true,
     description: "Hide the cast without notifying the user",
     args: {},
@@ -507,12 +509,14 @@ export const actionDefinitions = {
   ban: {
     friendlyName: "Permanent Ban",
     isWarpcast: true,
+    hidden: false,
     description: "Permanently ban them. This cannot be undone at the moment.",
     args: {},
   },
   warnAndHide: {
     friendlyName: "Warn and Hide",
     isWarpcast: true,
+    hidden: false,
     description: "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
@@ -540,6 +544,7 @@ export const actionDefinitions = {
   cooldown: {
     friendlyName: "Cooldown",
     isWarpcast: true,
+    hidden: false,
     description: "New casts from this user will be automatically hidden for the duration specified.",
     args: {
       duration: {
