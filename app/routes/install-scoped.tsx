@@ -15,7 +15,6 @@ export async function action({ request }: ActionFunctionArgs) {
     const env = getSharedEnv();
     const url = new URL(request.url);
     const data = await request.json();
-    console.log({ data });
     const fid = data.untrustedData.fid;
 
     const delegations = await db.delegate.findMany({
@@ -27,11 +26,13 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
+    console.log({ delegations });
+
     if (delegations.length === 0) {
       return frameResponse({
         title: "Automod Cast Actions",
         description: "You do not have any automod cast actions installed",
-        image: `${env.hostUrl}/no-actions-available.png`,
+        image: `${env.hostUrl}/actions/no-actions-available.png`,
       });
     }
 
@@ -46,13 +47,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
     //TODO: get cast action definitions using the available actions
     // based on the index show the next cast action
-    const availableActions = actions.filter((a) => actionPermissions.includes(a.actionType));
-    console.log({ availableActions, actionPermissions });
+    const availableActions = actions.filter((a) => actionPermissions.includes(a.automodAction));
+    console.log({ actionPermissions, availableActions });
     if (!availableActions.length) {
       return frameResponse({
         title: "Automod Cast Actions",
         description: "You do not have any automod cast actions installed",
-        image: `${env.hostUrl}/no-actions-available.png`,
+        image: `${env.hostUrl}/actions/no-actions-available.png`,
       });
     }
 
@@ -83,13 +84,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export async function loader() {
   const env = getSharedEnv();
-  const action = actions[0];
 
   return frameResponse({
     title: "Automod Cast Actions",
     description: "Install automod cast actions",
     postUrl: `${env.hostUrl}/install-scoped?index=1`,
-    image: action.image,
+    image: `${env.hostUrl}/actions/install-scoped.png`,
     cacheTtlSeconds: 0,
     buttons: [
       {

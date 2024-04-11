@@ -92,7 +92,7 @@ export default function ChannelRoot() {
                 },
                 {
                   to: `/~/channels/${channel.id}/roles`,
-                  title: "Community Roles",
+                  title: "Community Mods",
                 },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]

@@ -116,7 +116,7 @@ export default function Screen() {
     <div className="space-y-4">
       <div className="flex justify-between gap-4">
         <div>
-          <p className="font-semibold">Community Roles</p>
+          <p className="font-semibold">Community Mods</p>
           <p className="text-gray-500">
             Create roles with limited permissions to allow channel members to take on some moderation
             responsibilities.{" "}
