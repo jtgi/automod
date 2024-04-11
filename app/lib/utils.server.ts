@@ -30,13 +30,13 @@ export async function requireUser({ request }: { request: Request }) {
     failureRedirect: `/login`,
   });
 
-  const refreshedUser = await db.user.findFirst({
+  const refreshedUser = await db.user.findFirstOrThrow({
     where: {
       id: user.id,
     },
   });
 
-  if (refreshedUser && user && process.env.NODE_ENV === "production") {
+  if (user && process.env.NODE_ENV === "production") {
     Sentry.setUser({ id: user.name });
   }
 
