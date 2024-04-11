@@ -10,8 +10,9 @@ import {
   formatZodError,
   parseMessage,
 } from "~/lib/utils.server";
-import { actionFunctions, actionTypes } from "~/lib/validations.server";
+import { actionFunctions, actionTypes, userIsCohost } from "~/lib/validations.server";
 import { logModerationAction } from "./api.webhooks.neynar";
+import { getChannelHosts } from "~/lib/warpcast.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   try {
@@ -107,6 +108,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const cast = await neynar.fetchBulkCasts([message.action.cast.hash]);
+
+    const cohosts = await getChannelHosts({
+      channel: channel.id,
+    });
+    if (cohosts.result.hosts.some((h) => h.fid === cast.result.casts[0].author.fid)) {
+      return json(
+        {
+          message: "Can't apply to host",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     const actionFunction = actionFunctions[validation.data.action];
     await actionFunction({
