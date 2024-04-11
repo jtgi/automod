@@ -30,11 +30,17 @@ export async function requireUser({ request }: { request: Request }) {
     failureRedirect: `/login`,
   });
 
-  if (user && process.env.NODE_ENV === "production") {
+  const refreshedUser = await db.user.findFirst({
+    where: {
+      id: user.id,
+    },
+  });
+
+  if (refreshedUser && user && process.env.NODE_ENV === "production") {
     Sentry.setUser({ id: user.name });
   }
 
-  return user;
+  return refreshedUser;
 }
 
 export async function requireSuperAdmin({ request }: { request: Request }) {
