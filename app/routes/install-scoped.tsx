@@ -26,8 +26,6 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    console.log({ delegations });
-
     if (delegations.length === 0) {
       return frameResponse({
         title: "Automod Cast Actions",
@@ -57,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const currentIndex = parseInt(url.searchParams.get("index") ?? "1");
+    const currentIndex = parseInt(url.searchParams.get("index") ?? "0");
     const currentAction = availableActions[currentIndex];
     const nextIndex = (currentIndex + 1) % availableActions.length;
 
