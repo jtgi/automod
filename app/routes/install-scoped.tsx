@@ -86,7 +86,7 @@ export async function loader() {
   return frameResponse({
     title: "Automod Cast Actions",
     description: "Install automod cast actions",
-    postUrl: `${env.hostUrl}/install-scoped?index=1`,
+    postUrl: `${env.hostUrl}/install-scoped?index=0`,
     image: `${env.hostUrl}/actions/install-scoped.png`,
     cacheTtlSeconds: 0,
     buttons: [
