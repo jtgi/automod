@@ -382,7 +382,7 @@ export async function validateErc1155(props: {
   contractAddress?: string;
   tokenId?: string;
 }) {
-  if (!props.chainId || !props.contractAddress || !props.tokenId) {
+  if (!props.chainId || !props.contractAddress) {
     return false;
   }
 

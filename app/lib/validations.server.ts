@@ -19,7 +19,7 @@ import {
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
-import { clientsByChainId } from "./viem.server";
+import { chainByChainId, clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 import {
   formatHash,
@@ -32,6 +32,8 @@ import {
 import { WebhookCast } from "./types";
 import { erc1155Abi } from "./abis";
 import { languages } from "./languages";
+import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
+import { base, optimism, zora } from "viem/chains";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -303,11 +305,11 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       },
       tokenId: {
         type: "string",
-        required: true,
-        placeholder: "1",
+        required: false,
+        placeholder: "Any Token",
         pattern: "[0-9]+",
-        friendlyName: "Token ID",
-        description: "",
+        friendlyName: "Token ID (optional)",
+        description: "Optionally check for a specific token id, if left blank any token is valid.",
       },
     },
   },
@@ -1229,28 +1231,52 @@ export async function requiresErc1155(args: CheckFunctionArgs) {
   }
 
   if (!tokenId) {
-    throw new Error("Token ID required for ERC-1155 check");
-  }
+    const chain = chainIdToChainName({ chainId });
 
-  const contract = getContract({
-    address: getAddress(contractAddress),
-    abi: erc1155Abi,
-    client,
-  });
-
-  let isOwner = false;
-  for (const address of cast.author.verifications) {
-    const balance = await contract.read.balanceOf([getAddress(address), BigInt(tokenId)]);
-    if (balance > 0) {
-      isOwner = true;
-      break;
+    if (!chain) {
+      throw new Error(`No chain found for chainId: ${chainId}`);
     }
-  }
 
-  if (!rule.invert && !isOwner) {
-    return `Wallet does not hold ERC-1155 token: ${contractAddress}:${tokenId}`;
-  } else if (rule.invert && isOwner) {
-    return `Wallet holds ERC-1155 token: ${contractAddress}:${tokenId}`;
+    const nfts = await nftsByWallets({
+      wallets: cast.author.verifications.filter((v) => v.startsWith("0x")),
+      contractAddresses: [contractAddress],
+      chains: [chain],
+    });
+
+    const isOwner = nfts.count && nfts.count > 0;
+
+    if (!rule.invert && !isOwner) {
+      return `Wallet doesn't hold any ERC-1155 token from ${contractAddress}`;
+    } else if (rule.invert && isOwner) {
+      return `Wallet holds ERC-1155 token: ${contractAddress}`;
+    }
+
+    // all good
+    return undefined;
+  } else {
+    const contract = getContract({
+      address: getAddress(contractAddress),
+      abi: erc1155Abi,
+      client,
+    });
+
+    let isOwner = false;
+    for (const address of cast.author.verifications) {
+      const balance = await contract.read.balanceOf([getAddress(address), BigInt(tokenId)]);
+      if (balance > 0) {
+        isOwner = true;
+        break;
+      }
+    }
+
+    if (!rule.invert && !isOwner) {
+      return `Wallet does not hold ERC-1155 token: ${contractAddress}:${tokenId}`;
+    } else if (rule.invert && isOwner) {
+      return `Wallet holds ERC-1155 token: ${contractAddress}:${tokenId}`;
+    }
+
+    // we good
+    return undefined;
   }
 }
 

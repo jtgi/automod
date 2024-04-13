@@ -68,7 +68,6 @@ export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: stri
   const webhooks =
     (webhook.data.webhook?.subscription?.filters?.["cast.created"]?.root_parent_urls as string[]) || [];
 
-  console.log({ webhooks });
   if (!webhooks.includes(rootParentUrl)) {
     return;
   }
