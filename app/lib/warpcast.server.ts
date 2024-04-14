@@ -81,7 +81,7 @@ export async function getChannelHosts(props: { channel: string }): Promise<HostR
     };
   }
   const result = await http.get(
-    `https://client.warpcast.com/v2/get-channel-hosts?channelKey=${props.channel}`
+    `https://client.warpcast.com/v2/get-channel-hosts?channelKey=${props.channel.toLowerCase()}`
   );
 
   cache.set(cacheKey, result.data, 60 * 60 * 5);
@@ -241,7 +241,7 @@ export async function ban({ channel, cast, action }: { channel: string; cast: Ca
     return Promise.resolve({} as AxiosResponse);
   }
 
-  const channelKey = channel;
+  const channelKey = channel.toLowerCase();
   const fid = cast.author.fid;
   return http.put(
     `https://client.warpcast.com/v1/user-channel-ban`,
