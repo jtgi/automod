@@ -168,9 +168,9 @@ export async function action({ request }: ActionFunctionArgs) {
       removeOnFail: 5000,
       backoff: {
         type: "exponential",
-        delay: 1000,
+        delay: 10_000,
       },
-      attempts: 3,
+      attempts: 10,
     }
   );
 
