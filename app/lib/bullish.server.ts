@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Job, Queue, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
@@ -21,7 +22,13 @@ export const castWorker = new Worker(
     try {
       await validateCast(job.data);
     } catch (e) {
-      Sentry.captureException(e);
+      const err = e as any;
+      Sentry.captureException(e, {
+        extra: {
+          data: err.response?.data ? err.response.data : err.message,
+          status: err.response?.status,
+        },
+      });
       throw e;
     }
   },
