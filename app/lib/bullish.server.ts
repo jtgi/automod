@@ -137,3 +137,28 @@ simulationWorker.on("failed", (job, err) => {
 simulationWorker.on("completed", (job) => {
   console.log(`[${job.data.channelId}] simulation completed`);
 });
+
+// // sync queue
+// export const syncQueue = new Queue("syncQueue", {
+//   connection,
+// });
+
+// export const syncWorker = new Worker(
+//   "syncQueue",
+//   async (job: Job<{ channelId: string }>) => {
+//     console.log(`[${job.data.channelId}] syncing...`);
+//     // get the channel and last timestamp
+//     // while current timestamp is > last timestamp
+//     // page neynar
+//     // if not processed, enqueue it for processing
+//     //
+//   },
+//   { connection }
+// );
+
+// syncWorker.on("error", Sentry.captureException);
+// syncWorker.on("active", (job) => {
+//   if (process.env.NODE_ENV === "development") {
+//     console.log(`[${job.data.channelId}] syncing...`);
+//   }
+// });

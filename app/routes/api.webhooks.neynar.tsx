@@ -49,6 +49,8 @@ export async function action({ request }: ActionFunctionArgs) {
     incomingSignature: request.headers.get("X-Neynar-Signature")!,
   });
 
+  console.log(`[${webhookNotif.data.root_parent_url}]: cast ${webhookNotif.data.hash}`);
+
   const channelName = webhookNotif.data.root_parent_url?.split("/").pop();
 
   if (!channelName) {
@@ -133,8 +135,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel not found" }, { status: 404 });
   }
 
-  console.log(`[${channel.id}]: cast ${webhookNotif.data.hash}`);
-
   await db.usage.upsert({
     where: {
       channelId_monthYear: {
@@ -164,7 +164,7 @@ export async function action({ request }: ActionFunctionArgs) {
     },
     {
       jobId: `cast-${webhookNotif.data.hash}`,
-      removeOnComplete: 1000,
+      removeOnComplete: 20000,
       removeOnFail: 5000,
       backoff: {
         type: "exponential",
