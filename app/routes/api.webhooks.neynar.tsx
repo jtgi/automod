@@ -170,7 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
         type: "exponential",
         delay: 10_000,
       },
-      attempts: 10,
+      attempts: 4,
     }
   );
 
