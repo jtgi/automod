@@ -144,6 +144,9 @@ export type NeynarCastWithFrame = NeynarCast & { frames: Frame[] };
 
 export type WebhookCast = NeynarCast & {
   root_parent_url: string;
+  replies: {
+    count: number;
+  };
   thread_hash: string | null;
   frames?: Frame[];
 };

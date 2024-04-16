@@ -9,7 +9,7 @@ import { requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
-import { castQueue } from "~/lib/bullish.server";
+import { castQueue, defaultProcessCastJobArgs, syncQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
@@ -135,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel not found" }, { status: 404 });
   }
 
-  await db.usage.upsert({
+  const usage = await db.usage.upsert({
     where: {
       channelId_monthYear: {
         channelId: moderatedChannel.id,
@@ -155,24 +155,48 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
-  await castQueue.add(
-    "processCast",
-    {
-      channel,
-      moderatedChannel,
-      cast: webhookNotif.data,
-    },
-    {
-      jobId: `cast-${webhookNotif.data.hash}`,
-      removeOnComplete: 20000,
-      removeOnFail: 5000,
-      backoff: {
-        type: "exponential",
-        delay: 10_000,
+  await Promise.all([
+    await db.castLog.upsert({
+      where: {
+        hash: webhookNotif.data.hash,
       },
-      attempts: 4,
-    }
-  );
+      create: {
+        hash: webhookNotif.data.hash,
+        replyCount: webhookNotif.data.replies.count,
+        channelId: channel.id,
+        status: "waiting",
+      },
+      update: {
+        status: "waiting",
+      },
+    }),
+    await castQueue.add(
+      "processCast",
+      {
+        channel,
+        moderatedChannel,
+        cast: webhookNotif.data,
+      },
+      defaultProcessCastJobArgs(webhookNotif.data.hash)
+    ),
+  ]);
+
+  if (usage.castsProcessed % 25 === 0) {
+    syncQueue.add(
+      "syncChannel",
+      { channelId: moderatedChannel.id, rootCastsToProcess: 50 },
+      {
+        jobId: `sync-${moderatedChannel.id}-${usage.castsProcessed}`,
+        removeOnFail: 100,
+        removeOnComplete: 100,
+        backoff: {
+          type: "exponential",
+          delay: 10_000,
+        },
+        attempts: 2,
+      }
+    );
+  }
 
   return json({
     message: "enqueued",

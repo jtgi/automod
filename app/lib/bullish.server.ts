@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Job, Queue, Worker } from "bullmq";
+import { Job, JobsOptions, Queue, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
 import { ValidateCastArgs, validateCast } from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, simulate, sweep } from "~/routes/~.channels.$id.tools";
+import { db } from "./db.server";
+import { getChannel, neynar, pageChannelCasts } from "./neynar.server";
+import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -42,21 +45,66 @@ castWorker.on("error", (err: Error) => {
   console.error("job error", err);
 });
 
-castWorker.on("active", (job) => {
+castWorker.on("active", async (job) => {
   if (process.env.NODE_ENV === "development") {
     console.log(`[${job.data.channel.id}]: ${job.id} is now active`);
   }
+
+  await db.castLog.upsert({
+    where: {
+      hash: job.data.cast.hash,
+    },
+    create: {
+      hash: job.data.cast.hash,
+      replyCount: job.data.cast.replies.count,
+      channelId: job.data.channel.id,
+      status: "active",
+    },
+    update: {
+      status: "active",
+    },
+  });
 });
 
-castWorker.on("completed", (job) => {
+castWorker.on("completed", async (job) => {
   if (process.env.NODE_ENV === "development") {
     console.log(`${job.data.channel.id}: cast ${job.data.cast.hash} completed`);
   }
+
+  await db.castLog.upsert({
+    where: {
+      hash: job.data.cast.hash,
+    },
+    create: {
+      hash: job.data.cast.hash,
+      replyCount: job.data.cast.replies.count,
+      channelId: job.data.channel.id,
+      status: "completed",
+    },
+    update: {
+      status: "completed",
+    },
+  });
 });
 
-castWorker.on("failed", (job, err) => {
+castWorker.on("failed", async (job, err) => {
   if (job) {
     console.error(`${job.data.channel.id}: cast ${job.data.cast.hash} failed`, err);
+
+    await db.castLog.upsert({
+      where: {
+        hash: job.data.cast.hash,
+      },
+      create: {
+        hash: job.data.cast.hash,
+        replyCount: job.data.cast.replies.count,
+        channelId: job.data.channel.id,
+        status: "failed",
+      },
+      update: {
+        status: "failed",
+      },
+    });
   } else {
     console.error("job failed", err);
   }
@@ -138,27 +186,147 @@ simulationWorker.on("completed", (job) => {
   console.log(`[${job.data.channelId}] simulation completed`);
 });
 
-// // sync queue
-// export const syncQueue = new Queue("syncQueue", {
-//   connection,
-// });
+// sync queue
+export const syncQueue = new Queue("syncQueue", {
+  connection,
+});
 
-// export const syncWorker = new Worker(
-//   "syncQueue",
-//   async (job: Job<{ channelId: string }>) => {
-//     console.log(`[${job.data.channelId}] syncing...`);
-//     // get the channel and last timestamp
-//     // while current timestamp is > last timestamp
-//     // page neynar
-//     // if not processed, enqueue it for processing
-//     //
-//   },
-//   { connection }
-// );
+export const syncWorker = new Worker(
+  "syncQueue",
+  async (job: Job<{ channelId: string; rootCastsToProcess: number }>) => {
+    const [channel, moderatedChannel] = await Promise.all([
+      getChannel({ name: job.data.channelId }),
+      db.moderatedChannel.findFirst({
+        where: {
+          id: job.data.channelId,
+        },
+        include: {
+          ruleSets: true,
+        },
+      }),
+    ]);
 
-// syncWorker.on("error", Sentry.captureException);
-// syncWorker.on("active", (job) => {
-//   if (process.env.NODE_ENV === "development") {
-//     console.log(`[${job.data.channelId}] syncing...`);
-//   }
-// });
+    let rootCastsChecked = 0;
+    for await (const page of pageChannelCasts({ id: job.data.channelId })) {
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[${job.data.channelId}] sync: page length ${page.casts.length}`);
+      }
+      const castHashes = page.casts.map((cast) => cast.hash);
+      const alreadyProcessed = await db.castLog.findMany({
+        where: {
+          hash: {
+            in: castHashes,
+          },
+        },
+      });
+
+      for (const rootCast of page.casts) {
+        if (process.env.NODE_ENV === "development") {
+          console.log(`[${job.data.channelId}] sync: processing cast ${rootCast.hash}`);
+        }
+
+        if (rootCastsChecked >= job.data.rootCastsToProcess) {
+          return;
+        }
+
+        if (
+          alreadyProcessed.some(
+            (log) => log.hash === rootCast.hash && log.replyCount === rootCast.replies.count
+          )
+        ) {
+          if (process.env.NODE_ENV === "development") {
+            console.log(`[${job.data.channelId}] sync: cast ${rootCast.hash} already processed`);
+          }
+          continue;
+        }
+
+        const isProcessingReplies = moderatedChannel?.ruleSets.find((ruleSet) =>
+          ["all", "reply"].includes(ruleSet.target)
+        );
+
+        if (isProcessingReplies) {
+          const { conversation } = (await neynar.lookupCastConversation(rootCast.hash, "hash", {
+            // for now.
+            replyDepth: 1,
+          })) as unknown as {
+            conversation: Awaited<ReturnType<typeof neynar.lookupCastConversation>>;
+          };
+
+          const replyCasts: CastWithInteractions[] = [];
+          const processQueue = [conversation.cast];
+          while (processQueue.length > 0) {
+            const nextCast = processQueue.shift() as CastWithInteractions & {
+              direct_replies: Array<CastWithInteractions>;
+            };
+
+            replyCasts.push(nextCast);
+            processQueue.push(...nextCast.direct_replies);
+          }
+
+          const alreadyProcessedReplies = await db.castLog.findMany({
+            select: {
+              hash: true,
+            },
+            where: {
+              hash: {
+                in: replyCasts.map((cast) => cast.hash),
+              },
+            },
+          });
+
+          replyCasts
+            .filter((replyCast) => !alreadyProcessedReplies.some((cast) => cast.hash === replyCast.hash))
+            .forEach(async (cast) => {
+              castQueue.add(
+                "processCast",
+                {
+                  channel,
+                  moderatedChannel,
+                  cast: cast,
+                },
+                defaultProcessCastJobArgs(cast.hash)
+              );
+            });
+        } else {
+          castQueue.add(
+            "processCast",
+            {
+              channel,
+              moderatedChannel,
+              cast: rootCast,
+            },
+            defaultProcessCastJobArgs(rootCast.hash)
+          );
+        }
+
+        rootCastsChecked++;
+      }
+    }
+  },
+  { connection }
+);
+
+syncWorker.on("error", (err) => {
+  Sentry.captureException(err);
+});
+
+syncWorker.on("active", (job) => {
+  console.log(`[${job.data.channelId}] sync: active`);
+});
+
+syncWorker.on("completed", (job) => {
+  console.log(`[${job.data.channelId}] sync: completed`);
+});
+
+export function defaultProcessCastJobArgs(hash: string): JobsOptions {
+  return {
+    jobId: `cast-${hash}`,
+    removeOnComplete: 20000,
+    removeOnFail: 5000,
+    backoff: {
+      type: "exponential",
+      delay: 10_000,
+    },
+    attempts: 4,
+  };
+}
