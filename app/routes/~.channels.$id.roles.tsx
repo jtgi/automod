@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { MoreVerticalIcon } from "lucide-react";
 import { CastAction } from "~/lib/types";
-import { actionToInstallLink } from "~/lib/utils";
+import { actionToInstallLink, grantRoleAction } from "~/lib/utils";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -172,15 +172,14 @@ export default function Screen() {
                     <DropdownMenuItem>
                       <Link
                         className="no-underline text-foreground"
-                        to={actionToInstallLink({
-                          actionType: "post",
-                          icon: "person-add",
-                          name: `Grant "${role.name}"`.substring(0, 20),
-                          description: `Grant the "${role.name}" role in /${role.channelId} to a user`,
-                          postUrl: `${env.hostUrl}/api/actions/grantRole?roleId=${role.id}`,
-                          image: "todo",
-                          automodAction: "grantRole",
-                        })}
+                        to={actionToInstallLink(
+                          grantRoleAction({
+                            id: role.id,
+                            name: role.name,
+                            channelId: channel.id,
+                            hostUrl: env.hostUrl,
+                          })
+                        )}
                         target="_blank"
                         rel="noreferrer"
                       >

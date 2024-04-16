@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { z } from "zod";
 import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
-import { MessageResponse } from "~/lib/types";
+import { CastAction, MessageResponse } from "~/lib/types";
 import {
   canUserExecuteAction,
   canUserModerateChannel,
   formatZodError,
+  getSharedEnv,
   parseMessage,
 } from "~/lib/utils.server";
 import { actionFunctions, actionTypes, userIsCohost } from "~/lib/validations.server";
 import { logModerationAction } from "./api.webhooks.neynar";
 import { getChannelHosts } from "~/lib/warpcast.server";
+import { actions } from "~/lib/cast-actions.server";
+import { grantRoleAction } from "~/lib/utils";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   try {
@@ -151,4 +154,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.error(e);
     throw e;
   }
+}
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const type = params.action;
+  const env = getSharedEnv();
+
+  let actionDef: CastAction | undefined;
+  if (type === "grantRole") {
+    const url = new URL(request.url);
+    const roleId = url.searchParams.get("roleId");
+    const channelId = url.searchParams.get("channelId");
+    const roleName = url.searchParams.get("roleName");
+    console.log({ roleId, channelId, roleName, url });
+    if (!roleId || !channelId || !roleName) {
+      return json(
+        {
+          message: "Missing query params",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    actionDef = grantRoleAction({
+      id: roleId,
+      name: roleName,
+      channelId,
+      hostUrl: env.hostUrl,
+    });
+  } else {
+    actionDef = actions.find((a) => a.automodAction === type);
+  }
+
+  if (!actionDef) {
+    return json(
+      {
+        message: "Action not found",
+      },
+      {
+        status: 404,
+      }
+    );
+  }
+
+  return json({
+    ...actionDef,
+  });
 }

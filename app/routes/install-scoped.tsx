@@ -46,7 +46,6 @@ export async function action({ request }: ActionFunctionArgs) {
     //TODO: get cast action definitions using the available actions
     // based on the index show the next cast action
     const availableActions = actions.filter((a) => actionPermissions.includes(a.automodAction));
-    console.log({ actionPermissions, availableActions });
     if (!availableActions.length) {
       return frameResponse({
         title: "Automod Cast Actions",
@@ -77,6 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   } catch (e) {
     console.error(e);
+    throw e;
   }
 }
 

@@ -121,9 +121,26 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
 export function actionToInstallLink(action: CastAction) {
   const wcUrl = new URL(`https://warpcast.com/~/add-cast-action`);
-  wcUrl.searchParams.append("actionType", action.actionType);
-  wcUrl.searchParams.append("name", action.name);
-  wcUrl.searchParams.append("icon", action.icon);
-  wcUrl.searchParams.append("postUrl", action.postUrl);
+  wcUrl.searchParams.append("url", action.postUrl);
   return wcUrl.toString();
+}
+
+export function grantRoleAction(role: {
+  id: string;
+  name: string;
+  channelId: string;
+  hostUrl: string;
+}): CastAction {
+  return {
+    action: {
+      type: "post",
+    },
+    icon: "person-add",
+    name: `Grant "${role.name}"`.substring(0, 20),
+    description: `Grant the "${role.name}" role in /${role.channelId} to a user`,
+    postUrl: `${role.hostUrl}/api/actions/grantRole?roleId=${role.id}&channelId=${role.channelId}&roleName=${role.name}`,
+    image: "todo",
+    aboutUrl: "https://automod.sh",
+    automodAction: "grantRole",
+  };
 }
