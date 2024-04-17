@@ -15,7 +15,7 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
 
   console.error({
     status: err.response?.status,
-    data: err.response?.data,
+    data: JSON.stringify(err.response?.data),
   });
 
   if (
@@ -198,39 +198,33 @@ export async function addToBypass({
  * This does not check permissions
  */
 export async function grantRole({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
-  try {
-    const { roleId } = (action as any).args;
-    await db.role.findFirstOrThrow({
-      where: {
-        channelId: channel,
-        id: roleId,
-      },
-    });
+  const { roleId } = (action as any).args;
+  await db.role.findFirstOrThrow({
+    where: {
+      channelId: channel,
+      id: roleId,
+    },
+  });
 
-    const user = await neynar.lookupUserByUsername(cast.author.username);
+  const user = await neynar.lookupUserByUsername(cast.author.username);
 
-    return db.delegate.upsert({
-      where: {
-        fid_roleId_channelId: {
-          fid: String(cast.author.fid),
-          roleId,
-          channelId: channel,
-        },
-      },
-      update: {},
-      create: {
+  return db.delegate.upsert({
+    where: {
+      fid_roleId_channelId: {
         fid: String(cast.author.fid),
         roleId,
         channelId: channel,
-        avatarUrl: user.result.user.pfp.url,
-        username: cast.author.username,
       },
-    });
-  } catch (e) {
-    console.error(e);
-
-    throw e;
-  }
+    },
+    update: {},
+    create: {
+      fid: String(cast.author.fid),
+      roleId,
+      channelId: channel,
+      avatarUrl: user.result.user.pfp.url,
+      username: cast.author.username,
+    },
+  });
 }
 
 export async function ban({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {

@@ -22,18 +22,7 @@ export const castQueue = new Queue("castQueue", {
 export const castWorker = new Worker(
   "castQueue",
   async (job: Job<ValidateCastArgs>) => {
-    try {
-      await validateCast(job.data);
-    } catch (e) {
-      const err = e as any;
-      Sentry.captureException(e, {
-        extra: {
-          data: err.response?.data ? err.response.data : err.message,
-          status: err.response?.status,
-        },
-      });
-      throw e;
-    }
+    await validateCast(job.data);
   },
   {
     connection,
@@ -42,7 +31,6 @@ export const castWorker = new Worker(
 );
 castWorker.on("error", (err: Error) => {
   Sentry.captureException(err);
-  console.error("job error", err);
 });
 
 castWorker.on("active", async (job) => {
@@ -87,9 +75,11 @@ castWorker.on("completed", async (job) => {
   });
 });
 
-castWorker.on("failed", async (job, err) => {
+castWorker.on("failed", async (job, err: any) => {
+  const message = err?.response?.data || err?.message || "unknown error";
+
   if (job) {
-    console.error(`${job.data.channel.id}: cast ${job.data.cast.hash} failed`, err);
+    console.error(`[${job.data.channel.id}]: cast ${job.data.cast.hash} failed`, message);
 
     await db.castLog.upsert({
       where: {
@@ -106,7 +96,7 @@ castWorker.on("failed", async (job, err) => {
       },
     });
   } else {
-    console.error("job failed", err);
+    console.error("job failed", message);
   }
 });
 
