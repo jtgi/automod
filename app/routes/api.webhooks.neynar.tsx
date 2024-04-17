@@ -458,7 +458,7 @@ export async function logModerationAction(
       actor: "system",
       reason,
       affectedUsername: cast.author.username,
-      affectedUserAvatarUrl: cast.author.pfp_url,
+      affectedUserAvatarUrl: cast.author.pfp_url || null,
       affectedUserFid: String(cast.author.fid),
       castHash: cast.hash,
       castText: cast.text,

@@ -245,12 +245,10 @@ export const syncWorker = new Worker(
         );
 
         if (isProcessingReplies) {
-          const { conversation } = (await neynar.lookupCastConversation(rootCast.hash, "hash", {
+          const { conversation } = await neynar.lookupCastConversation(rootCast.hash, "hash", {
             // for now.
             replyDepth: 1,
-          })) as unknown as {
-            conversation: Awaited<ReturnType<typeof neynar.lookupCastConversation>>;
-          };
+          });
 
           const replyCasts: CastWithInteractions[] = [];
           const processQueue = [conversation.cast];
