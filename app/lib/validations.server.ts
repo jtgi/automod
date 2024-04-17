@@ -437,20 +437,21 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFidInRange: {
-    friendlyName: "User FID In Range",
+    friendlyName: "User FID",
     description: "Check if the user's FID is within a range",
     hidden: false,
     invertable: false,
     args: {
       minFid: {
         type: "number",
-        friendlyName: "Min FID",
-        description: "The minimum FID",
+        friendlyName: "Less than",
+        placeholder: "No Minimum",
+        description: "Setting a value of 5 would require the fid to be at least 5.",
       },
       maxFid: {
         type: "number",
-        friendlyName: "Max FID",
-        description: "The maximum FID",
+        friendlyName: "More than",
+        description: "Setting a value of 10 would require the fid to be less than 10.",
       },
     },
   },
