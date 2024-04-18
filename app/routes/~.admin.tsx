@@ -26,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (action === "add-user") {
     const fid = (formData.get("fid") as string) ?? "";
     if (!fid) {
-      return typedjson({ message: "Please enter a fid" }, { status: 400 });
+      return errorResponse({ request, message: "Please enter a fid" });
     }
 
     await db.order.upsert({
@@ -39,12 +39,12 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    return typedjson({ message: "User added" });
+    return successResponse({ request, message: "User added" });
   } else if (action === "impersonate") {
     const username = (formData.get("username") as string) ?? "";
 
     if (!username) {
-      return typedjson({ message: "Please enter a username" }, { status: 400 });
+      return errorResponse({ request, message: "Please enter a username" });
     }
 
     const session = await getSession(request.headers.get("Cookie"));
@@ -59,11 +59,11 @@ export async function action({ request }: ActionFunctionArgs) {
     const limit = parseInt((formData.get("limit") as string) ?? "1000");
 
     if (!channel) {
-      return typedjson({ message: "Enter a channel to sweep" }, { status: 400 });
+      return errorResponse({ request, message: "Enter a channel to sweep" });
     }
 
     if (isNaN(limit)) {
-      return typedjson({ message: "Invalid limit" }, { status: 400 });
+      return errorResponse({ request, message: "Invalid limit" });
     }
 
     const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
@@ -103,10 +103,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Admin() {
-  const actionData = useTypedActionData<typeof action>();
   return (
     <div className="space-y-8">
-      {actionData?.message && <Alert>{actionData.message}</Alert>}
       <Form method="post" className="space-y-4">
         <FieldLabel label="Grant Access by Fid" className="flex-col items-start">
           <Input name="fid" placeholder="123.." />
