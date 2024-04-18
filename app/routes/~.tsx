@@ -120,6 +120,11 @@ export default function Index() {
                   @{user.name}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {user.role === "superadmin" && (
+                  <DropdownMenuItem>
+                    <Link to="/~/admin">Admin</Link>
+                  </DropdownMenuItem>
+                )}
                 <Form method="post" action="/~/logout">
                   <DropdownMenuItem onClick={(e) => e.currentTarget.closest("form")?.submit()}>
                     Logout

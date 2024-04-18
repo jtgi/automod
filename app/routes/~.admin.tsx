@@ -5,14 +5,11 @@ import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
 import { Input } from "~/components/ui/input";
-import {
-  authenticator,
-  commitSession,
-  destroySession,
-  getSession,
-} from "~/lib/auth.server";
+import { authenticator, commitSession, destroySession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
-import { requireSuperAdmin } from "~/lib/utils.server";
+import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
+import { isSweepActive } from "./~.channels.$id.tools";
+import { sweepQueue } from "~/lib/bullish.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -57,6 +54,49 @@ export async function action({ request }: ActionFunctionArgs) {
         "Set-Cookie": await commitSession(session),
       },
     });
+  } else if (action === "sweep") {
+    const channel = (formData.get("channel") as string) ?? "";
+    const limit = parseInt((formData.get("limit") as string) ?? "1000");
+
+    if (!channel) {
+      return typedjson({ message: "Enter a channel to sweep" }, { status: 400 });
+    }
+
+    if (isNaN(limit)) {
+      return typedjson({ message: "Invalid limit" }, { status: 400 });
+    }
+
+    const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
+      where: {
+        id: channel,
+      },
+    });
+
+    console.log("sweeping", moderatedChannel.id, limit);
+
+    if (await isSweepActive(moderatedChannel.id)) {
+      return errorResponse({ request, message: "Sweep already in progress. Hang tight." });
+    }
+
+    await sweepQueue.add(
+      "sweep",
+      {
+        channelId: moderatedChannel.id,
+        moderatedChannel,
+        limit,
+      },
+      {
+        removeOnComplete: 100,
+        removeOnFail: 100,
+        jobId: `sweep:${moderatedChannel.id}`,
+        attempts: 3,
+      }
+    );
+
+    return successResponse({
+      request,
+      message: "Sweeping! This will take a while. Monitor progress in the logs.",
+    });
   }
 
   return typedjson({ message: "Invalid action" }, { status: 400 });
@@ -68,10 +108,7 @@ export default function Admin() {
     <div className="space-y-8">
       {actionData?.message && <Alert>{actionData.message}</Alert>}
       <Form method="post" className="space-y-4">
-        <FieldLabel
-          label="Grant Access by Fid"
-          className="flex-col items-start"
-        >
+        <FieldLabel label="Grant Access by Fid" className="flex-col items-start">
           <Input name="fid" placeholder="123.." />
         </FieldLabel>
         <Button name="action" value="add-user">
@@ -80,14 +117,23 @@ export default function Admin() {
       </Form>
 
       <Form method="post" className="space-y-4">
-        <FieldLabel
-          label="Impersonate Username"
-          className="flex-col items-start"
-        >
+        <FieldLabel label="Impersonate Username" className="flex-col items-start">
           <Input name="username" placeholder="username" />
         </FieldLabel>
         <Button name="action" value="impersonate">
           Impersonate
+        </Button>
+      </Form>
+
+      <Form method="post" className="space-y-4">
+        <FieldLabel label="Sweep Channel" className="flex-col items-start">
+          <Input name="channel" placeholder="channel" />
+        </FieldLabel>
+        <FieldLabel label="Limit" className="flex-col items-start">
+          <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
+        </FieldLabel>
+        <Button name="action" value="sweep">
+          Sweep
         </Button>
       </Form>
     </div>

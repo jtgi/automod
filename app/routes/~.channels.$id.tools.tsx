@@ -158,13 +158,6 @@ export async function sweep(args: SweepArgs) {
 
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
-    if (castsChecked >= args.limit) {
-      console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
-      break;
-    }
-
-    castsChecked += page.casts.length;
-
     const alreadyProcessed = await db.moderationLog.findMany({
       select: {
         castHash: true,
@@ -183,6 +176,11 @@ export async function sweep(args: SweepArgs) {
     const unprocessedCasts = page.casts.filter((cast) => !alreadyProcessedHashes.has(cast.hash));
 
     for (const cast of unprocessedCasts) {
+      if (castsChecked >= args.limit) {
+        console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
+        break;
+      }
+
       console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
 
       await validateCast({
@@ -191,12 +189,13 @@ export async function sweep(args: SweepArgs) {
         moderatedChannel: args.moderatedChannel,
       });
 
+      castsChecked++;
       await sleep(500);
     }
   }
 }
 
-async function isSweepActive(channelId: string) {
+export async function isSweepActive(channelId: string) {
   const job = await getSweepJob(channelId);
   if (!job) {
     return false;
