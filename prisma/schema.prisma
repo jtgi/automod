@@ -81,7 +81,6 @@ model ModeratedChannel {
   usage            Usage[]
   delegates        Delegate[]
   roles            Role[]
-  castLogs         CastLog[]
 }
 
 model Delegate {
@@ -189,11 +188,10 @@ model Usage {
 }
 
 model CastLog {
-  hash       String           @id
-  replyCount Int              @default(0)
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+  hash       String   @id
+  replyCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   status     String
-  channel    ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId  String
 }

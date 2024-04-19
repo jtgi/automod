@@ -86,8 +86,8 @@ export async function action({ request }: ActionFunctionArgs) {
         limit,
       },
       {
-        removeOnComplete: 100,
-        removeOnFail: 100,
+        removeOnComplete: true,
+        removeOnFail: true,
         jobId: `sweep:${moderatedChannel.id}`,
         attempts: 3,
       }
