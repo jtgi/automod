@@ -178,7 +178,7 @@ export async function sweep(args: SweepArgs) {
     for (const cast of unprocessedCasts) {
       if (castsChecked >= args.limit) {
         console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
-        break;
+        return;
       }
 
       console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
@@ -234,7 +234,7 @@ export async function simulate(args: SimulateArgs) {
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
     if (castsChecked >= args.limit) {
-      console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
+      console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping simulation`);
       break;
     }
 

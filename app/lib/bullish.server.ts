@@ -132,6 +132,10 @@ sweepWorker.on("failed", (job, err) => {
   console.error(`[${job?.data.channelId}] failed`, err);
 });
 
+sweepWorker.on("completed", (job) => {
+  console.log(`[${job.data.channelId}] sweep completed`);
+});
+
 // sweeeeep
 export const simulationQueue = new Queue("simulationQueue", {
   connection,

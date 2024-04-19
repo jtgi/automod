@@ -72,8 +72,6 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    console.log("sweeping", moderatedChannel.id, limit);
-
     if (await isSweepActive(moderatedChannel.id)) {
       return errorResponse({ request, message: "Sweep already in progress. Hang tight." });
     }
