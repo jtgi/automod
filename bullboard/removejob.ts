@@ -1,4 +1,8 @@
-import { sweepQueue } from "~/lib/bullish.server";
+import { sweepQueue, sweepWorker } from "~/lib/bullish.server";
+
+export async function killSweeps() {
+  await sweepQueue.obliterate({ force: true });
+}
 
 export async function killJob(jobId: string) {
   const job = await sweepQueue.getJob(jobId);
@@ -10,4 +14,5 @@ export async function killJob(jobId: string) {
   }
 }
 
-killJob("sweep:perl");
+// killJob("sweep:degen");
+killSweeps();

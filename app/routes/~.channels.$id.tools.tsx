@@ -183,15 +183,11 @@ export async function sweep(args: SweepArgs) {
 
       console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
 
-      try {
-        await validateCast({
-          cast: cast as unknown as WebhookCast,
-          channel,
-          moderatedChannel: args.moderatedChannel,
-        });
-      } catch (e) {
-        console.error(`${channel.id} sweep: error processing cast ${cast.hash}`, e);
-      }
+      await validateCast({
+        cast: cast as unknown as WebhookCast,
+        channel,
+        moderatedChannel: args.moderatedChannel,
+      });
 
       castsChecked++;
       await sleep(500);
