@@ -70,6 +70,16 @@ export async function action({ request }: ActionFunctionArgs) {
       where: {
         id: channel,
       },
+      include: {
+        ruleSets: true,
+        user: true,
+        roles: {
+          include: {
+            delegates: true,
+          },
+        },
+        comods: true,
+      },
     });
 
     if (await isSweepActive(moderatedChannel.id)) {
