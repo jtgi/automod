@@ -17,7 +17,7 @@ Sentry.init({
   enabled: process.env.NODE_ENV === "production",
 });
 
-const ABORT_DELAY = 5_000;
+const ABORT_DELAY = 10_000;
 
 export default function handleRequest(
   request: Request,
@@ -27,18 +27,8 @@ export default function handleRequest(
   loadContext: AppLoadContext
 ) {
   return isBotRequest(request.headers.get("user-agent"))
-    ? handleBotRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        remixContext
-      )
-    : handleBrowserRequest(
-        request,
-        responseStatusCode,
-        responseHeaders,
-        remixContext
-      );
+    ? handleBotRequest(request, responseStatusCode, responseHeaders, remixContext)
+    : handleBrowserRequest(request, responseStatusCode, responseHeaders, remixContext);
 }
 
 // We have some Remix apps in the wild already running with isbot@3 so we need
@@ -71,11 +61,7 @@ function handleBotRequest(
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
-      <RemixServer
-        context={remixContext}
-        url={request.url}
-        abortDelay={ABORT_DELAY}
-      />,
+      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
       {
         onAllReady() {
           shellRendered = true;
@@ -121,11 +107,7 @@ function handleBrowserRequest(
   return new Promise((resolve, reject) => {
     let shellRendered = false;
     const { pipe, abort } = renderToPipeableStream(
-      <RemixServer
-        context={remixContext}
-        url={request.url}
-        abortDelay={ABORT_DELAY}
-      />,
+      <RemixServer context={remixContext} url={request.url} abortDelay={ABORT_DELAY} />,
       {
         onShellReady() {
           shellRendered = true;
