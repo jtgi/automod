@@ -85,12 +85,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel is not moderated" }, { status: 400 });
   }
 
-  if (await isUserOverUsage(moderatedChannel, 0.1)) {
-    console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
-    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
-    return json({ message: "User is over usage limit" }, { status: 400 });
-  }
-
   if (moderatedChannel.user.plan === "expired") {
     console.error(
       `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
@@ -109,13 +103,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Already processed" });
   }
 
-  const [cohost, channel] = await Promise.all([
+  const [cohost, channel, isOverUsage] = await Promise.all([
     isCohost({
       fid: +moderatedChannel.userId,
       channel: moderatedChannel.id,
     }),
     getChannel({ name: moderatedChannel.id }).catch(() => null),
+    isUserOverUsage(moderatedChannel, 0.1),
   ]);
+
+  if (isOverUsage) {
+    console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
+    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+    return json({ message: "User is over usage limit" }, { status: 400 });
+  }
 
   if (!cohost) {
     console.log(`User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`);
@@ -138,28 +139,27 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel not found" }, { status: 404 });
   }
 
-  const usage = await db.usage.upsert({
-    where: {
-      channelId_monthYear: {
+  const [usage] = await Promise.all([
+    db.usage.upsert({
+      where: {
+        channelId_monthYear: {
+          channelId: moderatedChannel.id,
+          monthYear: new Date().toISOString().substring(0, 7),
+        },
+      },
+      create: {
         channelId: moderatedChannel.id,
         monthYear: new Date().toISOString().substring(0, 7),
+        userId: moderatedChannel.userId,
+        castsProcessed: 1,
       },
-    },
-    create: {
-      channelId: moderatedChannel.id,
-      monthYear: new Date().toISOString().substring(0, 7),
-      userId: moderatedChannel.userId,
-      castsProcessed: 1,
-    },
-    update: {
-      castsProcessed: {
-        increment: 1,
+      update: {
+        castsProcessed: {
+          increment: 1,
+        },
       },
-    },
-  });
-
-  await Promise.all([
-    await db.castLog.upsert({
+    }),
+    db.castLog.upsert({
       where: {
         hash: webhookNotif.data.hash,
       },
@@ -173,7 +173,7 @@ export async function action({ request }: ActionFunctionArgs) {
         status: "waiting",
       },
     }),
-    await castQueue.add(
+    castQueue.add(
       "processCast",
       {
         channel,
