@@ -22,4 +22,4 @@ primary_region = 'lax'
   processes = ['app']
 
 [[vm]]
-  size = "performance-8x"
+  size = "performance-4x"
