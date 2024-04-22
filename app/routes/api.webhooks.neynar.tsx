@@ -58,20 +58,22 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Invalid parent_url" }, { status: 400 });
   }
 
-  const moderatedChannel = await db.moderatedChannel.findFirst({
-    where: {
-      OR: [{ id: channelName }, { url: webhookNotif.data.root_parent_url }],
-      active: true,
-    },
-    include: {
-      user: true,
-      ruleSets: {
-        where: {
-          active: true,
+  const [moderatedChannel, alreadyProcessed] = await Promise.all([
+    db.moderatedChannel.findFirst({
+      where: {
+        OR: [{ id: channelName }, { url: webhookNotif.data.root_parent_url }],
+        active: true,
+      },
+      include: {
+        user: true,
+        ruleSets: {
+          where: {
+            active: true,
+          },
         },
       },
-    },
-  });
+    }),
+  ]);
 
   if (!moderatedChannel) {
     console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
@@ -97,21 +99,18 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Channel has no rules" });
   }
 
-  const alreadyProcessed = await db.moderationLog.findFirst({
-    where: {
-      castHash: webhookNotif.data.hash,
-    },
-  });
-
   if (alreadyProcessed) {
     console.log(`Cast ${webhookNotif.data.hash.substring(0, 10)} already processed`);
     return json({ message: "Already processed" });
   }
 
-  const cohost = await isCohost({
-    fid: +moderatedChannel.userId,
-    channel: moderatedChannel.id,
-  });
+  const [cohost, channel] = await Promise.all([
+    isCohost({
+      fid: +moderatedChannel.userId,
+      channel: moderatedChannel.id,
+    }),
+    getChannel({ name: moderatedChannel.id }).catch(() => null),
+  ]);
 
   if (!cohost) {
     console.log(`User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`);
@@ -127,7 +126,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 400 });
   }
 
-  const channel = await getChannel({ name: moderatedChannel.id }).catch(() => null);
   if (!channel) {
     console.error(
       `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
