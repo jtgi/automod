@@ -17,7 +17,7 @@ Sentry.init({
   enabled: process.env.NODE_ENV === "production",
 });
 
-const ABORT_DELAY = 10_000;
+const ABORT_DELAY = 30_000;
 
 export default function handleRequest(
   request: Request,
