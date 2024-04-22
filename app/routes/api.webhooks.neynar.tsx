@@ -73,6 +73,11 @@ export async function action({ request }: ActionFunctionArgs) {
         },
       },
     }),
+    db.castLog.findFirst({
+      where: {
+        hash: webhookNotif.data.hash,
+      },
+    }),
   ]);
 
   if (!moderatedChannel) {
