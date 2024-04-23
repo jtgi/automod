@@ -9,7 +9,7 @@ import { requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
-import { defaultProcessCastJobArgs, webhookQueue } from "~/lib/bullish.server";
+import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
 
@@ -55,10 +55,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Invalid channel name" }, { status: 400 });
   }
 
-  webhookQueue.add("webhookQueue", {
-    webhookNotif,
-    channelName,
-  });
+  webhookQueue.add(
+    "webhookQueue",
+    {
+      webhookNotif,
+      channelName,
+    },
+    {
+      removeOnComplete: true,
+      removeOnFail: 10_000,
+    }
+  );
 
   return json({
     message: "enqueued",
