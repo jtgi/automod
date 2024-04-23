@@ -96,7 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
       {
         removeOnComplete: true,
         removeOnFail: true,
-        jobId: `sweep:${moderatedChannel.id}`,
+        jobId: `sweep-${moderatedChannel.id}`,
         attempts: 3,
       }
     );

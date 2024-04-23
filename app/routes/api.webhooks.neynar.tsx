@@ -4,15 +4,14 @@ import { ModeratedChannel, ModerationLog, Prisma } from "@prisma/client";
 import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
-import { getChannel, neynar } from "~/lib/neynar.server";
+import { neynar } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
-import { castQueue, defaultProcessCastJobArgs, syncQueue } from "~/lib/bullish.server";
+import { defaultProcessCastJobArgs, webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
-import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -49,157 +48,17 @@ export async function action({ request }: ActionFunctionArgs) {
     incomingSignature: request.headers.get("X-Neynar-Signature")!,
   });
 
-  console.log(`[${webhookNotif.data.root_parent_url}]: cast ${webhookNotif.data.hash}`);
-
   const channelName = webhookNotif.data.root_parent_url?.split("/").pop();
 
   if (!channelName) {
     console.error(`Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`, webhookNotif.data);
-    return json({ message: "Invalid parent_url" }, { status: 400 });
+    return json({ message: "Invalid channel name" }, { status: 400 });
   }
 
-  const [moderatedChannel, alreadyProcessed] = await Promise.all([
-    db.moderatedChannel.findFirst({
-      where: {
-        OR: [{ id: channelName }, { url: webhookNotif.data.root_parent_url }],
-        active: true,
-      },
-      include: {
-        user: true,
-        ruleSets: {
-          where: {
-            active: true,
-          },
-        },
-      },
-    }),
-    db.castLog.findFirst({
-      where: {
-        hash: webhookNotif.data.hash,
-      },
-    }),
-  ]);
-
-  if (!moderatedChannel) {
-    console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
-    return json({ message: "Channel is not moderated" }, { status: 400 });
-  }
-
-  if (moderatedChannel.user.plan === "expired") {
-    console.error(
-      `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
-    );
-    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
-    return json({ message: "User's plan is expired, moderation disabled" }, { status: 400 });
-  }
-
-  if (moderatedChannel.ruleSets.length === 0) {
-    console.log(`Channel ${moderatedChannel.id} has no rules. Doing nothing.`);
-    return json({ message: "Channel has no rules" });
-  }
-
-  if (alreadyProcessed) {
-    console.log(`Cast ${webhookNotif.data.hash.substring(0, 10)} already processed`);
-    return json({ message: "Already processed" });
-  }
-
-  const [cohost, channel, isOverUsage] = await Promise.all([
-    isCohost({
-      fid: +moderatedChannel.userId,
-      channel: moderatedChannel.id,
-    }),
-    getChannel({ name: moderatedChannel.id }).catch(() => null),
-    isUserOverUsage(moderatedChannel, 0.1),
-  ]);
-
-  if (isOverUsage) {
-    console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
-    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
-    return json({ message: "User is over usage limit" }, { status: 400 });
-  }
-
-  if (!cohost) {
-    console.log(`User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`);
-    await db.moderatedChannel.update({
-      where: {
-        id: moderatedChannel.id,
-      },
-      data: {
-        active: false,
-      },
-    });
-
-    return json({ message: "Creator of moderated channel is no longer a cohost" }, { status: 400 });
-  }
-
-  if (!channel) {
-    console.error(
-      `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
-    );
-    return json({ message: "Channel not found" }, { status: 404 });
-  }
-
-  const [usage] = await Promise.all([
-    db.usage.upsert({
-      where: {
-        channelId_monthYear: {
-          channelId: moderatedChannel.id,
-          monthYear: new Date().toISOString().substring(0, 7),
-        },
-      },
-      create: {
-        channelId: moderatedChannel.id,
-        monthYear: new Date().toISOString().substring(0, 7),
-        userId: moderatedChannel.userId,
-        castsProcessed: 1,
-      },
-      update: {
-        castsProcessed: {
-          increment: 1,
-        },
-      },
-    }),
-    db.castLog.upsert({
-      where: {
-        hash: webhookNotif.data.hash,
-      },
-      create: {
-        hash: webhookNotif.data.hash,
-        replyCount: webhookNotif.data.replies.count,
-        channelId: channel.id,
-        status: "waiting",
-      },
-      update: {
-        status: "waiting",
-      },
-    }),
-    castQueue.add(
-      "processCast",
-      {
-        channel,
-        moderatedChannel,
-        cast: webhookNotif.data,
-      },
-      defaultProcessCastJobArgs(webhookNotif.data.hash)
-    ),
-  ]);
-
-  if (usage.castsProcessed % 25 === 0) {
-    syncQueue.add(
-      "syncChannel",
-      { channelId: moderatedChannel.id, rootCastsToProcess: 50 },
-      {
-        jobId: `sync-${moderatedChannel.id}-${usage.castsProcessed}`,
-        removeOnFail: 100,
-        removeOnComplete: 100,
-        backoff: {
-          type: "exponential",
-          delay: 10_000,
-        },
-        attempts: 2,
-      }
-    );
-  }
+  webhookQueue.add("webhookQueue", {
+    webhookNotif,
+    channelName,
+  });
 
   return json({
     message: "enqueued",
@@ -567,7 +426,7 @@ function isRuleTargetApplicable(target: string, cast: Cast) {
   }
 }
 
-async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
+export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
   const plan = userPlans[moderatedChannel.user.plan as PlanType];
   if (!plan) {
     return false;

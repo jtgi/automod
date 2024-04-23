@@ -1,18 +1,196 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Job, JobsOptions, Queue, Worker } from "bullmq";
+import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
-import { ValidateCastArgs, validateCast } from "~/routes/api.webhooks.neynar";
+import { ValidateCastArgs, isUserOverUsage, validateCast } from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
 import { getChannel, neynar, pageChannelCasts } from "./neynar.server";
 import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { WebhookCast } from "./types";
+import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
+import { isCohost } from "./warpcast.server";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
   port: Number(process.env.REDIS_PORT),
   password: process.env.REDIS_PASSWORD,
   maxRetriesPerRequest: null,
+});
+
+export const webhookQueue = new Queue("webhookQueue", {
+  connection,
+});
+
+export type ValidateCastArgsV2 = {
+  webhookNotif: {
+    type: string;
+    data: WebhookCast;
+  };
+  channelName: string;
+};
+
+export const webhookWorker = new Worker(
+  "webhookQueue",
+  async (job: Job<ValidateCastArgsV2>) => {
+    const { webhookNotif, channelName } = job.data;
+
+    console.log(`[${webhookNotif.data.root_parent_url}]: cast ${webhookNotif.data.hash}`);
+
+    const [moderatedChannel, alreadyProcessed] = await Promise.all([
+      db.moderatedChannel.findFirst({
+        where: {
+          OR: [{ id: channelName }, { url: webhookNotif.data.root_parent_url }],
+          active: true,
+        },
+        include: {
+          user: true,
+          ruleSets: {
+            where: {
+              active: true,
+            },
+          },
+        },
+      }),
+      db.castLog.findFirst({
+        where: {
+          hash: webhookNotif.data.hash,
+        },
+      }),
+    ]);
+
+    if (!moderatedChannel) {
+      console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
+      throw new UnrecoverableError("Channel is not moderated");
+    }
+
+    if (moderatedChannel.user.plan === "expired") {
+      console.error(
+        `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
+      );
+      await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+      throw new UnrecoverableError(
+        `User's plan ${moderatedChannel.user.id} is expired, ${moderatedChannel.id} moderation disabled`
+      );
+    }
+
+    if (moderatedChannel.ruleSets.length === 0) {
+      console.log(`Channel ${moderatedChannel.id} has no rules. Doing nothing.`);
+      return;
+    }
+
+    if (alreadyProcessed) {
+      console.log(`Cast ${webhookNotif.data.hash.substring(0, 10)} already processed`);
+      return;
+    }
+
+    const [cohost, channel, isOverUsage] = await Promise.all([
+      isCohost({
+        fid: +moderatedChannel.userId,
+        channel: moderatedChannel.id,
+      }),
+      getChannel({ name: moderatedChannel.id }).catch(() => null),
+      isUserOverUsage(moderatedChannel, 0.1),
+    ]);
+
+    if (isOverUsage) {
+      console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
+      await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+      throw new UnrecoverableError(`User ${moderatedChannel.userId} is over usage limit`);
+    }
+
+    if (!cohost) {
+      console.log(`User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`);
+      await db.moderatedChannel.update({
+        where: {
+          id: moderatedChannel.id,
+        },
+        data: {
+          active: false,
+        },
+      });
+
+      throw new UnrecoverableError("Creator of moderated channel is no longer a cohost");
+    }
+
+    if (!channel) {
+      console.error(
+        `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
+      );
+      throw new UnrecoverableError(`Channel not found: ${moderatedChannel.id}`);
+    }
+
+    const [usage] = await Promise.all([
+      db.usage.upsert({
+        where: {
+          channelId_monthYear: {
+            channelId: moderatedChannel.id,
+            monthYear: new Date().toISOString().substring(0, 7),
+          },
+        },
+        create: {
+          channelId: moderatedChannel.id,
+          monthYear: new Date().toISOString().substring(0, 7),
+          userId: moderatedChannel.userId,
+          castsProcessed: 1,
+        },
+        update: {
+          castsProcessed: {
+            increment: 1,
+          },
+        },
+      }),
+      db.castLog.upsert({
+        where: {
+          hash: webhookNotif.data.hash,
+        },
+        create: {
+          hash: webhookNotif.data.hash,
+          replyCount: webhookNotif.data.replies.count,
+          channelId: channel.id,
+          status: "waiting",
+        },
+        update: {
+          status: "waiting",
+        },
+      }),
+      castQueue.add(
+        "processCast",
+        {
+          channel,
+          moderatedChannel,
+          cast: webhookNotif.data,
+        },
+        defaultProcessCastJobArgs(webhookNotif.data.hash)
+      ),
+    ]);
+
+    if (usage.castsProcessed % 25 === 0) {
+      syncQueue.add(
+        "syncChannel",
+        { channelId: moderatedChannel.id, rootCastsToProcess: 50 },
+        {
+          jobId: `sync-${moderatedChannel.id}-${usage.castsProcessed}`,
+          removeOnFail: 100,
+          removeOnComplete: 100,
+          backoff: {
+            type: "exponential",
+            delay: 10_000,
+          },
+          attempts: 2,
+        }
+      );
+    }
+  },
+  {
+    connection,
+    lockDuration: 30_000,
+    concurrency: 200,
+  }
+);
+
+webhookWorker.on("error", (err: Error) => {
+  Sentry.captureException(err);
 });
 
 export const castQueue = new Queue("castQueue", {
