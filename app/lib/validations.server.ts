@@ -1204,9 +1204,11 @@ export async function requiresErc721(args: CheckFunctionArgs) {
 
   if (tokenId) {
     const owner = await contract.read.ownerOf([BigInt(tokenId)]);
-    isOwner = cast.author.verifications.some((address) => address.toLowerCase() === owner.toLowerCase());
+    isOwner = [cast.author.custody_address, ...cast.author.verifications].some(
+      (address) => address.toLowerCase() === owner.toLowerCase()
+    );
   } else {
-    for (const address of cast.author.verifications) {
+    for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
       const balance = await contract.read.balanceOf([getAddress(address)]);
       if (balance > 0) {
         isOwner = true;
@@ -1239,7 +1241,7 @@ export async function requiresErc1155(args: CheckFunctionArgs) {
     }
 
     const nfts = await nftsByWallets({
-      wallets: cast.author.verifications.filter((v) => v.startsWith("0x")),
+      wallets: [cast.author.custody_address, ...cast.author.verifications.filter((v) => v.startsWith("0x"))],
       contractAddresses: [contractAddress],
       chains: [chain],
     });
@@ -1262,7 +1264,7 @@ export async function requiresErc1155(args: CheckFunctionArgs) {
     });
 
     let isOwner = false;
-    for (const address of cast.author.verifications) {
+    for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
       const balance = await contract.read.balanceOf([getAddress(address), BigInt(tokenId)]);
       if (balance > 0) {
         isOwner = true;
@@ -1291,7 +1293,7 @@ export async function requiresErc20(args: CheckFunctionArgs) {
   }
 
   const { result: hasEnough } = await verifyErc20Balance({
-    wallets: cast.author.verifications,
+    wallets: [cast.author.custody_address, ...cast.author.verifications],
     chainId,
     contractAddress,
     minBalanceRequired: minBalance,
