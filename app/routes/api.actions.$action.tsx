@@ -177,7 +177,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     } else {
       const actionFunction = actionFunctions[validation.data.action];
       await actionFunction({
-        channel: channel.id,
+        channel: moderatedChannel.id,
         cast: cast.result.casts[0],
         action: {
           type: validation.data.action,
@@ -186,7 +186,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
 
       await logModerationAction(
-        channel.id,
+        moderatedChannel.id,
         validation.data.action,
         `Applied by @${message.action.interactor.username}`,
         cast.result.casts[0],
