@@ -38,4 +38,9 @@ export const permissionDefs = !actionDefinitions
         name: actionDefinitions["cooldown"].friendlyName,
         description: actionDefinitions["cooldown"].description,
       },
+      {
+        id: `action:downvote`,
+        name: actionDefinitions["downvote"].friendlyName,
+        description: actionDefinitions["downvote"].description,
+      },
     ] as const satisfies Permission[]);

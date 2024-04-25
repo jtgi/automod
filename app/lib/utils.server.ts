@@ -128,13 +128,22 @@ export async function requireUserCanModerateChannel(props: { userId: string; cha
 }
 
 export async function canUserExecuteAction(props: { userId: string; channelId: string; action: ActionType }) {
-  const { result: isModerator } = await canUserModerateChannel(props);
+  const [moderation, moderatedChannel] = await Promise.all([
+    canUserModerateChannel(props),
+    db.moderatedChannel.findUniqueOrThrow({ where: { id: props.channelId }, include: { roles: true } }),
+  ]);
 
-  if (isModerator) {
+  if (moderation.result) {
     return true;
   }
 
   const actionPermission = actionToPermission(props.action);
+
+  const everyoneRole = moderatedChannel.roles.find((role) => role.isEveryoneRole);
+  if (everyoneRole?.permissions.includes(actionPermission)) {
+    return true;
+  }
+
   const isDelegate = await db.delegate.findFirst({
     where: {
       channelId: props.channelId,

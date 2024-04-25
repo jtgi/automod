@@ -2,20 +2,15 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { z } from "zod";
 import { db } from "~/lib/db.server";
-import { neynar } from "~/lib/neynar.server";
+import { getChannel, neynar } from "~/lib/neynar.server";
 import { CastAction, MessageResponse } from "~/lib/types";
-import {
-  canUserExecuteAction,
-  canUserModerateChannel,
-  formatZodError,
-  getSharedEnv,
-  parseMessage,
-} from "~/lib/utils.server";
-import { actionFunctions, actionTypes, userIsCohost } from "~/lib/validations.server";
+import { canUserExecuteAction, formatZodError, getSharedEnv, parseMessage } from "~/lib/utils.server";
+import { actionFunctions, actionTypes } from "~/lib/validations.server";
 import { logModerationAction } from "./api.webhooks.neynar";
 import { getChannelHosts } from "~/lib/warpcast.server";
 import { actions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
+import { castQueue } from "~/lib/bullish.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   try {
@@ -30,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       console.error(validation.error);
       return json(
         {
-          message: `Oops:${formatZodError(validation.error)}`,
+          message: formatZodError(validation.error),
         },
         {
           status: 400,
@@ -76,13 +71,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const userFid = message.action.interactor.fid;
 
-    const channel = await db.moderatedChannel.findFirst({
+    const moderatedChannel = await db.moderatedChannel.findFirst({
       where: {
         url: message.action.cast.root_parent_url,
       },
+      include: {
+        ruleSets: true,
+        user: true,
+        roles: {
+          include: {
+            delegates: true,
+          },
+        },
+        comods: true,
+      },
     });
 
-    if (!channel) {
+    if (!moderatedChannel) {
       return json(
         {
           message: "Automod not installed",
@@ -95,7 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const isAllowed = await canUserExecuteAction({
       userId: String(userFid),
-      channelId: channel.id,
+      channelId: moderatedChannel.id,
       action: validation.data.action,
     });
 
@@ -110,11 +115,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const cast = await neynar.fetchBulkCasts([message.action.cast.hash]);
+    const [cast, cohosts] = await Promise.all([
+      neynar.fetchBulkCasts([message.action.cast.hash]),
+      getChannelHosts({ channel: moderatedChannel.id }),
+    ]);
 
-    const cohosts = await getChannelHosts({
-      channel: channel.id,
-    });
     if (cohosts.result.hosts.some((h) => h.fid === cast.result.casts[0].author.fid)) {
       return json(
         {
@@ -126,26 +131,71 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const actionFunction = actionFunctions[validation.data.action];
-    await actionFunction({
-      channel: channel.id,
-      cast: cast.result.casts[0],
-      action: {
-        type: validation.data.action,
-        args,
-      },
-    });
+    if (validation.data.action === "downvote") {
+      const actionFunction = actionFunctions[validation.data.action];
+      await actionFunction({
+        channel: moderatedChannel.id,
+        cast: cast.result.casts[0],
+        action: {
+          type: validation.data.action,
+          args: {
+            voterFid: String(message.action.interactor.fid),
+            voterAvatarUrl: message.action.interactor.pfp_url,
+            voterUsername: message.action.interactor.username,
+          },
+        },
+      });
+      const [neynarChannel] = await Promise.all([
+        getChannel({ name: moderatedChannel.id }).catch(() => null),
+        await logModerationAction(
+          moderatedChannel.id,
+          validation.data.action,
+          `Applied by @${message.action.interactor.username}`,
+          cast.result.casts[0],
+          false,
+          {
+            actor: `@${message.action.interactor.username}`,
+          }
+        ),
+      ]);
 
-    await logModerationAction(
-      channel.id,
-      validation.data.action,
-      `Applied manually by @${message.action.interactor.username}`,
-      cast.result.casts[0],
-      false,
-      {
-        actor: `@${message.action.interactor.username}`,
-      }
-    );
+      castQueue.add(
+        "processCast",
+        {
+          channel: neynarChannel,
+          moderatedChannel,
+          cast: cast.result.casts[0],
+        },
+        {
+          jobId: `cast-${cast.result.casts[0].hash}-downvote-${message.action.interactor.fid}`,
+        }
+      );
+
+      return json({
+        message: `Downvoted`,
+      });
+    } else {
+      const actionFunction = actionFunctions[validation.data.action];
+      await actionFunction({
+        channel: channel.id,
+        cast: cast.result.casts[0],
+        action: {
+          type: validation.data.action,
+          args,
+        },
+      });
+
+      await logModerationAction(
+        channel.id,
+        validation.data.action,
+        `Applied by @${message.action.interactor.username}`,
+        cast.result.casts[0],
+        false,
+        {
+          actor: `@${message.action.interactor.username}`,
+        }
+      );
+    }
 
     return json({
       message: `Applied`,
@@ -166,7 +216,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const roleId = url.searchParams.get("roleId");
     const channelId = url.searchParams.get("channelId");
     const roleName = url.searchParams.get("roleName");
-    console.log({ roleId, channelId, roleName, url });
+
     if (!roleId || !channelId || !roleName) {
       return json(
         {

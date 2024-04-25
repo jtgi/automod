@@ -814,36 +814,51 @@ function RuleSetEditor(props: {
               name={`ruleSets.${ruleSetIndex}.target`}
               onValueChange={controllerProps.field.onChange}
               defaultValue={controllerProps.field.value}
+              className="space-y-2"
             >
-              <FieldLabel
-                label="All"
-                position="right"
-                labelProps={{
-                  htmlFor: `ruleSets.${ruleSetIndex}.target.all`,
-                }}
-              >
-                <RadioGroupItem value="all" id={`ruleSets.${ruleSetIndex}.target.all`} />
-              </FieldLabel>
-              <FieldLabel
-                label="Root Level"
-                description=" - Only casts at the root level of the channel."
-                position="right"
-                labelProps={{
-                  htmlFor: `ruleSets.${ruleSetIndex}.target.root`,
-                }}
-              >
-                <RadioGroupItem value="root" id={`ruleSets.${ruleSetIndex}.target.root`} />
-              </FieldLabel>
-              <FieldLabel
-                label="Replies"
-                description=" - Only replies to other casts."
-                position="right"
-                labelProps={{
-                  htmlFor: `ruleSets.${ruleSetIndex}.target.replies`,
-                }}
-              >
-                <RadioGroupItem value="reply" id={`ruleSets.${ruleSetIndex}.target.replies`} />
-              </FieldLabel>
+              <div className="flex gap-2 items-start">
+                <RadioGroupItem value="all" id={`ruleSets.${ruleSetIndex}.target.all`} className="mt-[2px]" />
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor={`ruleSets.${ruleSetIndex}.target.all`}
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    All
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-2 items-start">
+                <RadioGroupItem
+                  value="root"
+                  id={`ruleSets.${ruleSetIndex}.target.root`}
+                  className="mt-[2px]"
+                />
+                <div className="flex flex-col ">
+                  <label
+                    htmlFor={`ruleSets.${ruleSetIndex}.target.root`}
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Root Level
+                  </label>
+                  <p className="text-xs text-gray-500">Only casts at the root level of the channel.</p>
+                </div>
+              </div>
+              <div className="flex gap-2 items-start">
+                <RadioGroupItem
+                  className="mt-[2px]"
+                  value="reply"
+                  id={`ruleSets.${ruleSetIndex}.target.replies`}
+                />
+                <div className="flex flex-col">
+                  <label
+                    htmlFor={`ruleSets.${ruleSetIndex}.target.replies`}
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Replies
+                  </label>
+                  <p className="text-xs text-gray-500">Only replies to other casts.</p>
+                </div>
+              </div>
             </RadioGroup>
           )}
         />
@@ -910,13 +925,14 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number; ru
             control={control}
             render={({ field }) => (
               <Select onValueChange={field.onChange} defaultValue={field.value} required={argDef.required}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-[150px] sm:w-[200px] md:w-[400px] text-left">
                   <SelectValue placeholder={`Select a ${argDef.friendlyName.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
                   {argDef.options?.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
+                      {option.hint && <p className="text-gray-500 text-xs">{option.hint}</p>}
                     </SelectItem>
                   ))}
                 </SelectContent>
