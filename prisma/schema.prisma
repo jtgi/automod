@@ -81,6 +81,7 @@ model ModeratedChannel {
   usage            Usage[]
   delegates        Delegate[]
   roles            Role[]
+  downvotes        Downvote[]
 }
 
 model Delegate {
@@ -99,14 +100,30 @@ model Delegate {
 }
 
 model Role {
-  id          String           @id @default(cuid())
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  name        String
-  channelId   String
-  channel     ModeratedChannel @relation(fields: [channelId], references: [id])
-  permissions String
-  delegates   Delegate[]
+  id             String           @id @default(cuid())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  name           String
+  description    String?
+  channelId      String
+  channel        ModeratedChannel @relation(fields: [channelId], references: [id])
+  isEveryoneRole Boolean          @default(false)
+  permissions    String
+  delegates      Delegate[]
+}
+
+model Downvote {
+  id        String           @id @default(cuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  fid       String
+  castHash  String
+  username  String
+  avatarUrl String?
+  channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channelId String
+
+  @@unique([fid, castHash])
 }
 
 model Comods {

@@ -194,6 +194,36 @@ export async function addToBypass({
   });
 }
 
+export async function downvote({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
+  if (action.type !== "downvote") {
+    return;
+  }
+
+  const { voterFid, voterAvatarUrl, voterUsername } = action.args;
+  await db.moderatedChannel.findFirstOrThrow({
+    where: {
+      id: channel,
+    },
+  });
+
+  await db.downvote.upsert({
+    where: {
+      fid_castHash: {
+        fid: String(voterFid),
+        castHash: cast.hash,
+      },
+    },
+    update: {},
+    create: {
+      castHash: cast.hash,
+      channelId: channel,
+      fid: voterFid,
+      username: voterUsername,
+      avatarUrl: voterAvatarUrl,
+    },
+  });
+}
+
 /**
  * This does not check permissions
  */

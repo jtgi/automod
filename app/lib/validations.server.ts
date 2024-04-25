@@ -10,6 +10,7 @@ import {
   addToBypass,
   ban,
   cooldown,
+  downvote,
   grantRole,
   hideQuietly,
   isCohost,
@@ -34,6 +35,7 @@ import { erc1155Abi } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { base, optimism, zora } from "viem/chains";
+import { db } from "./db.server";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -51,7 +53,7 @@ export type RuleDefinition = {
       description: string;
       pattern?: string;
       required?: boolean;
-      options?: Array<{ value: string; label: string }>;
+      options?: Array<{ value: string; label: string; hint?: string }>;
     }
   >;
 };
@@ -219,6 +221,21 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Max Links",
         description: "The maximum number of links allowed",
+      },
+    },
+  },
+
+  downvote: {
+    friendlyName: "Downvote",
+    description: "Check if the cast has been downvoted by your community",
+    hidden: false,
+    invertable: false,
+    args: {
+      threshold: {
+        type: "number",
+        friendlyName: "Threshold",
+        description: "A threshold of 5 means when the 5th downvote is received, the rule will be violated.",
+        pattern: "[0-9]+",
       },
     },
   },
@@ -516,6 +533,13 @@ export const actionDefinitions = {
     description: "Permanently ban them. This cannot be undone at the moment.",
     args: {},
   },
+  downvote: {
+    friendlyName: "Downvote",
+    isWarpcast: false,
+    hidden: true,
+    description: "Automatically hide casts after a certain number of downvotes.",
+    args: {},
+  },
   warnAndHide: {
     friendlyName: "Warn and Hide",
     isWarpcast: true,
@@ -578,6 +602,7 @@ export const ruleNames = [
   "or",
   "containsText",
   "containsEmbeds",
+  "downvote",
   "castInThread",
   "textMatchesPattern",
   "textMatchesLanguage",
@@ -601,6 +626,7 @@ export const actionTypes = [
   "bypass",
   "addToBypass",
   "hideQuietly",
+  "downvote",
   "ban",
   "mute",
   "warnAndHide",
@@ -745,6 +771,14 @@ export const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("hideQuietly") }),
   z.object({ type: z.literal("ban") }),
   z.object({ type: z.literal("addToBypass") }),
+  z.object({
+    type: z.literal("downvote"),
+    args: z.object({
+      voterFid: z.string(),
+      voterUsername: z.string(),
+      voterAvatarUrl: z.string(),
+    }),
+  }),
   z.object({ type: z.literal("warnAndHide") }),
   z.object({ type: z.literal("mute") }),
   z.object({ type: z.literal("cooldownEnded") }),
@@ -798,6 +832,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsEmbeds: containsEmbeds,
   castInThread: castInThread,
   castLength: castLength,
+  downvote: downvoteRule,
   userProfileContainsText: userProfileContainsText,
   userDoesNotFollow: userDoesNotFollow,
   userIsCohost: userIsCohost,
@@ -816,6 +851,7 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   mute: mute,
   bypass: () => Promise.resolve(),
   addToBypass: addToBypass,
+  downvote: downvote,
   cooldownEnded: () => Promise.resolve(),
   unmuted: () => Promise.resolve(),
   unhide: () => Promise.resolve(),
@@ -902,6 +938,21 @@ export function castLength(args: CheckFunctionArgs) {
     if (cast.text.length > max) {
       return `Cast length exceeds ${max} characters`;
     }
+  }
+}
+
+export async function downvoteRule(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { threshold } = rule.args;
+
+  const downvotes = await db.downvote.count({
+    where: {
+      castHash: cast.hash,
+    },
+  });
+
+  if (downvotes >= parseInt(threshold)) {
+    return `Downvote threshold of ${threshold} reached`;
   }
 }
 

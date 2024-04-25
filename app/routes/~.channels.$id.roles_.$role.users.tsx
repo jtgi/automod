@@ -16,7 +16,7 @@ import { Input } from "~/components/ui/input";
 import { neynar } from "~/lib/neynar.server";
 import { Loader } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef } from "react";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");

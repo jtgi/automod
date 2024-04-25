@@ -8,7 +8,6 @@ import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { cn } from "~/lib/utils";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
-import { Badge } from "~/components/ui/badge";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -64,36 +63,38 @@ export default function Screen() {
       </p>
       <div className="space-y-4">
         <div>
-          <div className=" flex gap-2 bg-slate-100 rounded-lg p-1 w-full text-center">
-            <NavLink
-              end
-              preventScrollReset
-              className={({ isActive, isPending }) =>
-                cn(
-                  isActive || isPending ? " bg-white text-black" : "text-gray-400",
-                  isPending ? "animate-pulse" : "",
-                  "w-full no-underline justify-start px-3 py-1 rounded-lg font-medium text-sm"
-                )
-              }
-              to={`/~/channels/${channel.id}/roles/${role.name}`}
-            >
-              Permissions
-            </NavLink>
-            <NavLink
-              end
-              preventScrollReset
-              className={({ isActive, isPending }) =>
-                cn(
-                  isActive || isPending ? " bg-white text-black" : "text-gray-400",
-                  isPending ? "animate-pulse" : "",
-                  "w-full no-underline justify-start px-3 py-1 rounded-lg font-medium text-sm"
-                )
-              }
-              to={`/~/channels/${channel.id}/roles/${role.name}/users`}
-            >
-              Users {role.delegates.length ? `(${humanNumber(role.delegates.length)})` : ""}
-            </NavLink>
-          </div>
+          {!role.isEveryoneRole && (
+            <div className=" flex gap-2 bg-slate-100 rounded-lg p-1 w-full text-center">
+              <NavLink
+                end
+                preventScrollReset
+                className={({ isActive, isPending }) =>
+                  cn(
+                    isActive || isPending ? " bg-white text-black" : "text-gray-400",
+                    isPending ? "animate-pulse" : "",
+                    "w-full no-underline justify-start px-3 py-1 rounded-lg font-medium text-sm"
+                  )
+                }
+                to={`/~/channels/${channel.id}/roles/${role.name}`}
+              >
+                Permissions
+              </NavLink>
+              <NavLink
+                end
+                preventScrollReset
+                className={({ isActive, isPending }) =>
+                  cn(
+                    isActive || isPending ? " bg-white text-black" : "text-gray-400",
+                    isPending ? "animate-pulse" : "",
+                    "w-full no-underline justify-start px-3 py-1 rounded-lg font-medium text-sm"
+                  )
+                }
+                to={`/~/channels/${channel.id}/roles/${role.name}/users`}
+              >
+                Users {role.delegates.length ? `(${humanNumber(role.delegates.length)})` : ""}
+              </NavLink>
+            </div>
+          )}
         </div>
         <Outlet />
       </div>

@@ -111,6 +111,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function Screen() {
   const { channel, env } = useTypedLoaderData<typeof loader>();
   const deleteRole = useSubmit();
+  const sortedRoles = channel.roles.sort((a, b) => {
+    if (a.isEveryoneRole) {
+      return -1;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
 
   return (
     <div className="space-y-4">
@@ -120,92 +127,95 @@ export default function Screen() {
           <p className="text-gray-500">
             Create roles with limited permissions to allow channel members to take on some moderation
             responsibilities.{" "}
-            {channel.roles.length === 0 && (
-              <Popover>
-                <PopoverTrigger className="underline decoration-dashed">How could I use this?</PopoverTrigger>
-                <PopoverContent>
-                  <div className="text-sm space-y-2">
-                    <p>
-                      Let's say you run a large channel like <span className="font-mono">/design</span> with
-                      60k+ members. Staying on top of moderation can be a big job. You likely have a small
-                      population of motivated members who would happily contribute to moderating the channel.
-                    </p>
-                    <p>
-                      You could make them a cohost, but then they'll be able to add/remove other cohosts and
-                      ban other members. It's a bit much.
-                    </p>
-                    <p>
-                      With automod roles, you can create a role with just the right level of access. For
-                      example, only allowing them to hide posts–nothing more. A much more appropriate level of
-                      access.
-                    </p>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
+            <Popover>
+              <PopoverTrigger className="underline decoration-dashed">How could I use this?</PopoverTrigger>
+              <PopoverContent>
+                <div className="text-sm space-y-2">
+                  <p>
+                    Let's say you run a large channel like <span className="font-mono">/design</span> with
+                    60k+ members. Staying on top of moderation can be a big job. You likely have a small
+                    population of motivated members who would happily contribute to moderating the channel.
+                  </p>
+                  <p>
+                    You could make them a cohost, but then they'll be able to add/remove other cohosts and ban
+                    other members. It's a bit much.
+                  </p>
+                  <p>
+                    With automod roles, you can create a role with just the right level of access. For
+                    example, only allowing them to hide posts–nothing more. A much more appropriate level of
+                    access.
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
           </p>
         </div>
       </div>
 
       <div className="divide-y border-t border-b mt-8">
-        {channel.roles.map((role) => (
+        {sortedRoles.map((role) => (
           <div key={role.id} className="flex items-center justify-between py-3">
-            <Link
-              className="block font-medium no-underline hover:underline"
-              prefetch="intent"
-              to={`/~/channels/${channel.id}/roles/${role.name}`}
-            >
-              {role.name}
-            </Link>
+            <div>
+              <Link
+                className="block font-medium no-underline hover:underline"
+                prefetch="intent"
+                to={`/~/channels/${channel.id}/roles/${role.name}`}
+              >
+                {role.name}
+              </Link>
+              {role.description && <p className="text-gray-500 text-xs">{role.description}</p>}
+            </div>
             <div className="flex gap-3 items-center">
               {role.delegates.length > 0 && (
                 <p className="text-gray-400 text-xs">
                   {role.delegates.length} {role.delegates.length ? plur("Member", role.delegates.length) : ""}
                 </p>
               )}
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <MoreVerticalIcon className="w-5 h-5 text-gray-400" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <Form method="post">
-                    <DropdownMenuItem>
-                      <Link
-                        className="no-underline text-foreground"
-                        to={actionToInstallLink(
-                          grantRoleAction({
-                            id: role.id,
-                            name: role.name,
-                            channelId: channel.id,
-                            hostUrl: env.hostUrl,
-                          })
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Install Action to Grant Role
-                      </Link>
-                    </DropdownMenuItem>
-                  </Form>
-                  <Form method="post">
-                    <input type="hidden" name="roleId" value={role.id} />
-                    <DropdownMenuItem>
-                      <button
-                        name="intent"
-                        value="deleteRole"
-                        className="w-full h-full cursor-default text-left"
-                        onClick={(e) => {
-                          if (confirm("Are you sure you want to delete this role?")) {
-                            deleteRole(e.currentTarget.form);
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </DropdownMenuItem>
-                  </Form>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!role.isEveryoneRole && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <MoreVerticalIcon className="w-5 h-5 text-gray-400" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <Form method="post">
+                      <DropdownMenuItem>
+                        <Link
+                          className="no-underline text-foreground"
+                          to={actionToInstallLink(
+                            grantRoleAction({
+                              id: role.id,
+                              name: role.name,
+                              channelId: channel.id,
+                              hostUrl: env.hostUrl,
+                            })
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Install Action to Grant Role
+                        </Link>
+                      </DropdownMenuItem>
+                    </Form>
+                    <Form method="post">
+                      <input type="hidden" name="roleId" value={role.id} />
+                      <DropdownMenuItem>
+                        <button
+                          name="intent"
+                          value="deleteRole"
+                          className="w-full h-full cursor-default text-left"
+                          onClick={(e) => {
+                            if (confirm("Are you sure you want to delete this role?")) {
+                              deleteRole(e.currentTarget.form);
+                            }
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </DropdownMenuItem>
+                    </Form>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         ))}
