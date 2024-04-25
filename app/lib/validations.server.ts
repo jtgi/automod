@@ -20,7 +20,7 @@ import {
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
-import { chainByChainId, clientsByChainId } from "./viem.server";
+import { clientsByChainId } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 import {
   formatHash,
