@@ -1077,8 +1077,8 @@ export function userProfileContainsText(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { searchText, caseSensitive } = rule.args;
   const containsText = !caseSensitive
-    ? cast.author.profile.bio.text.toLowerCase().includes(searchText.toLowerCase())
-    : cast.author.profile.bio.text.includes(searchText);
+    ? cast.author.profile.bio.text?.toLowerCase().includes(searchText.toLowerCase())
+    : cast.author.profile.bio.text?.includes(searchText);
 
   if (!rule.invert && containsText) {
     return `User profile contains the specified text: ${searchText}`;
