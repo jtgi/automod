@@ -128,10 +128,7 @@ export async function requireUserCanModerateChannel(props: { userId: string; cha
 }
 
 export async function canUserExecuteAction(props: { userId: string; channelId: string; action: ActionType }) {
-  const [moderation, moderatedChannel] = await Promise.all([
-    canUserModerateChannel(props),
-    db.moderatedChannel.findUniqueOrThrow({ where: { id: props.channelId }, include: { roles: true } }),
-  ]);
+  const [moderation] = await Promise.all([canUserModerateChannel(props)]);
 
   if (moderation.result) {
     return true;
@@ -139,10 +136,11 @@ export async function canUserExecuteAction(props: { userId: string; channelId: s
 
   const actionPermission = actionToPermission(props.action);
 
-  const everyoneRole = moderatedChannel.roles.find((role) => role.isEveryoneRole);
-  if (everyoneRole?.permissions.includes(actionPermission)) {
-    return true;
-  }
+  // this is dangerous
+  // const everyoneRole = moderatedChannel.roles.find((role) => role.isEveryoneRole);
+  // if (everyoneRole?.permissions.includes(actionPermission)) {
+  //   return true;
+  // }
 
   const isDelegate = await db.delegate.findFirst({
     where: {
