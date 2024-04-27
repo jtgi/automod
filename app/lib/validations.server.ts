@@ -154,6 +154,11 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         friendlyName: "Pattern",
         description: "The regular expression to match against. No leading or trailing slashes.",
       },
+      caseInsensitive: {
+        type: "boolean",
+        friendlyName: "Ignore Case",
+        description: "If checked, 'abc' is the same as 'ABC'",
+      },
     },
   },
 
@@ -1053,9 +1058,9 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
 
 export function textMatchesPattern(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { pattern } = rule.args;
+  const { pattern, caseInsensitive } = rule.args;
 
-  const re2 = new RE2(pattern);
+  const re2 = new RE2(pattern, caseInsensitive ? "i" : "");
   const isMatch = re2.test(cast.text);
 
   if (isMatch && !rule.invert) {
