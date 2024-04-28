@@ -34,7 +34,6 @@ import { WebhookCast } from "./types";
 import { erc1155Abi } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
-import { base, optimism, zora } from "viem/chains";
 import { db } from "./db.server";
 
 export type RuleDefinition = {
@@ -139,6 +138,11 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         defaultValue: true,
         friendlyName: "Links",
         description: "Check for links",
+      },
+      domain: {
+        type: "string",
+        friendlyName: "Domain",
+        description: "Check for links from a specific domain",
       },
     },
   },
@@ -963,7 +967,24 @@ export async function downvoteRule(args: CheckFunctionArgs) {
 
 export async function containsEmbeds(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { images, videos, frames, links } = rule.args;
+  const { images, videos, frames, links, domain } = rule.args;
+
+  if (domain) {
+    const foundDomain = cast.embeds.filter((embed): embed is { url: string } => {
+      if ("url" in embed) {
+        const url = new URL(embed.url);
+        return url.hostname.toLowerCase() === domain.toLowerCase();
+      } else {
+        return false;
+      }
+    });
+
+    if (!rule.invert && foundDomain.length > 0) {
+      return `Contains embeds from ${domain}: ${foundDomain.map((d) => d.url).join(", ")}`;
+    } else if (rule.invert && foundDomain.length === 0) {
+      return `Does not contain embeds from ${domain}`;
+    }
+  }
 
   const checkForEmbeds: string[] = [];
   images && checkForEmbeds.push("image");

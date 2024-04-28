@@ -309,6 +309,22 @@ describe("containsEmbeds", () => {
     (neynar as Mocked<typeof neynar>).fetchBulkCasts.mockReset();
   });
 
+  it("should detect domains", async () => {
+    const c = cast({
+      embeds: [{ url: "https://example.com/image.jpg" }],
+      text: "Check out this image",
+    });
+    const r = rule({
+      args: {
+        domain: "example.com",
+      },
+    });
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe(
+      "Contains embeds from example.com: https://example.com/image.jpg"
+    );
+  });
+
   it("should detect frames", async () => {
     const c = cast({
       frames: [{ frames_url: "https://google.com" } as any],
