@@ -142,7 +142,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       domain: {
         type: "string",
         friendlyName: "Domain",
-        description: "Check for links from a specific domain",
+        description: "Check for embeds from a specific domain. Applies to all embeds.",
       },
     },
   },
