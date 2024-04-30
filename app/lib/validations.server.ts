@@ -3,7 +3,6 @@
 import { detect } from "tinyld";
 import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
-import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import RE2 from "re2";
 import { z } from "zod";
 import {
@@ -35,6 +34,7 @@ import { erc1155Abi } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
+import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -549,6 +549,13 @@ export const actionDefinitions = {
     description: "Automatically hide casts after a certain number of downvotes.",
     args: {},
   },
+  like: {
+    friendlyName: "Like",
+    isWarpcast: false,
+    hidden: false,
+    description: "Automatically like the cast",
+    args: {},
+  },
   warnAndHide: {
     friendlyName: "Warn and Hide",
     isWarpcast: true,
@@ -637,6 +644,7 @@ export const actionTypes = [
   "hideQuietly",
   "downvote",
   "ban",
+  "like",
   "mute",
   "warnAndHide",
   "cooldown",
@@ -778,6 +786,7 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
 export const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
   z.object({ type: z.literal("hideQuietly") }),
+  z.object({ type: z.literal("like") }),
   z.object({ type: z.literal("ban") }),
   z.object({ type: z.literal("addToBypass") }),
   z.object({
@@ -865,10 +874,15 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   unmuted: () => Promise.resolve(),
   unhide: () => Promise.resolve(),
   ban: ban,
+  like: like,
   warnAndHide: warnAndHide,
   cooldown: cooldown,
   grantRole: grantRole,
 } as const;
+
+export async function like(props: { cast: Cast }) {
+  await neynar.publishReactionToCast(process.env.NEYNAR_SIGNER_UUID!, "like", props.cast.hash);
+}
 
 // Rule: contains text, option to ignore case
 export function containsText(props: CheckFunctionArgs) {
