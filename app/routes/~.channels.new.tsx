@@ -83,16 +83,6 @@ export async function action({ request }: ActionFunctionArgs) {
           };
         }),
       },
-      roles: {
-        create: [
-          {
-            name: "Everyone",
-            description: "Default role for everyone in the channel.",
-            permissions: "[]",
-            isEveryoneRole: true,
-          },
-        ],
-      },
     },
   });
 
