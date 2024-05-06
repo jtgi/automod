@@ -6,7 +6,7 @@ import { getChannel, neynar } from "~/lib/neynar.server";
 import { CastAction, MessageResponse } from "~/lib/types";
 import { canUserExecuteAction, formatZodError, getSharedEnv, parseMessage } from "~/lib/utils.server";
 import { actionFunctions, actionTypes } from "~/lib/validations.server";
-import { logModerationAction } from "./api.webhooks.neynar";
+import { isRuleTargetApplicable, logModerationAction } from "./api.webhooks.neynar";
 import { getChannelHosts } from "~/lib/warpcast.server";
 import { actions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
@@ -67,6 +67,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
           status: 400,
         }
       );
+    }
+
+    if (validation.data.action === "like") {
+      if (!isRuleTargetApplicable("root", message.action.cast as any)) {
+        return json({ message: "Root casts only. This is a reply." }, { status: 400 });
+      }
     }
 
     const userFid = message.action.interactor.fid;

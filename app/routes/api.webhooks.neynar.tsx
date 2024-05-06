@@ -420,7 +420,7 @@ async function evaluateRule(
   }
 }
 
-function isRuleTargetApplicable(target: string, cast: Cast) {
+export function isRuleTargetApplicable(target: string, cast: Cast) {
   switch (target) {
     case "all":
       return true;

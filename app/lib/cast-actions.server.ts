@@ -89,4 +89,16 @@ export const actions = [
     aboutUrl: "https://automod.sh",
     image: `${env.hostUrl}/actions/downvote.png`,
   },
+  {
+    automodAction: "like",
+    action: {
+      type: "post",
+    },
+    name: actionDefinitions["like"].friendlyName,
+    description: actionDefinitions["like"].description,
+    icon: "thumbsup",
+    postUrl: `${env.hostUrl}/api/actions/like`,
+    aboutUrl: "https://automod.sh",
+    image: `${env.hostUrl}/actions/boost.png`,
+  },
 ] as const satisfies Array<CastAction>;

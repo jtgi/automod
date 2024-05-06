@@ -550,10 +550,10 @@ export const actionDefinitions = {
     args: {},
   },
   like: {
-    friendlyName: "Like",
+    friendlyName: "Boost",
     isWarpcast: false,
     hidden: false,
-    description: "Automatically like the cast",
+    description: "Boost the post, increasing the chance it gets into your channel's trending feed.",
     args: {},
   },
   warnAndHide: {
