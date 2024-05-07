@@ -7,7 +7,7 @@ import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 
-import { Action, Rule, actionFunctions, ruleFunctions } from "~/lib/validations.server";
+import { Action, Rule, actionDefinitions, actionFunctions, ruleFunctions } from "~/lib/validations.server";
 import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
@@ -235,6 +235,11 @@ export async function validateCast({
       // }
 
       for (const action of actions) {
+        const actionDef = actionDefinitions[action.type];
+        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
+          continue;
+        }
+
         if (!simulation) {
           const actionFn = actionFunctions[action.type];
 

@@ -3,14 +3,7 @@
 import * as warpcast from "~/lib/warpcast.server";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import axios from "axios";
-import {
-  action,
-  cast,
-  neynarChannel,
-  neynarUser,
-  rule,
-  user,
-} from "./validations.test";
+import { action, cast, neynarChannel, neynarUser, rule, user } from "./validations.test";
 import { validateCast } from "~/routes/api.webhooks.neynar";
 import { prisma } from "tests/setup";
 
@@ -18,6 +11,7 @@ vi.mock("./neynar.server", () => {
   return {
     neynar: {
       fetchBulkCasts: vi.fn(),
+      publishReactionToCast: vi.fn(),
     },
   };
 });
@@ -102,10 +96,7 @@ describe("validateCast", () => {
                   },
                 })
               ),
-              actions: JSON.stringify([
-                action({ type: "warnAndHide" }),
-                action({ type: "ban" }),
-              ]),
+              actions: JSON.stringify([action({ type: "warnAndHide" }), action({ type: "ban" })]),
             },
           ],
         },
@@ -603,9 +594,7 @@ describe("validateCast", () => {
                   },
                 })
               ),
-              actions: JSON.stringify([
-                action({ type: "cooldown", args: { duration: 1 } }),
-              ]),
+              actions: JSON.stringify([action({ type: "cooldown", args: { duration: 1 } })]),
             },
           ],
         },
@@ -795,10 +784,7 @@ describe("validateCast", () => {
                   },
                 })
               ),
-              actions: JSON.stringify([
-                action({ type: "warnAndHide" }),
-                action({ type: "ban" }),
-              ]),
+              actions: JSON.stringify([action({ type: "warnAndHide" }), action({ type: "ban" })]),
             },
           ],
         },
@@ -849,6 +835,47 @@ describe("validateCast", () => {
         reason: "Text contains the text: spam",
       })
     );
+  });
+
+  it("should respect action targets if defined", async () => {
+    const mc = await prisma.moderatedChannel.create({
+      data: {
+        id: "jtgi",
+        userId: u0.id,
+        banThreshold: 3,
+        ruleSets: {
+          create: [
+            {
+              rule: JSON.stringify(
+                rule({
+                  name: "containsText",
+                  type: "CONDITION",
+                  args: {
+                    searchText: "spam",
+                    caseSensitive: true,
+                  },
+                })
+              ),
+              actions: JSON.stringify([action({ type: "hideQuietly" }), action({ type: "like" })]),
+            },
+          ],
+        },
+      },
+      include: { user: true, ruleSets: { where: { active: true } } },
+    });
+
+    const logs = await validateCast({
+      channel: nc0,
+      moderatedChannel: mc,
+      cast: cast({
+        parent_hash: "parent",
+        text: "spam",
+        hash: "gm",
+      }),
+    });
+
+    expect(logs).toHaveLength(1);
+    expect(logs[0].action).toBe("hideQuietly");
   });
 
   // it("ban threshold works", async () => {

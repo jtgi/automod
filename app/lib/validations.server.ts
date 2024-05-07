@@ -35,6 +35,7 @@ import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { isRuleTargetApplicable } from "~/routes/api.webhooks.neynar";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -486,8 +487,16 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 export type ActionDefinition = {
   friendlyName: string;
   description: string;
+  /**
+   * Hide the action from the customer facing UI
+   * Example: "Bypass" is hidden because it's a special action.
+   */
   hidden?: boolean;
-  isWarpcast: boolean;
+  /**
+   * Whether the action can be applied to root casts, reply, or all
+   * Example: "Boost" only makes sense for root.
+   */
+  castScope?: "root" | "reply" | "all";
   args: Record<
     string,
     | {
@@ -509,84 +518,85 @@ export type ActionDefinition = {
 export const actionDefinitions = {
   mute: {
     friendlyName: "Mute",
-    isWarpcast: true,
     hidden: false,
+    castScope: "all",
     description: "All this user's casts will be silently hidden from the channel until you unmute.",
     args: {},
   },
   hideQuietly: {
     friendlyName: "Hide Quietly",
     hidden: false,
-    isWarpcast: true,
+    castScope: "all",
     description: "Hide the cast without notifying the user",
     args: {},
   },
   addToBypass: {
     friendlyName: "Add to Bypass",
-    isWarpcast: false,
     hidden: true,
+    castScope: "all",
     description: "Add the user to the bypass list. This will exclude them from all moderation rules.",
     args: {},
   },
   bypass: {
     friendlyName: "Bypass",
-    isWarpcast: false,
+    castScope: "all",
     description: "Bypass the rule and let the cast be visible",
     hidden: true,
     args: {},
   },
   ban: {
     friendlyName: "Permanent Ban",
-    isWarpcast: true,
     hidden: false,
+    castScope: "all",
     description: "Permanently ban them. This cannot be undone at the moment.",
     args: {},
   },
   downvote: {
     friendlyName: "Downvote",
-    isWarpcast: false,
     hidden: true,
+    castScope: "all",
     description: "Automatically hide casts after a certain number of downvotes.",
     args: {},
   },
   like: {
     friendlyName: "Boost",
-    isWarpcast: false,
     hidden: false,
-    description: "Boost the post, increasing the chance it gets into your channel's trending feed.",
+    castScope: "root",
+    description:
+      "Boost the cast, increasing the chance it gets into your channel's trending feed. For root casts only.",
     args: {},
   },
   warnAndHide: {
     friendlyName: "Warn and Hide",
-    isWarpcast: true,
+    castScope: "all",
     hidden: false,
     description: "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
   unmuted: {
     friendlyName: "Unmuted",
-    isWarpcast: true,
+    castScope: "all",
     description: "Unmute the user",
     hidden: true,
     args: {},
   },
   cooldownEnded: {
     friendlyName: "End Cooldown",
-    isWarpcast: false,
+    castScope: "all",
     description: "End the user's cooldown period",
     hidden: true,
     args: {},
   },
   unhide: {
     friendlyName: "Unhide",
-    isWarpcast: true,
+    castScope: "all",
     description: "Unhide the cast",
     hidden: true,
     args: {},
   },
   cooldown: {
     friendlyName: "Cooldown",
-    isWarpcast: true,
+    castScope: "all",
     hidden: false,
     description: "New casts from this user will be automatically hidden for the duration specified.",
     args: {
@@ -599,7 +609,7 @@ export const actionDefinitions = {
   },
   grantRole: {
     friendlyName: "Grant Role",
-    isWarpcast: false,
+    castScope: "all",
     hidden: true,
     description: "Grant a role to a user",
     args: {
