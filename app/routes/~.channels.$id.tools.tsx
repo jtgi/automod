@@ -1,10 +1,11 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { typedjson, useTypedFetcher, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import {
   errorResponse,
   formatZodError,
+  getSetCache,
   getSharedEnv,
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
@@ -14,7 +15,7 @@ import {
 import { Form } from "@remix-run/react";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
-import { getChannel, pageChannelCasts } from "~/lib/neynar.server";
+import { getChannel, neynar, pageChannelCasts } from "~/lib/neynar.server";
 import { FullModeratedChannel, validateCast } from "./api.webhooks.neynar";
 import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
@@ -22,7 +23,13 @@ import { Loader2 } from "lucide-react";
 import { sweepQueue } from "~/lib/bullish.server";
 import { ModerationLog } from "@prisma/client";
 import { WebhookCast } from "~/lib/types";
-import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Input } from "~/components/ui/input";
+import { FieldLabel } from "~/components/ui/fields";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Alert } from "~/components/ui/alert";
+import { ActionType, actionDefinitions } from "~/lib/validations.server";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 
 const SWEEP_LIMIT = 1000;
 
@@ -40,6 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     user,
     isSweepActive: isActive,
     moderatedChannel,
+    actionDefinitions,
     env: getSharedEnv(),
   });
 }
@@ -58,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const rawData = Object.fromEntries(formData.entries());
   const result = z
     .object({
-      intent: z.enum(["sweep"]),
+      intent: z.enum(["sweep", "testCast"]),
     })
     .safeParse(rawData);
 
@@ -97,6 +105,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
       session,
       message: "Sweeping! This will take a while. Monitor progress in the logs.",
     });
+  } else if (result.data.intent === "testCast") {
+    const castHashOrWarpcastUrl = rawData.castHashOrWarpcastUrl as string;
+    if (!castHashOrWarpcastUrl) {
+      return errorResponse({
+        request,
+        message: "Cast hash or warpcast url is required",
+      });
+    }
+
+    const castResult = await getSetCache({
+      key: `cast:${castHashOrWarpcastUrl}`,
+      get: () => {
+        const isWarpcastUrl = castHashOrWarpcastUrl.includes("warpcast.com");
+        return neynar.lookUpCastByHashOrWarpcastUrl(castHashOrWarpcastUrl, isWarpcastUrl ? "url" : "hash");
+      },
+    }).catch(() => null);
+
+    if (!castResult) {
+      return errorResponse({
+        request,
+        message: "Couldn't find that cast. Got another?",
+      });
+    }
+
+    const channel = await getChannel({ name: moderatedChannel.id });
+    const logs = await validateCast({
+      cast: castResult.cast as WebhookCast,
+      channel,
+      moderatedChannel,
+      simulation: true,
+    });
+
+    return typedjson({
+      logs,
+    });
   } else {
     return errorResponse({
       request,
@@ -106,14 +149,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { isSweepActive } = useTypedLoaderData<typeof loader>();
+  const { isSweepActive, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   return (
     <main className="space-y-6">
       <div>
         <p className="font-semibold">Tools</p>
       </div>
+
       <hr />
+
       <div className="space-y-3">
         <div>
           <p className="font-medium">Sweep</p>
@@ -142,7 +187,111 @@ export default function Screen() {
           </Button>
         </Form>
       </div>
+
+      <hr />
+
+      <div className="space-y-3">
+        <div>
+          <p className="font-medium">Simulate Rules</p>
+          <p className="text-sm text-gray-500">
+            Enter a cast hash or warpcast url to simulate your moderation rules against.
+          </p>
+        </div>
+      </div>
+      <SimulateCast actionDefs={actionDefinitions} />
     </main>
+  );
+}
+
+function SimulateCast(props: { actionDefs: typeof actionDefinitions }) {
+  const [open, setIsOpen] = useState(false);
+  const [fetcherKey, setFetcherKey] = useState(new Date().toString());
+  const fetcher = useTypedFetcher<typeof action>({
+    key: fetcherKey,
+  });
+  const busy = fetcher.state === "submitting";
+  const data = fetcher.data as unknown as { logs: ModerationLog[] } | { message: string } | undefined;
+  const logData = data && "logs" in data && data.logs.length > 0;
+
+  return (
+    <fetcher.Form
+      method="post"
+      onSubmit={() => {
+        setIsOpen(true);
+      }}
+      className="space-y-4"
+    >
+      <FieldLabel label="Cast Hash or Warpcast URL" className="items-start flex-col">
+        <Input name="castHashOrWarpcastUrl" placeholder="e.g. https://warpcast.com/..." />
+      </FieldLabel>
+
+      <Button
+        className="w-full sm:w-auto min-w-[150px]"
+        name="intent"
+        disabled={busy}
+        value="testCast"
+        variant={"secondary"}
+      >
+        {busy ? (
+          <>
+            <Loader2 className="animate-spin inline w-4 h-4 mr-2" />
+            Simulating...
+          </>
+        ) : (
+          "Simulate"
+        )}
+      </Button>
+      <Dialog
+        open={!!logData}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            setFetcherKey(new Date().toString());
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Simulation Result</DialogTitle>
+            <DialogDescription></DialogDescription>
+          </DialogHeader>
+          {(() => {
+            if (!data) {
+              return <Loader2 className="animate-spin inline w-4 h-4 mr-2" />;
+            }
+
+            if ("message" in data) {
+              return <Alert variant={"default"}>{data.message as unknown as string}</Alert>;
+            }
+
+            if ("logs" in data && data.logs.length === 0) {
+              return <Alert variant={"default"}>Cast does not violate any rules.</Alert>;
+            }
+
+            if ("logs" in data && data.logs.length > 0) {
+              return (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">Action</TableHead>
+                      <TableHead className="w-[50px]">Reason</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.logs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell>{props.actionDefs[log.action as ActionType].friendlyName}</TableCell>
+                        <TableCell>{log.reason}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              );
+            }
+          })()}
+        </DialogContent>
+      </Dialog>
+    </fetcher.Form>
   );
 }
 
