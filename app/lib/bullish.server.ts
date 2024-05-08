@@ -185,7 +185,7 @@ export const webhookWorker = new Worker(
   {
     connection,
     lockDuration: 30_000,
-    concurrency: 200,
+    concurrency: 100,
     autorun: process.env.NODE_ENV === "production",
   }
 );
@@ -206,7 +206,7 @@ export const castWorker = new Worker(
   {
     connection,
     lockDuration: 30_000,
-    concurrency: 20,
+    concurrency: 200,
     autorun: process.env.NODE_ENV === "production",
   }
 );
