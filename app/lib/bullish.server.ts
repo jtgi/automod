@@ -196,6 +196,10 @@ webhookWorker.on("error", (err: Error) => {
 
 export const castQueue = new Queue("castQueue", {
   connection,
+  // temporarily lifo
+  defaultJobOptions: {
+    lifo: true,
+  },
 });
 
 export const castWorker = new Worker(
