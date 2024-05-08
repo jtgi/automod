@@ -186,6 +186,7 @@ export const webhookWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 200,
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 
@@ -205,6 +206,7 @@ export const castWorker = new Worker(
   {
     connection,
     lockDuration: 30_000,
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 castWorker.on("error", (err: Error) => {
@@ -297,7 +299,7 @@ export const sweepWorker = new Worker(
       throw e;
     }
   },
-  { connection }
+  { connection, autorun: process.env.NODE_ENV === "production" }
 );
 
 sweepWorker.on("error", Sentry.captureException);
@@ -340,7 +342,7 @@ export const simulationWorker = new Worker(
 
     return result;
   },
-  { connection }
+  { connection, autorun: process.env.NODE_ENV === "production" }
 );
 
 simulationWorker.on("error", Sentry.captureException);
@@ -473,7 +475,7 @@ export const syncWorker = new Worker(
       }
     }
   },
-  { connection }
+  { connection, autorun: process.env.NODE_ENV === "production" }
 );
 
 syncWorker.on("error", (err) => {
