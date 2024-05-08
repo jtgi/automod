@@ -1019,14 +1019,16 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   let embedsFound: string[] = [];
   const embedTypesFound: string[] = [];
 
+  const knownImageCdnHostnames = ["imagedelivery.net", "imgur.com"];
   // even if not specified in args we always search for
   // images and videos because they may only be filtering
   // for `link` embeds in which case these need to be
   // ruled out. its also free and fast.
   const foundImages = cast.embeds.filter((embed): embed is { url: string } => {
     if ("url" in embed) {
+      const url = new URL(embed.url);
       const mime = mimeType.lookup(embed.url);
-      return !!mime && mime.startsWith("image");
+      return (mime && mime.startsWith("image")) || knownImageCdnHostnames.includes(url.hostname);
     } else {
       return false;
     }
