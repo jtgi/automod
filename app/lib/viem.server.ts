@@ -13,12 +13,15 @@ const optimismClient = createPublicClient({
 
 const baseClient = createPublicClient({
   chain: base,
-  transport: fallback([
-    http(process.env.BASE_RPC_URL!),
-    http(process.env.BASE_RPC_URL2!),
-    http(process.env.BASE_RPC_URL3!),
-    http(process.env.BASE_RPC_URL4!),
-  ]),
+  transport: fallback(
+    [
+      http(process.env.BASE_RPC_URL!),
+      http(process.env.BASE_RPC_URL2!),
+      http(process.env.BASE_RPC_URL3!),
+      http(process.env.BASE_RPC_URL4!),
+    ],
+    { retryCount: 5, retryDelay: 1000 }
+  ),
 });
 
 const arbitrumClient = createPublicClient({
