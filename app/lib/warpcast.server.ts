@@ -8,7 +8,11 @@ import { Action } from "./validations.server";
 import { neynar } from "./neynar.server";
 
 const token = process.env.WARPCAST_TOKEN!;
-export const http = axiosFactory.create();
+export const http = axiosFactory.create({
+  headers: {
+    "x-agent": "automod",
+  },
+});
 
 http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
   const config = err.config;

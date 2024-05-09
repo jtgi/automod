@@ -304,7 +304,7 @@ export const sweepWorker = new Worker(
       throw e;
     }
   },
-  { connection, autorun: process.env.NODE_ENV === "production" }
+  { connection, concurrency: 25, autorun: process.env.NODE_ENV === "production" }
 );
 
 sweepWorker.on("error", Sentry.captureException);
