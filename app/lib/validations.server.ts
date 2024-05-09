@@ -1306,13 +1306,24 @@ export async function requiresErc721(args: CheckFunctionArgs) {
   });
 
   if (tokenId) {
-    const owner = await contract.read.ownerOf([BigInt(tokenId)]);
-    isOwner = [cast.author.custody_address, ...cast.author.verifications].some(
-      (address) => address.toLowerCase() === owner.toLowerCase()
-    );
+    isOwner = await getSetCache({
+      key: `erc721-owner:${contractAddress}:${tokenId}`,
+      get: async () => {
+        const owner = await contract.read.ownerOf([BigInt(tokenId)]);
+        return [cast.author.custody_address, ...cast.author.verifications].some(
+          (address) => address.toLowerCase() === owner.toLowerCase()
+        );
+      },
+      ttlSeconds: 60 * 60 * 2,
+    });
   } else {
     for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
-      const balance = await contract.read.balanceOf([getAddress(address)]);
+      const balance = await getSetCache({
+        key: `erc721-balance:${contractAddress}:${address}`,
+        get: () => contract.read.balanceOf([getAddress(address)]),
+        ttlSeconds: 60 * 60 * 2,
+      });
+
       if (balance > 0) {
         isOwner = true;
         break;
@@ -1368,7 +1379,12 @@ export async function requiresErc1155(args: CheckFunctionArgs) {
 
     let isOwner = false;
     for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
-      const balance = await contract.read.balanceOf([getAddress(address), BigInt(tokenId)]);
+      const balance = await getSetCache({
+        key: `erc1155-${contractAddress}-${address}-${tokenId}`,
+        get: () => contract.read.balanceOf([getAddress(address), BigInt(tokenId)]),
+        ttlSeconds: 60 * 60 * 2,
+      });
+
       if (balance > 0) {
         isOwner = true;
         break;
@@ -1395,11 +1411,20 @@ export async function requiresErc20(args: CheckFunctionArgs) {
     throw new Error(`No client found for chainId: ${chainId}`);
   }
 
-  const { result: hasEnough } = await verifyErc20Balance({
-    wallets: [cast.author.custody_address, ...cast.author.verifications],
-    chainId,
-    contractAddress,
-    minBalanceRequired: minBalance,
+  const cacheKey = `erc20-balance:${contractAddress}:${minBalance}:${
+    cast.author.custody_address
+  }:${cast.author.verifications.join(`,`)}`;
+
+  const { result: hasEnough } = await getSetCache({
+    key: cacheKey,
+    get: async () =>
+      verifyErc20Balance({
+        wallets: [cast.author.custody_address, ...cast.author.verifications],
+        chainId,
+        contractAddress,
+        minBalanceRequired: minBalance,
+      }),
+    ttlSeconds: 60 * 60 * 2,
   });
 
   if (!rule.invert && !hasEnough) {

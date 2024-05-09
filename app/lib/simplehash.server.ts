@@ -10,7 +10,7 @@ export function nftsByWallets(props: { chains: string[]; contractAddresses: stri
 
   return getSetCache({
     key: cacheKey,
-    ttlSeconds: 60 * 60,
+    ttlSeconds: 60 * 60 * 2,
     get: async () => {
       const url = new URL(`https://api.simplehash.com/api/v0/nfts/owners`);
       url.searchParams.set("chains", props.chains.join(","));
