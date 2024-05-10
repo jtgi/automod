@@ -16,9 +16,9 @@ export const sessionStorage = createCookieSessionStorage({
   cookie: {
     name: "_session",
     sameSite: "lax",
-    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
     path: "/",
     httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
     secrets: [process.env.SESSION_SECRET || "STRONG_SECRET"],
     secure: process.env.NODE_ENV === "production",
   },
