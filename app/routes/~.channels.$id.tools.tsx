@@ -211,7 +211,7 @@ function SimulateCast(props: { actionDefs: typeof actionDefinitions }) {
   });
   const busy = fetcher.state === "submitting";
   const data = fetcher.data as unknown as { logs: ModerationLog[] } | { message: string } | undefined;
-  const logData = data && "logs" in data && data.logs.length > 0;
+  const logData = data && "logs" in data;
 
   return (
     <fetcher.Form
