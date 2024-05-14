@@ -30,7 +30,7 @@ import {
   validateErc721,
 } from "./utils.server";
 import { WebhookCast } from "./types";
-import { erc1155Abi } from "./abis";
+import { erc1155Abi, hypersubAbi721 } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
@@ -262,6 +262,33 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         friendlyName: "Username",
         pattern: "^[a-zA-Z0-9_\\.]+$",
         description: "Drop the @ (it's cooler).",
+      },
+    },
+  },
+
+  requireActiveHypersub: {
+    friendlyName: "User does not Hypersub",
+    description: "Check if the user has an active subscription to a hypersub.",
+    hidden: false,
+    invertable: false,
+    args: {
+      chainId: {
+        type: "select",
+        friendlyName: "Chain",
+        description: "",
+        required: true,
+        options: [
+          { value: "1", label: "Ethereum" },
+          { value: "8453", label: "Base" },
+        ],
+      },
+      contractAddress: {
+        type: "string",
+        required: true,
+        pattern: "0x[a-fA-F0-9]{40}",
+        placeholder: "0xdead...",
+        friendlyName: "Contract Address",
+        description: "",
       },
     },
   },
@@ -643,6 +670,7 @@ export const ruleNames = [
   "userIsNotActive",
   "userFidInRange",
   "userIsCohost",
+  "requireActiveHypersub",
   "requiresErc1155",
   "requiresErc721",
   "requiresErc20",
@@ -869,6 +897,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userIsNotActive: userIsNotActive,
   userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
   userFidInRange: userFidInRange,
+  requireActiveHypersub: requireActiveHypersub,
   requiresErc721: requiresErc721,
   requiresErc20: requiresErc20,
   requiresErc1155: requiresErc1155,
@@ -1335,6 +1364,40 @@ export async function requiresErc721(args: CheckFunctionArgs) {
     return `Wallet does not hold ERC-721 token: ${contractAddress}:${tokenId}`;
   } else if (rule.invert && isOwner) {
     return `Wallet holds ERC-721 token: ${contractAddress}:${tokenId}`;
+  }
+}
+
+export async function requireActiveHypersub(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { chainId, contractAddress } = rule.args;
+  const client = clientsByChainId[chainId];
+
+  if (!client) {
+    throw new Error(`No client found for chainId: ${chainId}`);
+  }
+
+  let isSubscribed = false;
+  const contract = getContract({
+    address: getAddress(contractAddress),
+    abi: hypersubAbi721,
+    client,
+  });
+
+  for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
+    const balance = await getSetCache({
+      key: `hypersub:${contractAddress}:${address}`,
+      get: () => contract.read.balanceOf([getAddress(address)]),
+      ttlSeconds: 60 * 60 * 2,
+    });
+
+    if (balance > 0) {
+      isSubscribed = true;
+      break;
+    }
+  }
+
+  if (!isSubscribed) {
+    return `User is not subscribed to hypersub: ${contractAddress}`;
   }
 }
 
