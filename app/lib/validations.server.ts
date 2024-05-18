@@ -34,7 +34,7 @@ import { erc1155Abi, hypersubAbi721 } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
-import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Cast, CastId, EmbedCastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { isRuleTargetApplicable } from "~/routes/api.webhooks.neynar";
 
 export type RuleDefinition = {
@@ -139,6 +139,12 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         defaultValue: true,
         friendlyName: "Links",
         description: "Check for links",
+      },
+      casts: {
+        type: "boolean",
+        defaultValue: true,
+        friendlyName: "Casts",
+        description: "Check for quote casts",
       },
       domain: {
         type: "string",
@@ -1020,7 +1026,7 @@ export async function downvoteRule(args: CheckFunctionArgs) {
 
 export async function containsEmbeds(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { images, videos, frames, links, domain } = rule.args;
+  const { images, videos, frames, links, casts, domain } = rule.args;
 
   if (domain) {
     const foundDomain = cast.embeds.filter((embed): embed is { url: string } => {
@@ -1044,9 +1050,19 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   videos && checkForEmbeds.push("video");
   frames && checkForEmbeds.push("frame");
   links && checkForEmbeds.push("link");
+  casts && checkForEmbeds.push("casts");
 
   let embedsFound: string[] = [];
   const embedTypesFound: string[] = [];
+
+  const foundCasts = cast.embeds.filter((embed): embed is { cast_id: CastId } => {
+    return "cast_id" in embed;
+  });
+
+  if (foundCasts.length > 0) {
+    embedTypesFound.push("casts");
+    embedsFound = embedsFound.concat(foundCasts.map((c) => c.cast_id.hash));
+  }
 
   const knownImageCdnHostnames = ["imagedelivery.net", "imgur.com"];
   // even if not specified in args we always search for

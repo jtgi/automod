@@ -346,6 +346,34 @@ describe("containsEmbeds", () => {
     expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe("Contains embedded content: frame");
   });
 
+  it("should detect casts", async () => {
+    const c = cast({
+      text: "Check out this frame",
+      embeds: [
+        {
+          cast_id: {
+            hash: "casthash",
+            fid: 1,
+          },
+        },
+      ],
+    });
+
+    (neynar as Mocked<typeof neynar>).fetchBulkCasts.mockResolvedValue({
+      result: {
+        casts: [c as any],
+      },
+    });
+
+    const r = rule({
+      args: {
+        casts: true,
+      },
+    });
+
+    expect(await containsEmbeds({ channel: m, cast: c, rule: r })).toBe("Contains embedded content: casts");
+  });
+
   it("should detect only links", async () => {
     const c = cast({
       frames: [{ frames_url: "https://google.com" } as any],
