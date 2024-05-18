@@ -270,7 +270,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     friendlyName: "User does not Hypersub",
     description: "Check if the user has an active subscription to a hypersub.",
     hidden: false,
-    invertable: false,
+    invertable: true,
     args: {
       chainId: {
         type: "select",
@@ -1396,8 +1396,10 @@ export async function requireActiveHypersub(args: CheckFunctionArgs) {
     }
   }
 
-  if (!isSubscribed) {
+  if (!rule.invert && !isSubscribed) {
     return `User is not subscribed to hypersub: ${contractAddress}`;
+  } else if (rule.invert && isSubscribed) {
+    return `User is subscribed to hypersub: ${contractAddress}`;
   }
 }
 
