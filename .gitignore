@@ -1,5 +1,6 @@
 node_modules
 
+sqlite.db*
 /prisma/*.db
 /prisma/*.db*
 /.cache
