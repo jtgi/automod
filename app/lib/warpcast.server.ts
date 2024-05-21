@@ -261,29 +261,6 @@ export async function grantRole({ channel, cast, action }: { channel: string; ca
   });
 }
 
-export async function ban({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
-  const isCohostCheck = await isCohost({ fid: cast.author.fid, channel });
-
-  if (isCohostCheck) {
-    console.log(`user ${cast.author.fid} is cohost of ${channel}, not banning`);
-    return Promise.resolve({} as AxiosResponse);
-  }
-
-  const channelKey = channel.toLowerCase();
-  const fid = cast.author.fid;
-  return http.put(
-    `https://client.warpcast.com/v1/user-channel-ban`,
-    {
-      channelKey,
-      fid,
-      banned: true,
-    },
-    {
-      headers: headers(),
-    }
-  );
-}
-
 export async function warnAndHide({
   channel,
   cast,

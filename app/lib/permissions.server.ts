@@ -14,7 +14,7 @@ export const defaultPerms = [
   {
     id: `automod:*`,
     name: "Automod Admin",
-    description: "Complete access automod and ability to configure all settings.",
+    description: "Complete access to automod and ability to configure all settings.",
   },
 ];
 
@@ -31,16 +31,6 @@ export const permissionDefs = !actionDefinitions
         id: `action:hideQuietly`,
         name: actionDefinitions["hideQuietly"].friendlyName,
         description: actionDefinitions["hideQuietly"].description,
-      },
-      {
-        id: `action:warnAndHide`,
-        name: actionDefinitions["warnAndHide"].friendlyName,
-        description: actionDefinitions["warnAndHide"].description,
-      },
-      {
-        id: `action:mute`,
-        name: actionDefinitions["mute"].friendlyName,
-        description: actionDefinitions["mute"].description,
       },
       {
         id: `action:cooldown`,

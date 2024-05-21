@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChannelRoot() {
-  const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
+  const { channel, isNewChannel } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
 
   return (

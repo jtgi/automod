@@ -4,19 +4,9 @@ import { actionDefinitions } from "./validations.server";
 
 const env = getSharedEnv();
 
+export const deprecatedActions = ["mute", "warnAndHide"];
+
 export const actions = [
-  {
-    action: {
-      type: "post",
-    },
-    description: "Hide all messages from a user indefinitely",
-    automodAction: "mute",
-    name: "Mute",
-    icon: "mute",
-    postUrl: `${env.hostUrl}/api/actions/mute`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/mute.png`,
-  },
   {
     action: {
       type: "post",
@@ -66,18 +56,6 @@ export const actions = [
     image: `${env.hostUrl}/actions/ban.png`,
   },
   {
-    automodAction: "warnAndHide",
-    action: {
-      type: "post",
-    },
-    name: actionDefinitions["warnAndHide"].friendlyName,
-    description: actionDefinitions["warnAndHide"].description,
-    icon: "megaphone",
-    postUrl: `${env.hostUrl}/api/actions/warnAndHide`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/warnAndHide.png`,
-  },
-  {
     automodAction: "downvote",
     action: {
       type: "post",
@@ -99,6 +77,6 @@ export const actions = [
     icon: "thumbsup",
     postUrl: `${env.hostUrl}/api/actions/like`,
     aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/boost.png`,
+    image: `${env.hostUrl}/actions/curate.png`,
   },
 ] as const satisfies Array<CastAction>;

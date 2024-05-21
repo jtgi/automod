@@ -8,7 +8,7 @@ import { canUserExecuteAction, formatZodError, getSharedEnv, parseMessage } from
 import { actionFunctions, actionTypes } from "~/lib/validations.server";
 import { isRuleTargetApplicable, logModerationAction } from "./api.webhooks.neynar";
 import { getChannelHosts } from "~/lib/warpcast.server";
-import { actions } from "~/lib/cast-actions.server";
+import { actions, deprecatedActions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
 import { castQueue } from "~/lib/bullish.server";
 
@@ -212,7 +212,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const type = params.action;
+  const type = params.action as string;
   const env = getSharedEnv();
 
   let actionDef: CastAction | undefined;
@@ -244,6 +244,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!actionDef) {
+    if (deprecatedActions.includes(type)) {
+      return json(
+        {
+          message: `${type} is no longer supported.`,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     return json(
       {
         message: "Action not found",

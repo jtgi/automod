@@ -8,8 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
-import { getUser, neynar } from "~/lib/neynar.server";
-import { requireUser, requireUserOwnsChannel, requireUserIsCohost } from "~/lib/utils.server";
+import { getUser } from "~/lib/neynar.server";
+import { requireUser, requireUserOwnsChannel } from "~/lib/utils.server";
 import { getChannelHosts } from "~/lib/warpcast.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -109,7 +109,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { user, channel, channelHosts, automodCohosts } = useTypedLoaderData<typeof loader>();
+  const { user, channelHosts, automodCohosts } = useTypedLoaderData<typeof loader>();
 
   const allCohosts = [
     ...automodCohosts.map((h) => ({

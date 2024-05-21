@@ -7,7 +7,6 @@ import RE2 from "re2";
 import { z } from "zod";
 import {
   addToBypass,
-  ban,
   cooldown,
   downvote,
   grantRole,
@@ -34,8 +33,7 @@ import { erc1155Abi, hypersubAbi721 } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
-import { Cast, CastId, EmbedCastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import { isRuleTargetApplicable } from "~/routes/api.webhooks.neynar";
+import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -610,15 +608,15 @@ export const actionDefinitions = {
     friendlyName: "Downvote",
     hidden: true,
     castScope: "all",
-    description: "Automatically hide casts after a certain number of downvotes.",
+    description:
+      "Increase the downvote count. Configure a rule to trigger after a certain threshold of downvotes has been reached.",
     args: {},
   },
   like: {
-    friendlyName: "Boost",
+    friendlyName: "Curate",
     hidden: true,
     castScope: "root",
-    description:
-      "Boost the cast, increasing the chance it gets into your channel's trending feed. For root casts only.",
+    description: "Curate the cast into the Main feed. For root casts only.",
     args: {},
   },
   warnAndHide: {
@@ -653,7 +651,7 @@ export const actionDefinitions = {
     friendlyName: "Cooldown",
     castScope: "all",
     hidden: false,
-    description: "New casts from this user will be automatically hidden for the duration specified.",
+    description: "Casts from this user will not be curated into Main for the duration specified.",
     args: {
       duration: {
         type: "number",
@@ -951,6 +949,27 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
 
 export async function like(props: { cast: Cast }) {
   await neynar.publishReactionToCast(process.env.NEYNAR_SIGNER_UUID!, "like", props.cast.hash);
+}
+
+export async function ban({ channel, cast }: { channel: string; cast: Cast; action: Action }) {
+  // indefinite cooldown
+  return db.cooldown.upsert({
+    where: {
+      affectedUserId_channelId: {
+        affectedUserId: String(cast.author.fid),
+        channelId: channel,
+      },
+    },
+    update: {
+      active: true,
+      expiresAt: null,
+    },
+    create: {
+      affectedUserId: String(cast.author.fid),
+      channelId: channel,
+      expiresAt: null,
+    },
+  });
 }
 
 // Rule: contains text, option to ignore case

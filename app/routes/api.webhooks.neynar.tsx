@@ -8,7 +8,7 @@ import { neynar } from "~/lib/neynar.server";
 import { requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionDefinitions, actionFunctions, ruleFunctions } from "~/lib/validations.server";
-import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
+import { getChannelHosts, isCohost } from "~/lib/warpcast.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
@@ -137,7 +137,7 @@ export async function validateCast({
           },
         },
         {
-          // if null then its a soft-ban
+          // if null then its a ban
           expiresAt: null,
         },
       ],
@@ -146,11 +146,8 @@ export async function validateCast({
 
   if (cooldown) {
     if (!simulation) {
-      await hideQuietly({
-        channel: moderatedChannel.id,
-        cast,
-        action: { type: "hideQuietly" },
-      });
+      // no work to do
+      return logs;
     }
 
     if (cooldown.expiresAt) {
@@ -159,16 +156,6 @@ export async function validateCast({
           moderatedChannel.id,
           "hideQuietly",
           `User is in cooldown until ${cooldown.expiresAt.toISOString()}`,
-          cast,
-          simulation
-        )
-      );
-    } else {
-      logs.push(
-        await logModerationAction(
-          moderatedChannel.id,
-          "hideQuietly",
-          `User is currently muted`,
           cast,
           simulation
         )

@@ -3,7 +3,6 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
-import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import {
   requireUser,

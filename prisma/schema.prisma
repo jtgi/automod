@@ -108,6 +108,7 @@ model Role {
   channelId      String
   channel        ModeratedChannel @relation(fields: [channelId], references: [id])
   isEveryoneRole Boolean          @default(false)
+  isCohostRole   Boolean          @default(false)
   permissions    String
   delegates      Delegate[]
 }
