@@ -259,15 +259,35 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userDoesNotFollow: {
     friendlyName: "User Does Not Follow",
     description: "Check if the user does not follow a certain account",
+    invertedDescription: "Trigger this rule when users *do* follow the account",
     hidden: false,
-    invertable: false,
+    invertable: true,
+    args: {
+      username: {
+        type: "string",
+        required: true,
+        friendlyName: "Username",
+        placeholder: "e.g. jtgi",
+        pattern: "^[a-zA-Z0-9_\\.]+$",
+        description: "Example: If you enter jtgi, it will check that the cast author follows jtgi.",
+      },
+    },
+  },
+
+  userIsNotFollowedBy: {
+    friendlyName: "User Is Not Followed By",
+    description: "Check if the user is not followed by a certain account",
+    invertedDescription: "Trigger this rule when user is followed by the account",
+    hidden: false,
+    invertable: true,
     args: {
       username: {
         type: "string",
         required: true,
         friendlyName: "Username",
         pattern: "^[a-zA-Z0-9_\\.]+$",
-        description: "Drop the @ (it's cooler).",
+        placeholder: "e.g. jtgi",
+        description: "Example: If you enter jtgi, it will check that jtgi follows the cast author.",
       },
     },
   },
@@ -672,6 +692,7 @@ export const ruleNames = [
   "userDisplayNameContainsText",
   "userFollowerCount",
   "userDoesNotFollow",
+  "userIsNotFollowedBy",
   "userDoesNotHoldPowerBadge",
   "userIsNotActive",
   "userFidInRange",
@@ -897,6 +918,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   downvote: downvoteRule,
   userProfileContainsText: userProfileContainsText,
   userDoesNotFollow: userDoesNotFollow,
+  userIsNotFollowedBy: userIsNotFollowedBy,
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
@@ -1277,6 +1299,29 @@ export function userFollowerCount(props: CheckFunctionArgs) {
   }
 }
 
+export async function userIsNotFollowedBy(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { username } = rule.args;
+
+  const user = await getSetCache({
+    key: `followedby:${username}:${cast.author.fid}`,
+    ttlSeconds: 15,
+    get: () => neynar.lookupUserByUsername(username, cast.author.fid),
+  });
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`);
+  }
+
+  const isFollowedBy = user.result.user.viewerContext?.followedBy;
+
+  if (!isFollowedBy && !rule.invert) {
+    return `@${cast.author.username} is not followed by @${username}`;
+  } else if (isFollowedBy && rule.invert) {
+    return `@${cast.author.username} is followed by @${username}`;
+  }
+}
+
 export async function userDoesNotFollow(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { username } = rule.args;
@@ -1293,8 +1338,10 @@ export async function userDoesNotFollow(args: CheckFunctionArgs) {
 
   const isFollowing = user.result.user.viewerContext?.following;
 
-  if (!isFollowing) {
+  if (!isFollowing && !rule.invert) {
     return `User does not follow @${username}`;
+  } else if (isFollowing && rule.invert) {
+    return `User follows @${username}`;
   }
 }
 
