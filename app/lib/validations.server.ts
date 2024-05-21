@@ -259,15 +259,35 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userDoesNotFollow: {
     friendlyName: "User Does Not Follow",
     description: "Check if the user does not follow a certain account",
+    invertedDescription: "Trigger this rule when users *do* follow the account",
     hidden: false,
-    invertable: false,
+    invertable: true,
+    args: {
+      username: {
+        type: "string",
+        required: true,
+        friendlyName: "Username",
+        placeholder: "e.g. jtgi",
+        pattern: "^[a-zA-Z0-9_\\.]+$",
+        description: "Example: If you enter jtgi, it will check that the cast author follows jtgi.",
+      },
+    },
+  },
+
+  userIsNotFollowedBy: {
+    friendlyName: "User Is Not Followed By",
+    description: "Check if the user is not followed by a certain account",
+    invertedDescription: "Trigger this rule when user is followed by the account",
+    hidden: false,
+    invertable: true,
     args: {
       username: {
         type: "string",
         required: true,
         friendlyName: "Username",
         pattern: "^[a-zA-Z0-9_\\.]+$",
-        description: "Drop the @ (it's cooler).",
+        placeholder: "e.g. jtgi",
+        description: "Example: If you enter jtgi, it will check that jtgi follows the cast author.",
       },
     },
   },
@@ -674,6 +694,7 @@ export const ruleNames = [
   "userDisplayNameContainsText",
   "userFollowerCount",
   "userDoesNotFollow",
+  "userIsNotFollowedBy",
   "userDoesNotHoldPowerBadge",
   "userIsNotActive",
   "userFidInRange",
@@ -899,6 +920,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   downvote: downvoteRule,
   userProfileContainsText: userProfileContainsText,
   userDoesNotFollow: userDoesNotFollow,
+  userIsNotFollowedBy: userIsNotFollowedBy,
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
@@ -1033,7 +1055,11 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   if (domain) {
     const foundDomain = cast.embeds.filter((embed): embed is { url: string } => {
       if ("url" in embed) {
-        const url = new URL(embed.url);
+        const url = tryParseUrl(embed.url);
+        if (!url) {
+          return false;
+        }
+
         return url.hostname.toLowerCase() === domain.toLowerCase();
       } else {
         return false;
@@ -1073,7 +1099,11 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   // ruled out. its also free and fast.
   const foundImages = cast.embeds.filter((embed): embed is { url: string } => {
     if ("url" in embed) {
-      const url = new URL(embed.url);
+      const url = tryParseUrl(embed.url);
+      if (!url) {
+        return false;
+      }
+
       const mime = mimeType.lookup(embed.url);
       return (mime && mime.startsWith("image")) || knownImageCdnHostnames.includes(url.hostname);
     } else {
@@ -1279,6 +1309,43 @@ export function userFollowerCount(props: CheckFunctionArgs) {
   }
 }
 
+export async function userIsNotFollowedBy(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { username } = rule.args;
+
+  const user = await getSetCache({
+    key: `followedby:${username}:${cast.author.fid}`,
+    ttlSeconds: 15,
+    get: () => neynar.lookupUserByUsername(username, cast.author.fid),
+  });
+
+  if (!user) {
+    throw new Error(`User not found: ${username}`);
+  }
+
+  // TODO: this should be exposed an option or
+  // fixed in a refactor, but for now, because
+  // the check is phrased in the negative, if
+  // its not inverted, assume we're going to do
+  // some bad action, if it is inverted, assume
+  // its a positive action (like boost).
+  if (cast.author.username === username) {
+    if (rule.invert) {
+      return `Cast author and username are the same. Assuming followed by.`;
+    } else {
+      return;
+    }
+  }
+
+  const isFollowedBy = user.result.user.viewerContext?.followedBy;
+
+  if (!isFollowedBy && !rule.invert) {
+    return `@${cast.author.username} is not followed by @${username}`;
+  } else if (isFollowedBy && rule.invert) {
+    return `@${cast.author.username} is followed by @${username}`;
+  }
+}
+
 export async function userDoesNotFollow(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { username } = rule.args;
@@ -1293,10 +1360,26 @@ export async function userDoesNotFollow(args: CheckFunctionArgs) {
     throw new Error(`User not found: ${username}`);
   }
 
+  // TODO: this should be exposed an option or
+  // fixed in a refactor, but for now, because
+  // the check is phrased in the negative, if
+  // its not inverted, assume we're going to do
+  // some bad action, if it is inverted, assume
+  // its a positive action (like boost).
+  if (cast.author.username === username) {
+    if (rule.invert) {
+      return `User and cast author are the same. Assuming following.`;
+    } else {
+      return;
+    }
+  }
+
   const isFollowing = user.result.user.viewerContext?.following;
 
-  if (!isFollowing) {
+  if (!isFollowing && !rule.invert) {
     return `User does not follow @${username}`;
+  } else if (isFollowing && rule.invert) {
+    return `User follows @${username}`;
   }
 }
 
@@ -1564,5 +1647,13 @@ export function userFidInRange(args: CheckFunctionArgs) {
     if (cast.author.fid > maxFid) {
       return `FID ${cast.author.fid} is greater than ${maxFid}`;
     }
+  }
+}
+
+function tryParseUrl(url: string) {
+  try {
+    return new URL(url);
+  } catch (e) {
+    return undefined;
   }
 }
