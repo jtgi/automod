@@ -1313,6 +1313,20 @@ export async function userIsNotFollowedBy(args: CheckFunctionArgs) {
     throw new Error(`User not found: ${username}`);
   }
 
+  // TODO: this should be exposed an option or
+  // fixed in a refactor, but for now, because
+  // the check is phrased in the negative, if
+  // its not inverted, assume we're going to do
+  // some bad action, if it is inverted, assume
+  // its a positive action (like boost).
+  if (cast.author.username === username) {
+    if (rule.invert) {
+      return `Cast author and username are the same. Assuming followed by.`;
+    } else {
+      return;
+    }
+  }
+
   const isFollowedBy = user.result.user.viewerContext?.followedBy;
 
   if (!isFollowedBy && !rule.invert) {
@@ -1334,6 +1348,20 @@ export async function userDoesNotFollow(args: CheckFunctionArgs) {
 
   if (!user) {
     throw new Error(`User not found: ${username}`);
+  }
+
+  // TODO: this should be exposed an option or
+  // fixed in a refactor, but for now, because
+  // the check is phrased in the negative, if
+  // its not inverted, assume we're going to do
+  // some bad action, if it is inverted, assume
+  // its a positive action (like boost).
+  if (cast.author.username === username) {
+    if (rule.invert) {
+      return `User and cast author are the same. Assuming following.`;
+    } else {
+      return;
+    }
   }
 
   const isFollowing = user.result.user.viewerContext?.following;
