@@ -1053,7 +1053,11 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   if (domain) {
     const foundDomain = cast.embeds.filter((embed): embed is { url: string } => {
       if ("url" in embed) {
-        const url = new URL(embed.url);
+        const url = tryParseUrl(embed.url);
+        if (!url) {
+          return false;
+        }
+
         return url.hostname.toLowerCase() === domain.toLowerCase();
       } else {
         return false;
@@ -1093,7 +1097,11 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   // ruled out. its also free and fast.
   const foundImages = cast.embeds.filter((embed): embed is { url: string } => {
     if ("url" in embed) {
-      const url = new URL(embed.url);
+      const url = tryParseUrl(embed.url);
+      if (!url) {
+        return false;
+      }
+
       const mime = mimeType.lookup(embed.url);
       return (mime && mime.startsWith("image")) || knownImageCdnHostnames.includes(url.hostname);
     } else {
@@ -1637,5 +1645,13 @@ export function userFidInRange(args: CheckFunctionArgs) {
     if (cast.author.fid > maxFid) {
       return `FID ${cast.author.fid} is greater than ${maxFid}`;
     }
+  }
+}
+
+function tryParseUrl(url: string) {
+  try {
+    return new URL(url);
+  } catch (e) {
+    return undefined;
   }
 }
