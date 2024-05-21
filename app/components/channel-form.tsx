@@ -147,10 +147,8 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Rule Sets</p>
-              <p className="text-gray-500 text-sm">
-                Configure rules and actions to take whenever a cast comes in to your channel.
-              </p>
+              <p className="font-semibold">Rules</p>
+              <p className="text-gray-500 text-sm">Configure rules and actions to manage your Main feed.</p>
             </div>
 
             <div>
@@ -795,70 +793,6 @@ function RuleSetEditor(props: {
               >
                 <RadioGroupItem value="or" id={`ruleSets.${ruleSetIndex}.logicType.or`} />
               </FieldLabel>
-            </RadioGroup>
-          )}
-        />
-      </div>
-
-      <div className="py-12">
-        <hr />
-      </div>
-
-      <div className="space-y-4 pb-8">
-        <p className="font-medium">What casts should be checked?</p>
-        <Controller
-          name={`ruleSets.${ruleSetIndex}.target`}
-          control={control}
-          render={(controllerProps) => (
-            <RadioGroup
-              name={`ruleSets.${ruleSetIndex}.target`}
-              onValueChange={controllerProps.field.onChange}
-              defaultValue={controllerProps.field.value}
-              className="space-y-2"
-            >
-              <div className="flex gap-2 items-start">
-                <RadioGroupItem value="all" id={`ruleSets.${ruleSetIndex}.target.all`} className="mt-[2px]" />
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor={`ruleSets.${ruleSetIndex}.target.all`}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    All
-                  </label>
-                </div>
-              </div>
-              <div className="flex gap-2 items-start">
-                <RadioGroupItem
-                  value="root"
-                  id={`ruleSets.${ruleSetIndex}.target.root`}
-                  className="mt-[2px]"
-                />
-                <div className="flex flex-col ">
-                  <label
-                    htmlFor={`ruleSets.${ruleSetIndex}.target.root`}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Root Level
-                  </label>
-                  <p className="text-xs text-gray-500">Only casts at the root level of the channel.</p>
-                </div>
-              </div>
-              <div className="flex gap-2 items-start">
-                <RadioGroupItem
-                  className="mt-[2px]"
-                  value="reply"
-                  id={`ruleSets.${ruleSetIndex}.target.replies`}
-                />
-                <div className="flex flex-col">
-                  <label
-                    htmlFor={`ruleSets.${ruleSetIndex}.target.replies`}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Replies
-                  </label>
-                  <p className="text-xs text-gray-500">Only replies to other casts.</p>
-                </div>
-              </div>
             </RadioGroup>
           )}
         />

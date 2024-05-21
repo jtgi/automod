@@ -163,9 +163,16 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
       id: props.channelId,
       OR: [
         {
-          comods: {
+          roles: {
             some: {
-              fid: props.userId,
+              permissions: {
+                contains: `automod:*`,
+              },
+              delegates: {
+                some: {
+                  fid: props.userId,
+                },
+              },
             },
           },
         },
@@ -182,7 +189,6 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
           delegates: true,
         },
       },
-      comods: true,
     },
   });
 

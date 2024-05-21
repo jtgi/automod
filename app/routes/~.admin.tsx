@@ -78,7 +78,6 @@ export async function action({ request }: ActionFunctionArgs) {
             delegates: true,
           },
         },
-        comods: true,
       },
     });
 

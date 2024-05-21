@@ -106,6 +106,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "happy-dom": "^13.3.8",
     "prisma": "^5.8.1",
+    "sqlite3": "^5.1.7",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3",
     "vite-tsconfig-paths": "^4.2.3",

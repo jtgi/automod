@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { Link } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { PlanType, planTypes, userPlans } from "~/lib/auth.server";
+import { PlanType, userPlans } from "~/lib/auth.server";
 import { Alert } from "~/components/ui/alert";
 import {
   Dialog,
@@ -18,7 +18,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { BatteryWarningIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -27,9 +26,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     where: {
       OR: [
         {
-          comods: {
+          roles: {
             some: {
-              fid: user.id,
+              permissions: {
+                contains: `automod:*`,
+              },
+              delegates: {
+                some: {
+                  fid: user.id,
+                },
+              },
             },
           },
         },
@@ -40,7 +46,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     include: {
       ruleSets: true,
-      comods: true,
     },
   });
 

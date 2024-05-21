@@ -155,7 +155,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesPattern: {
-    friendlyName: "Text Matches Pattern (Regex)",
+    friendlyName: "Matches Pattern (Regex)",
     description: "Check if the text matches a specific pattern",
     hidden: false,
     invertable: true,
@@ -174,7 +174,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesLanguage: {
-    friendlyName: "Text Matches Language",
+    friendlyName: "Matches Language",
     description: "Check if the text matches a specific language",
     invertedDescription: "Check if the text is any language *but* the one specified.",
     hidden: false,
@@ -523,6 +523,7 @@ export type ActionDefinition = {
   /**
    * Hide the action from the customer facing UI
    * Example: "Bypass" is hidden because it's a special action.
+   * Note: this is prob an abstraction leak, but it's fine for now.
    */
   hidden?: boolean;
   /**
@@ -549,18 +550,19 @@ export type ActionDefinition = {
 };
 
 export const actionDefinitions = {
+  // deprecate
   mute: {
     friendlyName: "Mute",
-    hidden: false,
+    hidden: true,
     castScope: "all",
     description: "All this user's casts will be silently hidden from the channel until you unmute.",
     args: {},
   },
   hideQuietly: {
-    friendlyName: "Hide Quietly",
+    friendlyName: "Hide",
     hidden: false,
     castScope: "all",
-    description: "Hide the cast without notifying the user",
+    description: "Hide the cast from the Main feed",
     args: {},
   },
   addToBypass: {
@@ -578,10 +580,10 @@ export const actionDefinitions = {
     args: {},
   },
   ban: {
-    friendlyName: "Permanent Ban",
+    friendlyName: "Ban",
     hidden: false,
     castScope: "all",
-    description: "Permanently ban them. This cannot be undone at the moment.",
+    description: "Ban all future posts from appearing in the Main feed",
     args: {},
   },
   downvote: {
@@ -593,7 +595,7 @@ export const actionDefinitions = {
   },
   like: {
     friendlyName: "Boost",
-    hidden: false,
+    hidden: true,
     castScope: "root",
     description:
       "Boost the cast, increasing the chance it gets into your channel's trending feed. For root casts only.",
@@ -602,7 +604,7 @@ export const actionDefinitions = {
   warnAndHide: {
     friendlyName: "Warn and Hide",
     castScope: "all",
-    hidden: false,
+    hidden: true,
     description: "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },

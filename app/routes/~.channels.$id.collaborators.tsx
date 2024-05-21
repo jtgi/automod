@@ -8,12 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
-import {
-  requireUserIsChannelLead,
-  requireUser,
-  requireUserOwnsChannel,
-  requireUserIsCohost,
-} from "~/lib/utils.server";
+import { getUser, neynar } from "~/lib/neynar.server";
+import { requireUser, requireUserOwnsChannel, requireUserIsCohost } from "~/lib/utils.server";
 import { getChannelHosts } from "~/lib/warpcast.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -82,24 +78,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
       message: `Removed @${currentStatus.username} as a collaborator`,
     });
   } else {
-    const cohost = await requireUserIsCohost({
-      fid: +cohostId,
-      channelId: params.id,
-    });
+    const user = await getUser({ fid: cohostId });
 
     await db.comods.create({
       data: {
         channelId: channel.id,
         fid: cohostId,
-        username: cohost.username,
-        avatarUrl: cohost.pfp.url,
+        username: user.username,
+        avatarUrl: user.pfp_url,
       },
     });
+
+    // TODO: Send DM to user
 
     session.flash("message", {
       id: uuid(),
       type: "success",
-      message: `Added @${cohost.username} as a collaborator`,
+      message: `Added @${user.username} as a collaborator`,
     });
   }
 

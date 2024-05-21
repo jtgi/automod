@@ -144,8 +144,7 @@ export default function Screen() {
   return (
     <div className="space-y-4">
       <div>
-        <p className="font-medium">Actions</p>
-        <p className="text-sm">Choose what actions this role will be able to take.</p>
+        <p className="font-medium">Permissions</p>
       </div>
       <FormProvider {...methods}>
         <form method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>

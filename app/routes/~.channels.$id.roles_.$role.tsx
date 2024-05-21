@@ -54,7 +54,7 @@ export default function Screen() {
         </Link>
       </div>
       <p
-        className="font-semibold text-lg mb-4"
+        className="font-semibold text-xl mb-4"
         style={{
           fontFamily: "Kode Mono",
         }}

@@ -3,16 +3,25 @@ import { ActionType, actionDefinitions } from "./validations.server";
 export type Permission = {
   name: string;
   description: string;
-  id: `action:${ActionType}`;
+  id: string;
 };
 
 export function actionToPermission(action: ActionType): Permission["id"] {
   return `action:${action}`;
 }
 
+export const defaultPerms = [
+  {
+    id: `automod:*`,
+    name: "Automod Admin",
+    description: "Complete access automod and ability to configure all settings.",
+  },
+];
+
 export const permissionDefs = !actionDefinitions
-  ? []
+  ? [...defaultPerms]
   : ([
+      ...defaultPerms,
       {
         id: `action:ban`,
         name: actionDefinitions["ban"].friendlyName,

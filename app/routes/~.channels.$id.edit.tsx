@@ -116,7 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export default function FrameConfig() {
+export default function Screen() {
   const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   const patchedRuleSets = channel.ruleSets.map((ruleSet) => {

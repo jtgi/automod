@@ -55,6 +55,11 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ message: "Invalid channel name" }, { status: 400 });
   }
 
+  if (isRuleTargetApplicable("reply", webhookNotif.data)) {
+    console.log("Ignoring reply");
+    return json({ message: "Ignoring reply" });
+  }
+
   webhookQueue.add(
     "webhookQueue",
     {
@@ -294,6 +299,13 @@ export async function validateCast({
           )
         );
       }
+    } else {
+      const like = actionFunctions["like"];
+      await like({
+        channel: channel.id,
+        cast,
+        action: { type: "like" },
+      });
     }
   }
 
