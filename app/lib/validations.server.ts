@@ -34,8 +34,7 @@ import { erc1155Abi, hypersubAbi721 } from "./abis";
 import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
-import { Cast, CastId, EmbedCastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import { isRuleTargetApplicable } from "~/routes/api.webhooks.neynar";
+import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export type RuleDefinition = {
   friendlyName: string;
@@ -516,6 +515,23 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
+  userFidInList: {
+    friendlyName: "User FID is in List",
+    description: "Check if a FID is included on the list",
+    invertedDescription: "Check if a FID is not included in the list",
+    hidden: false,
+    invertable: true,
+    args: {
+      fids: {
+        type: "textarea",
+        friendlyName: "Farcaster User IDs",
+        required: true,
+        placeholder: "3179\n9887\n1220",
+        description: "A list of FIDs. One per line. You can find a user's FID on their profile page.",
+      },
+    },
+  },
+
   userFidInRange: {
     friendlyName: "User FID",
     description: "Check if the user's FID is within a range",
@@ -695,6 +711,7 @@ export const ruleNames = [
   "userIsNotFollowedBy",
   "userDoesNotHoldPowerBadge",
   "userIsNotActive",
+  "userFidInList",
   "userFidInRange",
   "userIsCohost",
   "requireActiveHypersub",
@@ -766,6 +783,30 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
     },
     {
       message: "Couldn't find that cast. Double check your identifiers.",
+    }
+  )
+  .refine(
+    async (data) => {
+      if (data.name === "userFidInList") {
+        const ids = data.args.fids.split(/\r?\n/);
+        if (!ids.length) {
+          return false;
+        }
+
+        for (const id of ids) {
+          const asNumber = parseInt(id);
+          if (isNaN(asNumber)) {
+            return false;
+          }
+        }
+
+        return true;
+      } else {
+        return true;
+      }
+    },
+    {
+      message: "Those FIDs look off. At least one required and they must be valid numbers.",
     }
   )
   .refine(
@@ -924,6 +965,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userFollowerCount: userFollowerCount,
   userIsNotActive: userIsNotActive,
   userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
+  userFidInList: userFidInList,
   userFidInRange: userFidInRange,
   requireActiveHypersub: requireActiveHypersub,
   requiresErc721: requiresErc721,
@@ -1011,6 +1053,18 @@ export async function castInThread(args: CheckFunctionArgs) {
     return `Cast found in thread: ${formatHash(cast.thread_hash)}`;
   } else if (rule.invert && !hashes.includes(cast.hash)) {
     return `Cast was not inside: ${formatHash(cast.hash)}`;
+  }
+}
+
+export async function userFidInList(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { fids } = rule.args;
+
+  const fidsArr = fids.split(/\r?\n/);
+  if (!rule.invert && fidsArr.includes(String(cast.author.fid))) {
+    return `FID #${cast.author.fid} is in the blocked FID list`;
+  } else if (rule.invert && !fidsArr.includes(cast.hash)) {
+    return `FID #${cast.author.fid} was not in the allowed FID list`;
   }
 }
 
