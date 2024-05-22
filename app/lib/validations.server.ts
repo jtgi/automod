@@ -431,14 +431,6 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
-  userIsNotActive: {
-    friendlyName: "User is Not Active",
-    hidden: false,
-    invertable: true,
-    description: "Require the user is active",
-    args: {},
-  },
-
   userDoesNotHoldPowerBadge: {
     friendlyName: "User Does Not Hold Power Badge",
     description: "Check if the user does not hold a power badge",
@@ -710,7 +702,6 @@ export const ruleNames = [
   "userDoesNotFollow",
   "userIsNotFollowedBy",
   "userDoesNotHoldPowerBadge",
-  "userIsNotActive",
   "userFidInList",
   "userFidInRange",
   "userIsCohost",
@@ -963,7 +954,6 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userIsCohost: userIsCohost,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
-  userIsNotActive: userIsNotActive,
   userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
   userFidInList: userFidInList,
   userFidInRange: userFidInRange,
@@ -1447,16 +1437,6 @@ export async function userIsCohost(args: CheckFunctionArgs) {
     return `User is not a cohost`;
   } else if (!rule.invert && isUserCohost) {
     return `User is a cohost`;
-  }
-}
-
-// Rule: user active_status must be active
-export function userIsNotActive(args: CheckFunctionArgs) {
-  const { cast, rule } = args;
-  if (!rule.invert && cast.author.active_status !== "active") {
-    return `User is not active`;
-  } else if (rule.invert && cast.author.active_status === "active") {
-    return `User is active`;
   }
 }
 

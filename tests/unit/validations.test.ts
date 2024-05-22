@@ -570,26 +570,6 @@ describe("userFollowerCount", () => {
   });
 });
 
-describe("userIsNotActive", () => {
-  it("should return undefined if user is active", () => {
-    const c = cast({ author: { active_status: "active" } as any });
-    const r = rule({});
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBeUndefined();
-  });
-
-  it('should invert the rule if "invert" is set', () => {
-    const c = cast({ author: { active_status: "active" } as any });
-    const r = rule({ invert: true });
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe("User is active");
-  });
-
-  it("should return a message if user is not active", () => {
-    const c = cast({ author: { active_status: "inactive" } as any });
-    const r = rule({});
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe("User is not active");
-  });
-});
-
 describe("userFidInRange", () => {
   it("should return message if FID is less than minimum", () => {
     const c = cast({ author: { fid: 500 } as any });
