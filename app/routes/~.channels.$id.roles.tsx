@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { MoreVerticalIcon } from "lucide-react";
+import { actionToInstallLink, grantRoleAction } from "~/lib/utils";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");

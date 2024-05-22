@@ -5,10 +5,10 @@ import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
-import { requireValidSignature } from "~/lib/utils.server";
+import { getModerators, requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionDefinitions, actionFunctions, ruleFunctions } from "~/lib/validations.server";
-import { getChannelHosts, isCohost } from "~/lib/warpcast.server";
+import { getWarpcastChannelHosts, isCohost } from "~/lib/warpcast.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
@@ -118,9 +118,9 @@ export async function validateCast({
   }
 
   if (moderatedChannel.excludeCohosts) {
-    const cohosts = await getChannelHosts({ channel: channel.id });
-    if (cohosts.result.hosts.find((c) => c.fid === cast.author.fid)) {
-      console.log(`[${channel.id}] @${cast.author.username} is a cohost. Doing nothing.`);
+    const mods = await getModerators({ channel: channel.id });
+    if (mods.find((c) => c.fid === String(cast.author.fid))) {
+      console.log(`[${channel.id}] @${cast.author.username} is a moderator. Doing nothing.`);
       return logs;
     }
   }
@@ -145,11 +145,6 @@ export async function validateCast({
   });
 
   if (cooldown) {
-    if (!simulation) {
-      // no work to do
-      return logs;
-    }
-
     if (cooldown.expiresAt) {
       logs.push(
         await logModerationAction(
@@ -160,6 +155,8 @@ export async function validateCast({
           simulation
         )
       );
+    } else {
+      // they're banned, logging is noise so skip
     }
 
     return logs;

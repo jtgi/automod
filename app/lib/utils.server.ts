@@ -12,7 +12,7 @@ import { redirect, typedjson } from "remix-typedjson";
 import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
-import { getChannelHosts } from "./warpcast.server";
+import { getWarpcastChannelHosts } from "./warpcast.server";
 import { erc20Abi, getAddress, getContract } from "viem";
 import { clientsByChainId } from "./viem.server";
 import { cache } from "./cache.server";
@@ -94,19 +94,6 @@ export async function requireUserOwnsChannel(props: { userId: string; channelId:
   }
 
   return channel;
-}
-
-export async function requireUserIsChannelLead(props: { userId: string; channelId: string }) {
-  const result = await isChannelLead({
-    userId: props.userId,
-    channelId: props.channelId,
-  });
-
-  if (!result.isLead || !result.channel) {
-    throw redirect(`/`, { status: 403 });
-  }
-
-  return result.channel;
 }
 
 /**
@@ -205,63 +192,17 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
 }
 
 export async function requireUserIsCohost(props: { fid: number; channelId: string }) {
-  const results = await getChannelHosts({
+  const hosts = await getWarpcastChannelHosts({
     channel: props.channelId,
   });
 
-  const cohost = results.result.hosts.find((h) => h.fid === props.fid);
+  const cohost = hosts.find((h) => h.fid === String(props.fid));
 
   if (!cohost) {
     throw redirect(`/`, { status: 403 });
   }
 
   return cohost;
-}
-
-export async function isChannelLead(props: { userId: string; channelId: string }) {
-  const channel = await getChannel({ name: props.channelId }).catch(() => {
-    return null;
-  });
-
-  if (!channel) {
-    return {
-      lead: null,
-      isLead: false,
-      channel: null,
-    };
-  }
-
-  if (!channel.lead) {
-    const cohosts = await getChannelHosts({ channel: props.channelId });
-
-    if (cohosts.result.hosts.length === 0) {
-      return {
-        isLead: false,
-        channel,
-      };
-    }
-
-    const firstCohost = cohosts.result.hosts[0];
-    return {
-      lead: {
-        fid: firstCohost.fid,
-        username: firstCohost.username,
-        avatarUrl: firstCohost.pfp.url,
-      },
-      isLead: firstCohost.fid === +props.userId,
-      channel,
-    };
-  }
-
-  return {
-    lead: {
-      fid: channel.lead.fid,
-      username: channel.lead.username,
-      avatarUrl: channel.lead.pfp_url,
-    },
-    isLead: channel.lead?.fid === +props.userId,
-    channel,
-  };
 }
 
 export async function generateSystemFrame(message: string) {
@@ -600,4 +541,17 @@ export function frameResponse(params: FrameResponseArgs) {
       "Cache-Control": `no-store, max-age=${params.cacheTtlSeconds ?? 60 * 15}`,
     },
   });
+}
+
+export async function getModerators(props: { channel: string }) {
+  const channelDelegates = await db.delegate.findMany({
+    where: {
+      channelId: props.channel,
+    },
+    include: {
+      role: true,
+    },
+  });
+
+  return channelDelegates.filter((d) => d.role.isCohostRole);
 }

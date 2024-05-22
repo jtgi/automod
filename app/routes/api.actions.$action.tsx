@@ -4,10 +4,16 @@ import { z } from "zod";
 import { db } from "~/lib/db.server";
 import { getChannel, neynar } from "~/lib/neynar.server";
 import { CastAction, MessageResponse } from "~/lib/types";
-import { canUserExecuteAction, formatZodError, getSharedEnv, parseMessage } from "~/lib/utils.server";
+import {
+  canUserExecuteAction,
+  formatZodError,
+  getModerators,
+  getSharedEnv,
+  parseMessage,
+} from "~/lib/utils.server";
 import { actionFunctions, actionTypes } from "~/lib/validations.server";
 import { isRuleTargetApplicable, logModerationAction } from "./api.webhooks.neynar";
-import { getChannelHosts } from "~/lib/warpcast.server";
+import { getWarpcastChannelHosts } from "~/lib/warpcast.server";
 import { actions, deprecatedActions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
 import { castQueue } from "~/lib/bullish.server";
@@ -120,12 +126,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const [cast, cohosts] = await Promise.all([
+    const [cast, moderators] = await Promise.all([
       neynar.fetchBulkCasts([message.action.cast.hash]),
-      getChannelHosts({ channel: moderatedChannel.id }),
+      getModerators({ channel: moderatedChannel.id }),
     ]);
 
-    if (cohosts.result.hosts.some((h) => h.fid === cast.result.casts[0].author.fid)) {
+    if (moderators.some((h) => h.fid === String(cast.result.casts[0].author.fid))) {
       return json(
         {
           message: "Can't apply to host",
