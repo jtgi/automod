@@ -448,16 +448,16 @@ export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, bu
     return false;
   }
 
-  const usage = await db.usage.findFirst({
+  const usages = await db.usage.findMany({
     where: {
       userId: moderatedChannel.userId,
       monthYear: new Date().toISOString().substring(0, 7),
     },
   });
 
-  console.log(`${moderatedChannel.id} usage`, { usage: usage?.castsProcessed, maxCasts: plan.maxCasts });
+  console.log(`${moderatedChannel.id} usage`, { totalCasts, maxCasts: plan.maxCasts });
 
-  if (!usage) {
+  if (!usages.length) {
     console.log(
       `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no usage`,
       moderatedChannel.user.plan
@@ -465,8 +465,10 @@ export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, bu
     return false;
   }
 
+  const totalCasts = usages.reduce((acc, u) => acc + u.castsProcessed, 0);
+
   const maxCastsWithBuffer = plan.maxCasts * (1 + buffer);
-  if (usage.castsProcessed >= maxCastsWithBuffer) {
+  if (totalCasts >= maxCastsWithBuffer) {
     return true;
   }
 
