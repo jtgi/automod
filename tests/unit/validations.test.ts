@@ -17,7 +17,6 @@ import {
   userFollowerCount,
   userProfileContainsText,
   castLength,
-  userIsNotActive,
 } from "~/lib/validations.server";
 import RE2 from "re2";
 import { NeynarCastWithFrame, WebhookCast } from "~/lib/types";
@@ -567,26 +566,6 @@ describe("userFollowerCount", () => {
     const c = cast({ author: { follower_count: 200 } as any });
     const r = rule({ args: { min: 100, max: 300 } });
     expect(userFollowerCount({ channel: m, cast: c, rule: r })).toBeUndefined();
-  });
-});
-
-describe("userIsNotActive", () => {
-  it("should return undefined if user is active", () => {
-    const c = cast({ author: { active_status: "active" } as any });
-    const r = rule({});
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBeUndefined();
-  });
-
-  it('should invert the rule if "invert" is set', () => {
-    const c = cast({ author: { active_status: "active" } as any });
-    const r = rule({ invert: true });
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe("User is active");
-  });
-
-  it("should return a message if user is not active", () => {
-    const c = cast({ author: { active_status: "inactive" } as any });
-    const r = rule({});
-    expect(userIsNotActive({ channel: m, cast: c, rule: r })).toBe("User is not active");
   });
 });
 

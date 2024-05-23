@@ -437,22 +437,32 @@ export function isRuleTargetApplicable(target: string, cast: Cast) {
 export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
   const plan = userPlans[moderatedChannel.user.plan as PlanType];
   if (!plan) {
+    console.log(
+      `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no plan`,
+      moderatedChannel.user.plan
+    );
     return false;
   }
 
-  const usage = await db.usage.findFirst({
+  const usages = await db.usage.findMany({
     where: {
       userId: moderatedChannel.userId,
       monthYear: new Date().toISOString().substring(0, 7),
     },
   });
 
-  if (!usage) {
+  if (!usages.length) {
+    console.log(
+      `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no usage`,
+      moderatedChannel.user.plan
+    );
     return false;
   }
 
+  const totalCasts = usages.reduce((acc, u) => acc + u.castsProcessed, 0);
+
   const maxCastsWithBuffer = plan.maxCasts * (1 + buffer);
-  if (usage.castsProcessed >= maxCastsWithBuffer) {
+  if (totalCasts >= maxCastsWithBuffer) {
     return true;
   }
 
