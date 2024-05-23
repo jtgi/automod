@@ -4,11 +4,16 @@ import { z } from "zod";
 import { db } from "~/lib/db.server";
 import { getChannel, neynar } from "~/lib/neynar.server";
 import { CastAction, MessageResponse } from "~/lib/types";
-import { canUserExecuteAction, formatZodError, getSharedEnv, parseMessage } from "~/lib/utils.server";
+import {
+  canUserExecuteAction,
+  formatZodError,
+  getModerators,
+  getSharedEnv,
+  parseMessage,
+} from "~/lib/utils.server";
 import { actionFunctions, actionTypes } from "~/lib/validations.server";
 import { isRuleTargetApplicable, logModerationAction } from "./api.webhooks.neynar";
-import { getChannelHosts } from "~/lib/warpcast.server";
-import { actions } from "~/lib/cast-actions.server";
+import { actions, deprecatedActions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
 import { castQueue } from "~/lib/bullish.server";
 
@@ -73,6 +78,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (!isRuleTargetApplicable("root", message.action.cast as any)) {
         return json({ message: "Root casts only. This is a reply." }, { status: 400 });
       }
+    } else if (validation.data.action === "hideQuietly") {
+      if (!isRuleTargetApplicable("root", message.action.cast as any)) {
+        return json({ message: "Root casts only. This is a reply." }, { status: 400 });
+      }
+
+      // Backwards compatibility: hideQuietly now does nothing
+      // but the intent is to hide the cast from the channel
+      validation.data.action = "unlike";
     }
 
     const userFid = message.action.interactor.fid;
@@ -89,7 +102,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
             delegates: true,
           },
         },
-        comods: true,
       },
     });
 
@@ -121,12 +133,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const [cast, cohosts] = await Promise.all([
+    const [cast, moderators] = await Promise.all([
       neynar.fetchBulkCasts([message.action.cast.hash]),
-      getChannelHosts({ channel: moderatedChannel.id }),
+      getModerators({ channel: moderatedChannel.id }),
     ]);
 
-    if (cohosts.result.hosts.some((h) => h.fid === cast.result.casts[0].author.fid)) {
+    if (moderators.some((h) => h.fid === String(cast.result.casts[0].author.fid))) {
       return json(
         {
           message: "Can't apply to host",
@@ -213,7 +225,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const type = params.action;
+  const type = params.action as string;
   const env = getSharedEnv();
 
   let actionDef: CastAction | undefined;
@@ -240,11 +252,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       channelId,
       hostUrl: env.hostUrl,
     });
+  } else if (type === "hideQuietly") {
+    // Reverse compatibility, hideQuietly is now unlike
+    // and want to preserve install actions
+    actionDef = actions.find((a) => a.automodAction === "unlike");
   } else {
     actionDef = actions.find((a) => a.automodAction === type);
   }
 
   if (!actionDef) {
+    if (deprecatedActions.includes(type)) {
+      return json(
+        {
+          message: `${type} is no longer supported.`,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     return json(
       {
         message: "Action not found",

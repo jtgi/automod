@@ -17,7 +17,6 @@ import {
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
-import { isCohost } from "~/lib/warpcast.server";
 import { ChannelForm } from "~/components/channel-form";
 import { v4 as uuid } from "uuid";
 
@@ -34,18 +33,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (process.env.NODE_ENV === "development") {
     console.log(JSON.stringify(data, null, 2));
-  }
-
-  const isHost = await isCohost({
-    fid: +user.id,
-    channel: data.id,
-  });
-
-  if (!isHost) {
-    return errorResponse({
-      request,
-      message: "Only cohosts can configure moderation.",
-    });
   }
 
   const ch = await ModeratedChannelSchema.safeParseAsync(data);
@@ -116,7 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
-export default function FrameConfig() {
+export default function Screen() {
   const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   const patchedRuleSets = channel.ruleSets.map((ruleSet) => {

@@ -7,12 +7,11 @@ import RE2 from "re2";
 import { z } from "zod";
 import {
   addToBypass,
-  ban,
   cooldown,
   downvote,
+  getWarpcastChannelOwner,
   grantRole,
   hideQuietly,
-  isCohost,
   mute,
   warnAndHide,
 } from "./warpcast.server";
@@ -154,7 +153,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesPattern: {
-    friendlyName: "Text Matches Pattern (Regex)",
+    friendlyName: "Matches Pattern (Regex)",
     description: "Check if the text matches a specific pattern",
     hidden: false,
     invertable: true,
@@ -173,7 +172,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesLanguage: {
-    friendlyName: "Text Matches Language",
+    friendlyName: "Matches Language",
     description: "Check if the text matches a specific language",
     invertedDescription: "Check if the text is any language *but* the one specified.",
     hidden: false,
@@ -441,8 +440,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsCohost: {
-    friendlyName: "User Is Cohost",
-    description: "Check if the user is a cohost",
+    friendlyName: "User Is Cohost or Owner",
+    description: "Check if the user is a cohost or owner of the channel",
     hidden: false,
     invertable: true,
     args: {},
@@ -551,6 +550,7 @@ export type ActionDefinition = {
   /**
    * Hide the action from the customer facing UI
    * Example: "Bypass" is hidden because it's a special action.
+   * Note: this is prob an abstraction leak, but it's fine for now.
    */
   hidden?: boolean;
   /**
@@ -577,18 +577,19 @@ export type ActionDefinition = {
 };
 
 export const actionDefinitions = {
+  // deprecate
   mute: {
     friendlyName: "Mute",
-    hidden: false,
+    hidden: true,
     castScope: "all",
     description: "All this user's casts will be silently hidden from the channel until you unmute.",
     args: {},
   },
   hideQuietly: {
-    friendlyName: "Hide Quietly",
+    friendlyName: "Hide",
     hidden: false,
     castScope: "all",
-    description: "Hide the cast without notifying the user",
+    description: "Hide the cast from the Main feed",
     args: {},
   },
   addToBypass: {
@@ -606,31 +607,38 @@ export const actionDefinitions = {
     args: {},
   },
   ban: {
-    friendlyName: "Permanent Ban",
+    friendlyName: "Ban",
     hidden: false,
     castScope: "all",
-    description: "Permanently ban them. This cannot be undone at the moment.",
+    description: "Ban all future posts from appearing in the Main feed",
     args: {},
   },
   downvote: {
     friendlyName: "Downvote",
     hidden: true,
     castScope: "all",
-    description: "Automatically hide casts after a certain number of downvotes.",
+    description:
+      "Increase the downvote count. Configure a rule to trigger after a certain threshold of downvotes has been reached.",
     args: {},
   },
   like: {
-    friendlyName: "Boost",
-    hidden: false,
+    friendlyName: "Curate",
+    hidden: true,
     castScope: "root",
-    description:
-      "Boost the cast, increasing the chance it gets into your channel's trending feed. For root casts only.",
+    description: "Curate the cast into the Main feed. For root casts only.",
+    args: {},
+  },
+  unlike: {
+    friendlyName: "Hide",
+    hidden: true,
+    castScope: "root",
+    description: "Hide the cast from the Main feed. For root casts only.",
     args: {},
   },
   warnAndHide: {
     friendlyName: "Warn and Hide",
     castScope: "all",
-    hidden: false,
+    hidden: true,
     description: "Hide the cast and let them know it was hidden via a notification",
     args: {},
   },
@@ -659,7 +667,7 @@ export const actionDefinitions = {
     friendlyName: "Cooldown",
     castScope: "all",
     hidden: false,
-    description: "New casts from this user will be automatically hidden for the duration specified.",
+    description: "Casts from this user will not be curated into Main for the duration specified.",
     args: {
       duration: {
         type: "number",
@@ -717,6 +725,7 @@ export const actionTypes = [
   "hideQuietly",
   "downvote",
   "ban",
+  "unlike",
   "like",
   "mute",
   "warnAndHide",
@@ -884,6 +893,7 @@ export const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
   z.object({ type: z.literal("hideQuietly") }),
   z.object({ type: z.literal("like") }),
+  z.object({ type: z.literal("unlike") }),
   z.object({ type: z.literal("ban") }),
   z.object({ type: z.literal("addToBypass") }),
   z.object({
@@ -951,7 +961,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userProfileContainsText: userProfileContainsText,
   userDoesNotFollow: userDoesNotFollow,
   userIsNotFollowedBy: userIsNotFollowedBy,
-  userIsCohost: userIsCohost,
+  userIsCohost: userIsCohostOrOwner,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
   userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
@@ -974,13 +984,60 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   unhide: () => Promise.resolve(),
   ban: ban,
   like: like,
+  unlike: unlike,
   warnAndHide: warnAndHide,
   cooldown: cooldown,
   grantRole: grantRole,
 } as const;
 
-export async function like(props: { cast: Cast }) {
-  await neynar.publishReactionToCast(process.env.NEYNAR_SIGNER_UUID!, "like", props.cast.hash);
+export async function like(props: { cast: Cast; channel: string }) {
+  const signerAlloc = await db.signerAllocation.findFirst({
+    where: {
+      channelId: props.channel,
+    },
+    include: {
+      signer: true,
+    },
+  });
+
+  const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
+  console.log(`liking w/signer: ${uuid}`);
+  await neynar.publishReactionToCast(uuid, "like", props.cast.hash);
+}
+
+export async function unlike(props: { cast: Cast; channel: string }) {
+  const signerAlloc = await db.signerAllocation.findFirst({
+    where: {
+      channelId: props.channel,
+    },
+    include: {
+      signer: true,
+    },
+  });
+
+  const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
+  await neynar.deleteReactionFromCast(uuid, "like", props.cast.hash);
+}
+
+export async function ban({ channel, cast }: { channel: string; cast: Cast; action: Action }) {
+  // indefinite cooldown
+  return db.cooldown.upsert({
+    where: {
+      affectedUserId_channelId: {
+        affectedUserId: String(cast.author.fid),
+        channelId: channel,
+      },
+    },
+    update: {
+      active: true,
+      expiresAt: null,
+    },
+    create: {
+      affectedUserId: String(cast.author.fid),
+      channelId: channel,
+      expiresAt: null,
+    },
+  });
 }
 
 // Rule: contains text, option to ignore case
@@ -1425,18 +1482,24 @@ export async function userDoesNotFollow(args: CheckFunctionArgs) {
   }
 }
 
-export async function userIsCohost(args: CheckFunctionArgs) {
+export async function userIsCohostOrOwner(args: CheckFunctionArgs) {
   const { channel, rule } = args;
 
-  const isUserCohost = await isCohost({
-    fid: args.cast.author.fid,
-    channel: channel.id,
-  });
+  const [isUserCohost, ownerFid] = await Promise.all([
+    isCohost({
+      fid: args.cast.author.fid,
+      channel: channel.id,
+    }),
+    getWarpcastChannelOwner({ channel: channel.id }),
+  ]);
 
-  if (rule.invert && !isUserCohost) {
-    return `User is not a cohost`;
-  } else if (!rule.invert && isUserCohost) {
-    return `User is a cohost`;
+  const isOwner = ownerFid === args.cast.author.fid;
+  const isCohostOrOwner = isUserCohost || isOwner;
+
+  if (rule.invert && !isCohostOrOwner) {
+    return `User is not a cohost nor owner`;
+  } else if (!rule.invert && isCohostOrOwner) {
+    return `User is a cohost or owner`;
   }
 }
 
@@ -1688,4 +1751,22 @@ function tryParseUrl(url: string) {
   } catch (e) {
     return undefined;
   }
+}
+
+export async function isCohost(props: { fid: number; channel: string }) {
+  const role = await db.role.findFirst({
+    where: {
+      channelId: props.channel,
+      isCohostRole: true,
+    },
+    include: {
+      delegates: true,
+    },
+  });
+
+  if (!role) {
+    return false;
+  }
+
+  return role.delegates.some((d) => d.fid === String(props.fid));
 }

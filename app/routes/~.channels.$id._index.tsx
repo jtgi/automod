@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -18,7 +19,7 @@ import {
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
 import { Form, NavLink } from "@remix-run/react";
-import { actionDefinitions } from "~/lib/validations.server";
+import { actionDefinitions, like } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import {
   ArrowUpRight,
@@ -28,7 +29,6 @@ import {
   SlidersHorizontalIcon,
 } from "lucide-react";
 import { z } from "zod";
-import { unhide } from "~/lib/warpcast.server";
 import { useLocalStorage } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 
@@ -77,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserCanModerateChannel({
+  const moderatedChannel = await requireUserCanModerateChannel({
     userId: user.id,
     channelId: params.id,
   });
@@ -87,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = z
     .object({
       logId: z.string(),
-      intent: z.enum(["end-cooldown", "unmute", "unhide"]),
+      intent: z.enum(["end-cooldown", "unban", "like"]),
     })
     .safeParse(rawData);
 
@@ -120,7 +120,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       where: {
         affectedUserId_channelId: {
           affectedUserId: log.affectedUserFid,
-          channelId: channel.id,
+          channelId: moderatedChannel.id,
         },
       },
       data: {
@@ -135,18 +135,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
           affectedUserFid: log.affectedUserFid,
           affectedUsername: log.affectedUsername,
           affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+          castHash: log.castHash,
+          castText: log.castText,
           actor: user.id,
-          channelId: channel.id,
+          channelId: moderatedChannel.id,
           reason: `Cooldown ended by @${user.name}`,
         },
       });
     }
-  } else if (result.data.intent === "unmute") {
+  } else if (result.data.intent === "unban") {
     const updated = await db.cooldown.update({
       where: {
         affectedUserId_channelId: {
           affectedUserId: log.affectedUserFid,
-          channelId: channel.id,
+          channelId: moderatedChannel.id,
         },
       },
       data: {
@@ -161,25 +163,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
           affectedUserFid: log.affectedUserFid,
           affectedUsername: log.affectedUsername,
           affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+          castHash: log.castHash,
+          castText: log.castText,
           actor: user.id,
-          channelId: channel.id,
+          channelId: moderatedChannel.id,
           reason: `Unmuted by @${user.name}`,
         },
       });
     }
-  } else if (result.data.intent === "unhide") {
+  } else if (result.data.intent === "like") {
     invariant(log.castHash, "castHash is required");
 
-    await unhide({ castHash: log.castHash });
+    await like({ cast: { hash: log.castHash } as any, channel: moderatedChannel.id });
     await db.moderationLog.create({
       data: {
-        action: "unhide",
+        action: "like",
         affectedUserFid: log.affectedUserFid,
         affectedUsername: log.affectedUsername,
         affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+        castHash: log.castHash,
+        castText: log.castText,
         actor: user.id,
-        channelId: channel.id,
-        reason: `Unhidden by @${user.name}`,
+        channelId: moderatedChannel.id,
+        reason: `Applied manually by @${user.name}`,
       },
     });
   } else {
@@ -311,16 +317,16 @@ export default function Screen() {
                             </DropdownMenuItem>
                           </Form>
                         )}
-                        {log.action === "mute" && (
+                        {log.action === "ban" && (
                           <Form method="post">
                             <input type="hidden" name="logId" value={log.id} />
                             <DropdownMenuItem>
                               <button
                                 name="intent"
-                                value="unmute"
+                                value="unban"
                                 className="w-full h-full cursor-default text-left"
                               >
-                                Unmute
+                                Unban
                               </button>
                             </DropdownMenuItem>
                           </Form>
@@ -331,7 +337,7 @@ export default function Screen() {
                             <DropdownMenuItem>
                               <button
                                 name="intent"
-                                value="unhide"
+                                value="like"
                                 className="w-full h-full cursor-default text-left"
                               >
                                 Unhide

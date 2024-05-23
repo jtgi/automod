@@ -5,13 +5,20 @@ import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
-import { requireValidSignature } from "~/lib/utils.server";
+import { getModerators, requireValidSignature } from "~/lib/utils.server";
 
-import { Action, Rule, actionDefinitions, actionFunctions, ruleFunctions } from "~/lib/validations.server";
-import { getChannelHosts, hideQuietly, isCohost } from "~/lib/warpcast.server";
+import {
+  Action,
+  Rule,
+  actionDefinitions,
+  actionFunctions,
+  isCohost,
+  ruleFunctions,
+} from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
+import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -53,6 +60,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!channelName) {
     console.error(`Couldn't extract channel name: ${webhookNotif.data.root_parent_url}`, webhookNotif.data);
     return json({ message: "Invalid channel name" }, { status: 400 });
+  }
+
+  if (isRuleTargetApplicable("reply", webhookNotif.data)) {
+    return json({ message: "Ignoring reply" });
   }
 
   webhookQueue.add(
@@ -108,14 +119,48 @@ export async function validateCast({
   const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(cast.author.username);
 
   if (isExcluded) {
-    console.log(`User @${cast.author.username} is excluded. Doing nothing.`);
+    console.log(`User @${cast.author.username} is in the bypass list. Curating.`);
+
+    const [, log] = await Promise.all([
+      actionFunctions["like"]({
+        channel: channel.id,
+        cast,
+        action: { type: "like" },
+      }),
+      logModerationAction(
+        moderatedChannel.id,
+        "like",
+        `@${cast.author.username} is in the bypass list.`,
+        cast,
+        simulation
+      ),
+    ]);
+
+    logs.push(log);
     return logs;
   }
 
   if (moderatedChannel.excludeCohosts) {
-    const cohosts = await getChannelHosts({ channel: channel.id });
-    if (cohosts.result.hosts.find((c) => c.fid === cast.author.fid)) {
-      console.log(`[${channel.id}] @${cast.author.username} is a cohost. Doing nothing.`);
+    const mods = await getModerators({ channel: channel.id });
+    if (mods.find((c) => c.fid === String(cast.author.fid))) {
+      console.log(`[${channel.id}] @${cast.author.username} is a moderator. Curating.`);
+
+      const [, log] = await Promise.all([
+        actionFunctions["like"]({
+          channel: channel.id,
+          cast,
+          action: { type: "like" },
+        }),
+        logModerationAction(
+          moderatedChannel.id,
+          "like",
+          `@${cast.author.username} is in the bypass list.`,
+          cast,
+          simulation
+        ),
+      ]);
+
+      logs.push(log);
       return logs;
     }
   }
@@ -132,7 +177,7 @@ export async function validateCast({
           },
         },
         {
-          // if null then its a soft-ban
+          // if null then its a ban
           expiresAt: null,
         },
       ],
@@ -140,14 +185,6 @@ export async function validateCast({
   });
 
   if (cooldown) {
-    if (!simulation) {
-      await hideQuietly({
-        channel: moderatedChannel.id,
-        cast,
-        action: { type: "hideQuietly" },
-      });
-    }
-
     if (cooldown.expiresAt) {
       logs.push(
         await logModerationAction(
@@ -159,20 +196,13 @@ export async function validateCast({
         )
       );
     } else {
-      logs.push(
-        await logModerationAction(
-          moderatedChannel.id,
-          "hideQuietly",
-          `User is currently muted`,
-          cast,
-          simulation
-        )
-      );
+      // they're banned, logging is noise so skip
     }
 
     return logs;
   }
 
+  let passedAllRules = true;
   for (const ruleSet of moderatedChannel.ruleSets) {
     if (!isRuleTargetApplicable(ruleSet.target, cast)) {
       continue;
@@ -184,55 +214,7 @@ export async function validateCast({
     const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
 
     if (ruleEvaluation.didViolateRule) {
-      /**
-       * Temporarily disabling ban threshold until I can
-       * think more about it
-       */
-      // if (moderatedChannel.banThreshold) {
-      //   const violations = await db.moderationLog.groupBy({
-      //     by: ["channelId", "castHash"],
-      //     where: {
-      //       affectedUserFid: String(cast.author.fid),
-      //     },
-      //     _count: {
-      //       _all: true,
-      //     },
-      //   });
-
-      //   // note: use >= because this cast that has
-      //   // violated the rules is not in the db at this
-      //   // point.
-      //   if (violations.length >= moderatedChannel.banThreshold) {
-      //     const isCo = await isCohost({
-      //       fid: cast.author.fid,
-      //       channel: channel.id,
-      //     });
-
-      //     if (!isCo) {
-      //       await ban({
-      //         channel: channel.id,
-      //         cast,
-      //         action: { type: "ban" },
-      //       });
-
-      //       await logModerationAction(
-      //         moderatedChannel.id,
-      //         "ban",
-      //         `User exceeded warn threshold of ${moderatedChannel.banThreshold} and is banned.`,
-      //         cast
-      //       );
-
-      //       return json({ message: "User banned" });
-      //     } else {
-      //       await logModerationAction(
-      //         moderatedChannel.id,
-      //         "bypass",
-      //         `User exceeded warn threshold of ${moderatedChannel.banThreshold} but is cohost.`,
-      //         cast
-      //       );
-      //     }
-      //   }
-      // }
+      passedAllRules = false;
 
       for (const action of actions) {
         const actionDef = actionDefinitions[action.type];
@@ -267,8 +249,8 @@ export async function validateCast({
 
         if (
           action.type === "ban" &&
-          (await isCohost({
-            fid: cast.author.fid,
+          (await isCohostOrOwner({
+            fid: String(cast.author.fid),
             channel: channel.id,
           }))
         ) {
@@ -295,6 +277,18 @@ export async function validateCast({
         );
       }
     }
+  }
+
+  if (passedAllRules) {
+    const like = actionFunctions["like"];
+    await like({
+      channel: channel.id,
+      cast,
+      action: { type: "like" },
+    });
+    logs.push(
+      await logModerationAction(moderatedChannel.id, "like", "Cast passed all rules", cast, simulation)
+    );
   }
 
   return logs;
@@ -471,4 +465,18 @@ export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, bu
   }
 
   return false;
+}
+
+export async function isCohostOrOwner({ fid, channel }: { fid: string; channel: string }) {
+  const [isUserCohost, ownerFid] = await Promise.all([
+    isCohost({
+      fid: +fid,
+      channel,
+    }),
+    getWarpcastChannelOwner({ channel }),
+  ]);
+
+  const isOwner = ownerFid === +fid;
+
+  return isUserCohost || isOwner;
 }

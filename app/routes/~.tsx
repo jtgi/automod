@@ -20,6 +20,7 @@ import { getSharedEnv, requireUser } from "~/lib/utils.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
+
   const session = await getSession(request.headers.get("Cookie"));
   const message =
     (session.get("message") as { id: string; type: string; message: string } | null) ?? undefined;

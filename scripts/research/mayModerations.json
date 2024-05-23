@@ -1,0 +1,406 @@
+[
+    {
+        "channelId": "automod",
+        "count": 1
+    },
+    {
+        "channelId": "cn-alpha",
+        "count": 1
+    },
+    {
+        "channelId": "custompunks",
+        "count": 1
+    },
+    {
+        "channelId": "johann",
+        "count": 1
+    },
+    {
+        "channelId": "manysuchcases",
+        "count": 1
+    },
+    {
+        "channelId": "powerbadgecabal",
+        "count": 1
+    },
+    {
+        "channelId": "prohibition",
+        "count": 1
+    },
+    {
+        "channelId": "rad",
+        "count": 1
+    },
+    {
+        "channelId": "farcaster-id",
+        "count": 2
+    },
+    {
+        "channelId": "hodlhq",
+        "count": 2
+    },
+    {
+        "channelId": "lisp",
+        "count": 2
+    },
+    {
+        "channelId": "nick",
+        "count": 2
+    },
+    {
+        "channelId": "pichi",
+        "count": 2
+    },
+    {
+        "channelId": "school-of-solana",
+        "count": 2
+    },
+    {
+        "channelId": "sean",
+        "count": 2
+    },
+    {
+        "channelId": "theburrow",
+        "count": 2
+    },
+    {
+        "channelId": "twocommaclub",
+        "count": 2
+    },
+    {
+        "channelId": "ufo",
+        "count": 2
+    },
+    {
+        "channelId": "wearesosorry",
+        "count": 2
+    },
+    {
+        "channelId": "all",
+        "count": 3
+    },
+    {
+        "channelId": "glass",
+        "count": 3
+    },
+    {
+        "channelId": "lsd",
+        "count": 3
+    },
+    {
+        "channelId": "tmp",
+        "count": 3
+    },
+    {
+        "channelId": "farcon-pics",
+        "count": 4
+    },
+    {
+        "channelId": "scenecoin",
+        "count": 4
+    },
+    {
+        "channelId": "paperboy",
+        "count": 5
+    },
+    {
+        "channelId": "star",
+        "count": 5
+    },
+    {
+        "channelId": "wearesoearly",
+        "count": 5
+    },
+    {
+        "channelId": "cookies",
+        "count": 6
+    },
+    {
+        "channelId": "purple-updates",
+        "count": 6
+    },
+    {
+        "channelId": "bookworms",
+        "count": 7
+    },
+    {
+        "channelId": "geopolitics",
+        "count": 7
+    },
+    {
+        "channelId": "nook",
+        "count": 7
+    },
+    {
+        "channelId": "framedl-pro",
+        "count": 8
+    },
+    {
+        "channelId": "vip",
+        "count": 10
+    },
+    {
+        "channelId": "agust",
+        "count": 12
+    },
+    {
+        "channelId": "obscura",
+        "count": 12
+    },
+    {
+        "channelId": "science",
+        "count": 13
+    },
+    {
+        "channelId": "consonant",
+        "count": 16
+    },
+    {
+        "channelId": "onchain-gaming",
+        "count": 16
+    },
+    {
+        "channelId": "coop",
+        "count": 20
+    },
+    {
+        "channelId": "powerbadgers",
+        "count": 24
+    },
+    {
+        "channelId": "btw",
+        "count": 26
+    },
+    {
+        "channelId": "tap",
+        "count": 35
+    },
+    {
+        "channelId": "salty",
+        "count": 38
+    },
+    {
+        "channelId": "proxyswap",
+        "count": 45
+    },
+    {
+        "channelId": "books",
+        "count": 54
+    },
+    {
+        "channelId": "lucky",
+        "count": 56
+    },
+    {
+        "channelId": "amp",
+        "count": 58
+    },
+    {
+        "channelId": "purpleday",
+        "count": 60
+    },
+    {
+        "channelId": "sofi",
+        "count": 61
+    },
+    {
+        "channelId": "fc-ogs",
+        "count": 78
+    },
+    {
+        "channelId": "vandelay",
+        "count": 84
+    },
+    {
+        "channelId": "lounge",
+        "count": 102
+    },
+    {
+        "channelId": "memes",
+        "count": 107
+    },
+    {
+        "channelId": "replyguys",
+        "count": 111
+    },
+    {
+        "channelId": "coop-recs",
+        "count": 115
+    },
+    {
+        "channelId": "beer",
+        "count": 123
+    },
+    {
+        "channelId": "aaron",
+        "count": 128
+    },
+    {
+        "channelId": "fufu",
+        "count": 149
+    },
+    {
+        "channelId": "houseofdegen",
+        "count": 158
+    },
+    {
+        "channelId": "flying",
+        "count": 161
+    },
+    {
+        "channelId": "fitness",
+        "count": 164
+    },
+    {
+        "channelId": "hypermod",
+        "count": 193
+    },
+    {
+        "channelId": "human",
+        "count": 219
+    },
+    {
+        "channelId": "robotics",
+        "count": 224
+    },
+    {
+        "channelId": "banana",
+        "count": 228
+    },
+    {
+        "channelId": "frontend",
+        "count": 292
+    },
+    {
+        "channelId": "seaport",
+        "count": 341
+    },
+    {
+        "channelId": "farcasterroyale",
+        "count": 397
+    },
+    {
+        "channelId": "wake",
+        "count": 403
+    },
+    {
+        "channelId": "ethereum",
+        "count": 461
+    },
+    {
+        "channelId": "cnz",
+        "count": 498
+    },
+    {
+        "channelId": "commitment",
+        "count": 514
+    },
+    {
+        "channelId": "noreply",
+        "count": 530
+    },
+    {
+        "channelId": "farc",
+        "count": 542
+    },
+    {
+        "channelId": "dont-do-this",
+        "count": 543
+    },
+    {
+        "channelId": "degendao",
+        "count": 584
+    },
+    {
+        "channelId": "light",
+        "count": 584
+    },
+    {
+        "channelId": "ogs",
+        "count": 623
+    },
+    {
+        "channelId": "Masks",
+        "count": 637
+    },
+    {
+        "channelId": "powermonday",
+        "count": 649
+    },
+    {
+        "channelId": "karak",
+        "count": 656
+    },
+    {
+        "channelId": "spirituality",
+        "count": 858
+    },
+    {
+        "channelId": "animeoutcasts",
+        "count": 1176
+    },
+    {
+        "channelId": "perl",
+        "count": 1405
+    },
+    {
+        "channelId": "ham",
+        "count": 1456
+    },
+    {
+        "channelId": "art",
+        "count": 1696
+    },
+    {
+        "channelId": "space",
+        "count": 1831
+    },
+    {
+        "channelId": "360",
+        "count": 2090
+    },
+    {
+        "channelId": "history",
+        "count": 2265
+    },
+    {
+        "channelId": "rainbow",
+        "count": 2667
+    },
+    {
+        "channelId": "higher",
+        "count": 3802
+    },
+    {
+        "channelId": "farcon",
+        "count": 8501
+    },
+    {
+        "channelId": "base",
+        "count": 12705
+    },
+    {
+        "channelId": "banmal-mode",
+        "count": 15174
+    },
+    {
+        "channelId": "farcasther",
+        "count": 17711
+    },
+    {
+        "channelId": "paidgroup",
+        "count": 24981
+    },
+    {
+        "channelId": "degen",
+        "count": 92196
+    },
+    {
+        "channelId": "design",
+        "count": 122813
+    },
+    {
+        "channelId": "lp",
+        "count": 858423
+    }
+]

@@ -1,0 +1,3034 @@
+Delegates
+select channelid, count(*) from delegate group by channelId;
+art|7
+degen|20
+jtgi|1
+lp|1
+paidgroup|13
+tmp|3
+wearesoearly|7674
+yakult1000|3
+
+
+Roles
+lp|["action:hideQuietly"]
+paidgroup|["action:hideQuietly","action:warnAndHide","action:mute","action:cooldown"]
+paidgroup|["action:hideQuietly","action:warnAndHide"]
+yakult1000|["action:downvote","action:like"]
+wearesoearly|["action:downvote"]
+degen|["action:hideQuietly","action:downvote","action:like"]
+jtgi|["action:like"]
+tmp|["action:like"]
+art|["action:like"]
+
+Rule count:
+140 containsText
+23 userDoesNotHoldPowerBadge
+20 userDisplayNameContainsText
+15 containsEmbeds
+15 castLength
+14 userIsCohost
+14 requiresErc721
+13 userIsNotActive
+11 requiresErc1155
+10 userProfileContainsText
+9 textMatchesPattern
+9 downvote
+8 userFollowerCount
+6 userFidInRange
+5 containsLinks
+5 userDoesNotFollow
+4 requiresErc20
+3 textMatchesLanguage
+2 containsTooManyMentions
+1 castInThread
+
+
+
+==============================
+channel: wake
+target: all
+==============================
+rule: userFidInRange
+invert: false
+args:  searchText: 1234567890, minFid: 2904, maxFid: 2904
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: replyguys
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: f4f
+
+rule: containsText
+invert: false
+args:  searchText: reply with $degen
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: follow
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: f4f
+
+rule: containsText
+invert: false
+args:  searchText: follow4follow
+
+rule: containsText
+invert: false
+args:  searchText: follow 4 follow
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: vandelay
+target: all
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🍖
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🍕
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: $chicken
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: vandelay
+target: all
+==============================
+rule: textMatchesPattern
+invert: false
+args:  searchText: GN, caseSensitive: true, pattern: ^(gm|gn)/i
+
+rule: containsText
+invert: false
+args:  searchText: /vandelay
+
+rule: textMatchesPattern
+invert: false
+args:  searchText: , pattern: ^gm$/i
+
+rule: textMatchesPattern
+invert: false
+args:  searchText: ^gm$/i, pattern: ^gn$/i
+
+action: cooldown
+args: duration: 48
+
+
+
+
+==============================
+channel: vandelay
+target: root
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: light
+target: all
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: light
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: $light
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: light
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: gm, caseSensitive: false
+
+rule: containsText
+invert: false
+args:  searchText: gn
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: light
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: light, caseSensitive: false
+
+rule: containsText
+invert: false
+args:  searchText: /light, caseSensitive: false
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: sean
+target: root
+==============================
+rule: userDisplayNameContainsText
+invert: true
+args:  searchText: sean
+
+rule: userDisplayNameContainsText
+invert: true
+args:  searchText: shawn
+
+rule: userDisplayNameContainsText
+invert: true
+args:  searchText: shaun
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: houseofdegen
+target: all
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: Flow
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: Asshole, min: 0, max: 500
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: star
+target: all
+==============================
+rule: containsLinks
+invert: false
+args:  searchText: , maxLinks: 0
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: obscura
+target: all
+==============================
+rule: containsLinks
+invert: false
+args:  searchText: , maxLinks: 
+
+action: cooldown
+args: duration: 1
+
+
+
+
+==============================
+channel: all
+target: all
+==============================
+rule: userFidInRange
+invert: false
+args:  searchText: , minFid: 0, maxFid: 1337
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: johann
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: , min: , max: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: 0773H
+target: root
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: cookies
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: $COOKIE
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: degendao
+target: root
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: fitness
+target: root
+==============================
+rule: textMatchesPattern
+invert: false
+args:  searchText: recast, pattern: ^$
+
+rule: containsEmbeds
+invert: false
+args:  searchText: , images: true, videos: true, frames: true, links: true
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: lsd
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: wearesosorry
+target: all
+==============================
+rule: containsText
+invert: true
+args:  searchText: sorry, caseSensitive: false
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: china
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: chyna, caseSensitive: true
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: yungwknd
+target: all
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: gm, contractAddress: 0x1385595b59f972ff81ba9c72533d95897b529349, tokenId: , chainId: 8453
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: seaport
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: $seaport
+
+rule: castLength
+invert: false
+args:  searchText: , min: 15, max: 
+
+rule: containsText
+invert: false
+args:  searchText: OpenSea
+
+rule: containsText
+invert: false
+args:  searchText: airdrop
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: guessthechart
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: degen-tools
+target: all
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: Farcasther
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: $degen
+
+rule: userIsNotActive
+invert: false
+args:  searchText: , images: true, videos: true, frames: true, links: true
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: glass
+target: root
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+rule: castLength
+invert: false
+args:  searchText: , min: 10, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: onchainletters
+target: all
+==============================
+rule: castInThread
+invert: false
+args:  searchText: , identifiers: https://warpcast.com/yb/0x7077a452
+
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0xD663b056a69282D300c1901f15aACa3A7993A783, tokenId: , chainId: 8453
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: jooktuleytoons
+target: root
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0xaa35Bc7a2f6115275f335F8F370b6BD01e6aabf5, minBalance: , chainId: 8453, tokenId: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: fc-ogs
+target: all
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0xe03ef4b9db1a47464de84fb476f9baf493b3e886, tokenId: , chainId: 7777777
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: ball
+target: root
+==============================
+rule: castLength
+invert: false
+args:  searchText: , min: 5, max: 
+
+rule: containsText
+invert: false
+args:  searchText: /ball
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: ball
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: $BALL
+
+rule: castLength
+invert: false
+args:  searchText: , min: 5, max: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: ball
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: /ball $ball
+
+rule: castLength
+invert: false
+args:  searchText: , min: 11, max: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: samantha
+target: all
+==============================
+action: warnAndHide
+
+
+
+
+==============================
+channel: moments
+target: root
+==============================
+rule: containsEmbeds
+invert: true
+args:  searchText: , identifiers: , images: true, videos: true, frames: false, links: false
+
+rule: containsText
+invert: false
+args:  searchText: , pattern: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: pullup
+target: all
+==============================
+rule: containsText
+invert: true
+args:  searchText: ✈️
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: karak
+target: all
+==============================
+action: cooldown
+args: duration: 12
+
+
+
+
+==============================
+channel: rad
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: cn-alpha
+target: all
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: farcasther
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: $degen
+
+rule: containsText
+invert: false
+args:  searchText: f4f
+
+rule: textMatchesPattern
+invert: false
+args:  searchText: \$[a-zA-Z]+, pattern: \$[a-zA-Z]+
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: F3
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: fren3
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: coop-recs
+target: root
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x51aE17181b869319a10c429EB0693a2a8d67502D, tokenId: , chainId: 8453
+
+rule: containsText
+invert: true
+args:  searchText: cooprecs
+
+rule: containsText
+invert: true
+args:  searchText: coop-recs
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: framedl-pro
+target: root
+==============================
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0x402ae0eb018c623b14ad61268b786edd4ad87c56, tokenId: 1, chainId: 8453
+
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0x402ae0eb018c623b14ad61268b786edd4ad87c56, tokenId: 2, chainId: 8453
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: paperboy
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: sofi
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: airdrop
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: follow
+
+rule: containsText
+invert: false
+args:  searchText: recast
+
+rule: containsText
+invert: false
+args:  searchText: follow + recast, caseSensitive: false
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: farc
+target: all
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+rule: userIsNotActive
+invert: false
+args:  searchText: , min: , max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: unofficial
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: futurama
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: giveaway
+
+rule: containsText
+invert: false
+args:  searchText: give away
+
+rule: userFollowerCount
+invert: false
+args:  searchText: , identifiers: , pattern: , username: , min: 5, max: 
+
+rule: containsTooManyMentions
+invert: false
+args:  searchText: , maxMentions: 3
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: whatisthis
+target: root
+==============================
+rule: userFollowerCount
+invert: false
+args:  searchText: , min: 5, max: 
+
+rule: containsTooManyMentions
+invert: false
+args:  searchText: , images: true, videos: false, frames: false, links: true, maxLinks: , maxMentions: 0
+
+rule: containsEmbeds
+invert: false
+args:  searchText: , images: false, videos: false, frames: true, links: false
+
+rule: castLength
+invert: false
+args:  searchText: , images: true, videos: true, frames: true, links: true, min: 1, max: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: habibis
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: Gm
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: consol3
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: minigames
+target: all
+==============================
+rule: containsLinks
+invert: false
+args:  searchText: , maxLinks: 0
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: minigames
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: mint, caseSensitive: false
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: entropybender
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: $fire
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: purpleday
+target: all
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: school-of-solana
+target: all
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: higher
+target: root
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: $chicken
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🍕
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🍖
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: RAPH
+
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🍗
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: higher
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: frames.baby/higher, maxLinks: 
+
+action: cooldown
+args: duration: 72
+
+
+
+
+==============================
+channel: higher
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: higher
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: 🚀🚀🚀
+
+rule: containsText
+invert: false
+args:  searchText: to the moon
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: ham
+target: all
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: wumblr
+target: all
+==============================
+rule: textMatchesPattern
+invert: true
+args:  searchText: , pattern: ^https:\/\/zora\.co\/collect\/[^\s]+$
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: tap
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: whitelist
+
+rule: containsText
+invert: false
+args:  searchText: $tap
+
+rule: containsText
+invert: false
+args:  searchText: airdrop
+
+rule: containsText
+invert: false
+args:  searchText: witelist
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: dont-do-this
+target: root
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: pysop
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: $pysop
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: coop
+target: root
+==============================
+rule: userDoesNotFollow
+invert: false
+args:  searchText: , username: coopahtroopa
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: motherlode
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: salty
+target: all
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: fufu
+target: all
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: btw
+target: root
+==============================
+rule: containsText
+invert: true
+args:  searchText: btw
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: farcon
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x456cc03543d41eb1c9a7ca9fa86e9383b404f50d, tokenId: , chainId: 8453
+
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x238b522fa4d04bfe0b9b875e9ccea6d3f98d51d2, tokenId: , chainId: 8453
+
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x27fb25e111d2540b195a4a0c6e471a5e7e8cd6ec, tokenId: , chainId: 8453
+
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0xc689c9d3c3fa608ab51f360b7f0761ece4af18fa, tokenId: , chainId: 8453
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: perl
+target: root
+==============================
+rule: userFollowerCount
+invert: false
+args:  searchText: , minFid: , maxFid: , contractAddress: 0xdd3a772ce481d266756b378901d0138264b10f7e, minBalance: , chainId: 8453, tokenId: , images: true, videos: true, frames: true, links: true, pattern: , min: 69, max: 
+
+rule: userDoesNotFollow
+invert: false
+args:  searchText: , username: perl
+
+rule: textMatchesLanguage
+invert: true
+args:  searchText: , language: en
+
+rule: containsText
+invert: false
+args:  searchText: pearl
+
+rule: containsText
+invert: false
+args:  searchText: pearls
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: perl
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: f4f #f4f 맞팔 #맞팔
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: dev
+target: all
+==============================
+rule: userFollowerCount
+invert: true
+args:  searchText: , min: 0, max: 10000
+
+rule: userFidInRange
+invert: false
+args:  searchText: , minFid: , maxFid: 20000
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: imagine-infra
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: airdrop
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: imagine-infra
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: jam.so
+
+action: ban
+
+
+
+
+==============================
+channel: imagine-infra
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: FIRE reward
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: synthesis
+target: reply
+==============================
+rule: containsText
+invert: false
+args:  searchText: test
+
+rule: castLength
+invert: false
+args:  searchText: , maxMentions: , min: 5, max: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: textMatchesLanguage
+invert: true
+args:  searchText: , language: en
+
+action: mute
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: have a nice evening
+
+rule: containsText
+invert: false
+args:  searchText: have a nice day
+
+rule: containsText
+invert: false
+args:  searchText: have a good day
+
+rule: containsText
+invert: false
+args:  searchText: bitcoin's price
+
+rule: containsText
+invert: false
+args:  searchText: pls tip
+
+rule: containsText
+invert: false
+args:  searchText: f4f
+
+rule: containsText
+invert: false
+args:  searchText: follow and farm
+
+rule: containsText
+invert: false
+args:  searchText: drakula
+
+rule: containsText
+invert: false
+args:  searchText: have a blessed
+
+rule: containsText
+invert: false
+args:  searchText: good noon
+
+rule: containsText
+invert: false
+args:  searchText: Good night
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: airdrop
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: $DEGEN
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: claim your NFT
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: irenella
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: follow our channel
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: degen
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: mute
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: degen
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: mute
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: #frontend
+
+rule: userFollowerCount
+invert: false
+args:  searchText: , min: 0, max: 100
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: hello guys
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: F4F
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: follow me
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: hey guys
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: cryptocurrencies
+
+action: ban
+
+
+
+
+==============================
+channel: frontend
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: looking for a challenge
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: yakult1000
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 1
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: ogs
+target: root
+==============================
+rule: textMatchesPattern
+invert: true
+args:  searchText: , pattern: ^🔵$
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: ogs
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 10
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: lifeisgood
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 15
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: cnz
+target: root
+==============================
+rule: userIsCohost
+invert: true
+args:  searchText: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: cnz
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 10
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: airdrop4u
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 10
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: automod
+target: root
+==============================
+rule: castLength
+invert: false
+args:  searchText: , min: 10, max: , pattern: hmmmm, caseInsensitive: true
+
+action: hideQuietly
+
+action: cooldown
+args: duration: 24
+
+
+
+
+==============================
+channel: tmp
+target: all
+==============================
+rule: textMatchesPattern
+invert: false
+args:  searchText: , contractAddress: 0xfbe447728968a28c0b8109259218fed98bb2cab4, tokenId: 1, chainId: 8453, pattern: gm, caseInsensitive: true
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: space
+target: all
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: robotics
+target: all
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: history
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: agust
+target: root
+==============================
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0x7d6c292FD3C3FC77123545651035537f0D36Cd65, tokenId: 0, chainId: 8453
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: theburrow
+target: root
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🦉
+
+action: like
+
+
+
+
+==============================
+channel: Masks
+target: all
+==============================
+rule: containsText
+invert: true
+args:  searchText: 🎭
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: Masks
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: 🎭
+
+action: like
+
+
+
+
+==============================
+channel: design-pieces
+target: root
+==============================
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: true, videos: true, frames: false, links: false
+
+action: like
+
+
+
+
+==============================
+channel: thecryptomasks
+target: all
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: 🎭, caseSensitive: false
+
+action: like
+
+
+
+
+==============================
+channel: lessoninthere
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: lesson in there
+
+action: like
+
+
+
+
+==============================
+channel: yup
+target: all
+==============================
+rule: userFidInRange
+invert: false
+args:  searchText: , minFid: 10000, maxFid: 
+
+action: like
+
+
+
+
+==============================
+channel: unko
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: うんこ
+
+rule: containsText
+invert: false
+args:  searchText: 便
+
+rule: containsText
+invert: false
+args:  searchText: クソ
+
+rule: containsText
+invert: false
+args:  searchText: 糞
+
+action: like
+
+
+
+
+==============================
+channel: wearesoearly
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 10
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: wearesoearly
+target: root
+==============================
+rule: requiresErc1155
+invert: true
+args:  searchText: , contractAddress: 0x49AF605BC56649C4a67716cf7C7B8790b17b8160, tokenId: , chainId: 8453
+
+rule: requiresErc721
+invert: true
+args:  searchText: , contractAddress: 0xA449b4f43D9A33FcdCF397b9cC7Aa909012709fD, tokenId: , chainId: 8453
+
+action: like
+
+
+
+
+==============================
+channel: Valuesdao
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: 
+
+action: like
+
+
+
+
+==============================
+channel: valuesdao
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: 
+
+action: like
+
+
+
+
+==============================
+channel: bycmlab
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: ⚜️, identifiers: 
+
+action: like
+
+
+
+
+==============================
+channel: twocommaclub
+target: root
+==============================
+rule: requiresErc20
+invert: true
+args:  searchText: , contractAddress: 0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed, minBalance: 1000000, chainId: 8453
+
+action: like
+
+
+
+
+==============================
+channel: twocommaclub
+target: root
+==============================
+rule: requiresErc20
+invert: false
+args:  searchText: , contractAddress: 0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed, minBalance: 1000000, chainId: 8453
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: base
+target: root
+==============================
+rule: userFollowerCount
+invert: false
+args:  searchText: farcaster.manifold.xyz, images: false, videos: false, frames: false, links: false, min: 3600, max: 
+
+rule: userFidInRange
+invert: false
+args:  searchText: , minFid: , maxFid: 100000
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: bros
+target: all
+==============================
+rule: requiresErc1155
+invert: true
+args:  searchText: , contractAddress: 0xcfcfef541841829409def7788c8d6388f45006c2, tokenId: 5, chainId: 7777777
+
+action: like
+
+
+
+
+==============================
+channel: panda
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: 
+
+action: like
+
+
+
+
+==============================
+channel: nook
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: $nook, pattern: \$[a-zA-Z]+
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: the-glyph
+target: all
+==============================
+rule: requiresErc1155
+invert: true
+args:  searchText: , contractAddress: 0x89747a9264cdabb06d18fd2c48eeb519f6f111f6, tokenId: , chainId: 8453
+
+action: like
+
+
+
+
+==============================
+channel: builtdifferent
+target: all
+==============================
+rule: requiresErc1155
+invert: true
+args:  searchText: , contractAddress: 0xdf9e96b907edfb041dea3fecdd8a53ad9e2ce897, tokenId: , chainId: 8453
+
+action: like
+
+
+
+
+==============================
+channel: farcon-pics
+target: root
+==============================
+rule: containsEmbeds
+invert: true
+args:  searchText: , domain: content.nook.social, images: false, videos: false, frames: false, links: false
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: bookworms
+target: all
+==============================
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0xfbab3ad340a1e31935af123f79e316fe3b01c8fc, tokenId: , chainId: 8453
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: degentips
+target: all
+==============================
+action: like
+
+
+
+
+==============================
+channel: lp
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: frame.farlaunch.xyz/activity/cast-join-cast
+
+rule: containsText
+invert: false
+args:  searchText: frame.farlaunch.xyz/activity/cast-0305?type=DEGEN
+
+action: ban
+
+
+
+
+==============================
+channel: lp
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: casterbites.com/lp, maxLinks: , caseSensitive: false
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: lp
+target: all
+==============================
+rule: requiresErc20
+invert: false
+args:  searchText: , contractAddress: 0x5b5dee44552546ecea05edea01dcd7be7aa6144a, minBalance: 100000, chainId: 8453
+
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x8ce608ce2b5004397faef1556bfe33bdfbe4696d, tokenId: , chainId: 8453
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: lp
+target: all
+==============================
+rule: requiresErc20
+invert: false
+args:  searchText: , contractAddress: 0x5b5dee44552546ecea05edea01dcd7be7aa6144a, minBalance: 250000, chainId: 8453
+
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x8ce608ce2b5004397faef1556bfe33bdfbe4696d, tokenId: , chainId: 8453
+
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: true, videos: true, frames: true, links: true
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: adp
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: ADP, min: , max: 
+
+action: like
+
+
+
+
+==============================
+channel: m3ter-heads
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: airdrop
+
+rule: containsText
+invert: false
+args:  searchText: claim
+
+rule: containsLinks
+invert: false
+args:  searchText: , maxLinks: 1
+
+rule: userDoesNotFollow
+invert: false
+args:  searchText: , username: friederike
+
+action: warnAndHide
+
+action: cooldown
+args: duration: 1
+
+
+
+
+==============================
+channel: m3ter-heads
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: gm, contractAddress: , tokenId: , minBalance: 
+
+rule: containsText
+invert: false
+args:  searchText: m3ter-heads
+
+rule: containsEmbeds
+invert: false
+args:  searchText: , maxMentions: , domain: , images: true, videos: true, frames: true, links: true
+
+action: like
+
+
+
+
+==============================
+channel: farcasterroyale
+target: reply
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+rule: userFollowerCount
+invert: false
+args:  searchText: , min: 100, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: 360
+target: root
+==============================
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0x4f072c88a9144a490aee53bda2af5798e3ea3548, tokenId: , chainId: 8453
+
+rule: containsLinks
+invert: false
+args:  searchText: , maxLinks: 0
+
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: false, videos: false, frames: true, links: true
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: running-jp
+target: root
+==============================
+rule: userFollowerCount
+invert: false
+args:  searchText: , minFid: , maxFid: , min: 1, max: 9999999999999999, threshold: 
+
+action: like
+
+
+
+
+==============================
+channel: radaf
+target: reply
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: , username: , minFid: , maxFid: , contractAddress: 0x638decd68274c17658a0080D372f5EDae8d34e86, minBalance: , chainId: 8453, tokenId: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: rainbow
+target: root
+==============================
+rule: userIsNotActive
+invert: false
+args:  searchText: 
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: rainbow
+target: root
+==============================
+rule: userDoesNotFollow
+invert: false
+args:  searchText: , contractAddress: , minBalance: , username: rainbow
+
+rule: castLength
+invert: false
+args:  searchText: , min: 5, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: rainbow
+target: all
+==============================
+rule: userIsCohost
+invert: false
+args:  searchText: 
+
+action: like
+
+
+
+
+==============================
+channel: 9dcc
+target: all
+==============================
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: true, videos: true, frames: true, links: true
+
+action: like
+
+
+
+
+==============================
+channel: human
+target: all
+==============================
+rule: requiresErc1155
+invert: false
+args:  searchText: , contractAddress: 0xfbe447728968a28c0b8109259218fed98bb2cab4, tokenId: , chainId: 8453
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: ITAPofmypet
+target: all
+==============================
+action: like
+
+
+
+
+==============================
+channel: prohibition
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: , threshold: , identifiers: , domain: , images: true, videos: true, frames: true, links: true, pattern: , min: , max: , maxMentions: , maxLinks: , username: , minFid: , maxFid: 
+
+action: cooldown
+args: duration: -1
+
+
+
+
+==============================
+channel: fashionweb3
+target: all
+==============================
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: true, videos: true, frames: true, links: false
+
+action: like
+
+
+
+
+==============================
+channel: AIFilm
+target: all
+==============================
+action: hideQuietly
+
+
+
+
+==============================
+channel: design
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: f4f
+
+rule: textMatchesPattern
+invert: false
+args:  searchText: $[a-zA-Z0-9], pattern: \$[a-zA-Z0-9]$
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: design
+target: root
+==============================
+rule: containsEmbeds
+invert: false
+args:  searchText: , images: true, videos: true, frames: true, links: true, domain: 
+
+rule: castLength
+invert: false
+args:  searchText: , min: 5, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: design
+target: root
+==============================
+rule: textMatchesLanguage
+invert: true
+args:  searchText: , language: en
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: design
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: staybased
+target: all
+==============================
+rule: downvote
+invert: false
+args:  searchText: , caseSensitive: false, threshold: 3
+
+rule: userDoesNotFollow
+invert: false
+args:  searchText: , username: base
+
+action: like
+
+
+
+
+==============================
+channel: hank
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: hank
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: flying
+target: root
+==============================
+rule: castLength
+invert: false
+args:  searchText: , min: 5, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: creatureworld
+target: all
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0xc92cedDfb8dd984A89fb494c376f9A48b999aAFc, tokenId: , chainId: 1
+
+action: like
+
+
+
+
+==============================
+channel: spirituality
+target: root
+==============================
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: true, videos: false, frames: false, links: false
+
+rule: castLength
+invert: false
+args:  searchText: , min: 1, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: powerbadgers
+target: all
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: art
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText:  FIRE, caseSensitive: false
+
+rule: containsText
+invert: false
+args:  searchText: $fire
+
+rule: containsText
+invert: false
+args:  searchText: $DEGEN
+
+rule: containsText
+invert: false
+args:  searchText: tip
+
+rule: containsText
+invert: false
+args:  searchText: ham
+
+rule: containsText
+invert: false
+args:  searchText: allowance
+
+rule: containsText
+invert: false
+args:  searchText: DRIP
+
+rule: containsText
+invert: false
+args:  searchText: airdrop
+
+rule: containsText
+invert: false
+args:  searchText: #
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: art
+target: root
+==============================
+rule: castLength
+invert: false
+args:  searchText: , min: 1, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: art
+target: all
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: Gogolitus, caseSensitive: false, minFid: , maxFid: 
+
+rule: containsText
+invert: false
+args:  searchText: marcus
+
+rule: containsText
+invert: false
+args:  searchText: Geisleris
+
+rule: containsText
+invert: false
+args:  searchText: Eslen
+
+rule: containsText
+invert: false
+args:  searchText: Perrone
+
+rule: containsText
+invert: false
+args:  searchText: Joain
+
+rule: containsText
+invert: false
+args:  searchText: outrunyouth
+
+rule: containsText
+invert: false
+args:  searchText: Elfilter
+
+rule: containsText
+invert: false
+args:  searchText: lorenipsum
+
+action: like
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: like
+
+rule: containsText
+invert: false
+args:  searchText: recast
+
+rule: containsText
+invert: false
+args:  searchText: follow
+
+action: warnAndHide
+
+action: cooldown
+args: duration: 24
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: like
+
+rule: containsText
+invert: false
+args:  searchText: recast
+
+rule: containsText
+invert: false
+args:  searchText: comment
+
+action: warnAndHide
+
+action: cooldown
+args: duration: 24
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 2
+
+action: hideQuietly
+
+action: cooldown
+args: duration: 12
+
+
+
+
+==============================
+channel: degen
+target: reply
+==============================
+rule: downvote
+invert: false
+args:  searchText: , threshold: 1
+
+action: hideQuietly
+
+action: cooldown
+args: duration: 2
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: castLength
+invert: false
+args:  searchText: , maxMentions: , min: 8, max: 
+
+rule: containsEmbeds
+invert: true
+args:  searchText: , images: true, videos: true, frames: true, links: true, domain: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: like
+
+rule: containsText
+invert: false
+args:  searchText: follow
+
+rule: containsText
+invert: false
+args:  searchText: tag
+
+action: hideQuietly
+
+action: cooldown
+args: duration: 24
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: containsEmbeds
+invert: false
+args:  searchText: , images: true, videos: true, frames: true, links: true, domain: 
+
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+rule: castLength
+invert: false
+args:  searchText: , min: 15, max: 
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: containsText
+invert: false
+args:  searchText: /degen
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: degen
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: false
+args:  searchText: 
+
+rule: userFidInRange
+invert: false
+args:  searchText: , minFid: , maxFid: 350000
+
+action: hideQuietly
+
+
+
+
+==============================
+channel: degen
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: Check your $DEGEN Stats
+
+rule: containsText
+invert: false
+args:  searchText: $DEGEN stats by @ds8
+
+action: hideQuietly
+
+action: cooldown
+args: duration: 12
+
+
+
+
+==============================
+channel: degen
+target: all
+==============================
+rule: userDisplayNameContainsText
+invert: false
+args:  searchText: !
+
+rule: containsText
+invert: false
+args:  searchText: $PIZZA
+
+action: hideQuietly
+
+action: cooldown
+args: duration: 1
+
+
+
+
+==============================
+channel: nerdery
+target: root
+==============================
+rule: userDoesNotHoldPowerBadge
+invert: true
+args:  searchText: 
+
+rule: containsEmbeds
+invert: false
+args:  searchText: , domain: , images: true, videos: true, frames: true, links: true
+
+action: like
+
+
+
+
+==============================
+channel: paidgroup
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: faggot, maxLinks: 
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: paidgroup
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: "This paid group is a scam"
+
+action: ban
+
+
+
+
+==============================
+channel: ethereum
+target: all
+==============================
+rule: containsText
+invert: false
+args:  searchText: free mint
+
+rule: containsText
+invert: false
+args:  searchText: Like  Recast  Follow
+
+rule: containsText
+invert: false
+args:  searchText: $FOMO
+
+rule: containsText
+invert: false
+args:  searchText: Like  Comment Follow Recast
+
+rule: containsText
+invert: false
+args:  searchText: GIVE AWAY
+
+rule: containsText
+invert: false
+args:  searchText: GIVEAWAY
+
+rule: containsText
+invert: false
+args:  searchText: Follow, Like, Recast
+
+rule: containsText
+invert: false
+args:  searchText: Like ❤️ Recast 🔄  Comment ✍️ Follow me ✅  Minted Done 👍
+
+rule: containsText
+invert: false
+args:  searchText: Mint for free
+
+rule: containsText
+invert: false
+args:  searchText: Follow Like Recast Comment
+
+rule: containsText
+invert: false
+args:  searchText: follow to follow
+
+rule: containsText
+invert: false
+args:  searchText: Long  Or  Short
+
+rule: containsText
+invert: false
+args:  searchText: first cast
+
+rule: containsText
+invert: false
+args:  searchText: Like Recast Follow
+
+rule: containsText
+invert: false
+args:  searchText: Mint and recast
+
+rule: containsText
+invert: false
+args:  searchText: Reply for a surprise
+
+rule: containsText
+invert: false
+args:  searchText: Comment degen
+
+rule: containsText
+invert: false
+args:  searchText: Mint It Please
+
+rule: containsText
+invert: false
+args:  searchText: Follow + Like + Recast
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: custompunks
+target: all
+==============================
+rule: requiresErc721
+invert: false
+args:  searchText: , contractAddress: 0x78bcbe6B5df0B1775576b3a7bDab622E18F177A5, tokenId: , chainId: 8453
+
+action: warnAndHide
+
+
+
+
+==============================
+channel: books
+target: all
+==============================
+rule: userProfileContainsText
+invert: false
+args:  searchText: airdrop
+
+action: hideQuietly
+
+
+
+

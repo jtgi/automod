@@ -1,51 +1,52 @@
+import { actions } from "./cast-actions.server";
+import { actionToInstallLink } from "./utils";
 import { ActionType, actionDefinitions } from "./validations.server";
 
 export type Permission = {
   name: string;
   description: string;
-  id: `action:${ActionType}`;
+  castActionInstallUrl?: string;
+  id: string;
 };
 
 export function actionToPermission(action: ActionType): Permission["id"] {
   return `action:${action}`;
 }
 
+export const defaultPerms = [];
+
 export const permissionDefs = !actionDefinitions
-  ? []
+  ? [...defaultPerms]
   : ([
+      ...defaultPerms,
       {
         id: `action:ban`,
         name: actionDefinitions["ban"].friendlyName,
         description: actionDefinitions["ban"].description,
-      },
-      {
-        id: `action:hideQuietly`,
-        name: actionDefinitions["hideQuietly"].friendlyName,
-        description: actionDefinitions["hideQuietly"].description,
-      },
-      {
-        id: `action:warnAndHide`,
-        name: actionDefinitions["warnAndHide"].friendlyName,
-        description: actionDefinitions["warnAndHide"].description,
-      },
-      {
-        id: `action:mute`,
-        name: actionDefinitions["mute"].friendlyName,
-        description: actionDefinitions["mute"].description,
+        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "ban")!),
       },
       {
         id: `action:cooldown`,
         name: actionDefinitions["cooldown"].friendlyName,
-        description: actionDefinitions["cooldown"].description,
+        description: "Casts from this user will not be curated into Main for 24 hours.",
+        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "cooldown")!),
       },
       {
         id: `action:downvote`,
         name: actionDefinitions["downvote"].friendlyName,
         description: actionDefinitions["downvote"].description,
+        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "downvote")!),
       },
       {
         id: `action:like`,
         name: actionDefinitions["like"].friendlyName,
         description: actionDefinitions["like"].description,
+        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "like")!),
+      },
+      {
+        id: `action:unlike`,
+        name: actionDefinitions["unlike"].friendlyName,
+        description: actionDefinitions["unlike"].description,
+        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "unlike")!),
       },
     ] as const satisfies Permission[]);

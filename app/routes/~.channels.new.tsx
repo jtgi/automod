@@ -1,6 +1,6 @@
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { errorResponse, formatZodError, getSharedEnv, isChannelLead, requireUser } from "~/lib/utils.server";
+import { errorResponse, formatZodError, getSharedEnv, requireUser } from "~/lib/utils.server";
 
 import {
   ModeratedChannelSchema,
@@ -13,20 +13,19 @@ import { db } from "~/lib/db.server";
 import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { ChannelForm } from "~/components/channel-form";
-import { getChannelHosts } from "~/lib/warpcast.server";
+import { getWarpcastChannelHosts } from "~/lib/warpcast.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
   const data = await request.json();
 
   if (process.env.NODE_ENV !== "development") {
-    const cohosts = await getChannelHosts({ channel: data.id });
-    const isCohost = cohosts.result.hosts.some((host) => String(host.fid) === user.id);
+    const hosts = await getWarpcastChannelHosts({ channel: data.id });
 
-    if (!isCohost) {
+    if (!hosts.includes(+user.id)) {
       return errorResponse({
         request,
-        message: `You must be a cohost to setup a bot.`,
+        message: `You must be a host to setup a bot.`,
       });
     }
   }

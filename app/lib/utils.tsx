@@ -69,7 +69,9 @@ export function useClipboard() {
       }
 
       setTimeout(() => setCopied(false), 1_000);
-    } catch (err) {}
+    } catch (err) {
+      // cool
+    }
   };
 
   return { copy, copied };

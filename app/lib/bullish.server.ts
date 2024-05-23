@@ -9,7 +9,7 @@ import { getChannel, neynar, pageChannelCasts } from "./neynar.server";
 import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
-import { isCohost } from "./warpcast.server";
+import { getWarpcastChannel } from "./warpcast.server";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -37,7 +37,7 @@ export const webhookWorker = new Worker(
 
     console.log(`[${webhookNotif.data.root_parent_url}]: cast ${webhookNotif.data.hash}`);
 
-    const [moderatedChannel, alreadyProcessed] = await Promise.all([
+    const [moderatedChannel, alreadyProcessed, signerAllocation] = await Promise.all([
       db.moderatedChannel.findFirst({
         where: {
           OR: [{ id: channelName }, { url: webhookNotif.data.root_parent_url }],
@@ -57,11 +57,38 @@ export const webhookWorker = new Worker(
           hash: webhookNotif.data.hash,
         },
       }),
+      db.signerAllocation.findFirst({
+        where: {
+          channelId: channelName,
+        },
+        include: {
+          signer: true,
+        },
+      }),
     ]);
 
     if (!moderatedChannel) {
       console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
       throw new UnrecoverableError("Channel is not moderated");
+    }
+
+    const warpcastChannel = await getWarpcastChannel({ channel: moderatedChannel.id }).catch(() => null);
+    if (!warpcastChannel) {
+      console.error(`Channel is not known by warpcast`, webhookNotif.data);
+      await toggleWebhook({ channelId: channelName, active: false });
+      throw new UnrecoverableError("Channel is not known by warpcast");
+    }
+
+    if (signerAllocation) {
+      if (signerAllocation.signer.fid !== String(warpcastChannel.moderatorFid)) {
+        console.error(
+          `Signer allocation mismatch. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}`
+        );
+        await toggleWebhook({ channelId: channelName, active: false });
+        throw new UnrecoverableError(
+          `Signer allocation mismatch. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}`
+        );
+      }
     }
 
     if (moderatedChannel.user.plan === "expired") {
@@ -113,8 +140,6 @@ export const webhookWorker = new Worker(
       await toggleWebhook({ channelId: moderatedChannel.id, active: false });
       throw new UnrecoverableError(`User ${moderatedChannel.userId} is over usage limit`);
     }
-
-    // TODO: add moderatorFid check here
 
     if (!channel) {
       console.error(

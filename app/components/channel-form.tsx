@@ -1,10 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableFooter,
   TableHead,
@@ -19,7 +19,6 @@ import {
   RuleDefinition,
   RuleName,
   actionDefinitions,
-  actionTypes,
   ruleDefinitions,
 } from "~/lib/validations.server";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "~/components/ui/accordion";
@@ -28,7 +27,7 @@ import { loader as jobStatusLoader } from "~/routes/api.channels.$id.simulations
 import { Input } from "~/components/ui/input";
 import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
@@ -147,9 +146,10 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Rule Sets</p>
+              <p className="font-semibold">Filtering Rules</p>
               <p className="text-gray-500 text-sm">
-                Configure rules and actions to take whenever a cast comes in to your channel.
+                If enabled, by default all casts are included in your Main feed. Use rules to filter out what
+                you don't want.
               </p>
             </div>
 
@@ -162,7 +162,11 @@ export function ChannelForm(props: {
                 onValueChange={(value) => setOpenRule(Number(value.split("-")[1]))}
               >
                 {fields.map((ruleSetField, ruleSetIndex) => (
-                  <AccordionItem key={ruleSetField.id} value={`item-${ruleSetIndex}`}>
+                  <AccordionItem
+                    key={ruleSetField.id}
+                    value={`item-${ruleSetIndex}`}
+                    className={ruleSetField.active ? "" : "opacity-50 "}
+                  >
                     <AccordionTrigger
                       className={cn(
                         "hover:no-underline no-underline w-full py-2 px-4 border bg-slate-50/50 hover:bg-slate-50 data-[state=open]:rounded-b-none",
@@ -173,7 +177,10 @@ export function ChannelForm(props: {
                       )}
                       hideChevron
                     >
-                      <p className="font-semibold">Rule Set {ruleSetIndex + 1}</p>
+                      <p className="font-semibold">
+                        Rule Set {ruleSetIndex + 1}{" "}
+                        {!ruleSetField.active && <span className="text-yellow-700">(Disabled)</span>}
+                      </p>
 
                       <Button
                         type="button"
@@ -192,7 +199,14 @@ export function ChannelForm(props: {
                       </Button>
                     </AccordionTrigger>
 
-                    <AccordionContent className="p-6 border">
+                    <AccordionContent
+                      className={`p-6 border ${ruleSetField.active ? "" : "pointer-events-none"}`}
+                    >
+                      {!ruleSetField.active && (
+                        <Alert variant={"destructive"} className="mb-4 text-yellow-700 border-yellow-500">
+                          This rule is no longer supported and has been disabled. You may delete it anytime.
+                        </Alert>
+                      )}
                       <RuleSetEditor
                         actionDefinitions={props.actionDefinitions}
                         ruleDefinitions={props.ruleDefinitions}
@@ -236,7 +250,9 @@ export function ChannelForm(props: {
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
               <p className="font-medium">Bypass</p>
-              <p className="text-gray-500 text-sm">Exclude certain users from being checked by all rules.</p>
+              <p className="text-gray-500 text-sm">
+                Users in this list will always have their casts curated into Main.
+              </p>
             </div>
 
             <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
@@ -795,70 +811,6 @@ function RuleSetEditor(props: {
               >
                 <RadioGroupItem value="or" id={`ruleSets.${ruleSetIndex}.logicType.or`} />
               </FieldLabel>
-            </RadioGroup>
-          )}
-        />
-      </div>
-
-      <div className="py-12">
-        <hr />
-      </div>
-
-      <div className="space-y-4 pb-8">
-        <p className="font-medium">What casts should be checked?</p>
-        <Controller
-          name={`ruleSets.${ruleSetIndex}.target`}
-          control={control}
-          render={(controllerProps) => (
-            <RadioGroup
-              name={`ruleSets.${ruleSetIndex}.target`}
-              onValueChange={controllerProps.field.onChange}
-              defaultValue={controllerProps.field.value}
-              className="space-y-2"
-            >
-              <div className="flex gap-2 items-start">
-                <RadioGroupItem value="all" id={`ruleSets.${ruleSetIndex}.target.all`} className="mt-[2px]" />
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor={`ruleSets.${ruleSetIndex}.target.all`}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    All
-                  </label>
-                </div>
-              </div>
-              <div className="flex gap-2 items-start">
-                <RadioGroupItem
-                  value="root"
-                  id={`ruleSets.${ruleSetIndex}.target.root`}
-                  className="mt-[2px]"
-                />
-                <div className="flex flex-col ">
-                  <label
-                    htmlFor={`ruleSets.${ruleSetIndex}.target.root`}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Root Level
-                  </label>
-                  <p className="text-xs text-gray-500">Only casts at the root level of the channel.</p>
-                </div>
-              </div>
-              <div className="flex gap-2 items-start">
-                <RadioGroupItem
-                  className="mt-[2px]"
-                  value="reply"
-                  id={`ruleSets.${ruleSetIndex}.target.replies`}
-                />
-                <div className="flex flex-col">
-                  <label
-                    htmlFor={`ruleSets.${ruleSetIndex}.target.replies`}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Replies
-                  </label>
-                  <p className="text-xs text-gray-500">Only replies to other casts.</p>
-                </div>
-              </div>
             </RadioGroup>
           )}
         />

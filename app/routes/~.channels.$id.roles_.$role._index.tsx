@@ -3,7 +3,6 @@ import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
-import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import {
   requireUser,
@@ -18,6 +17,7 @@ import { Permission, permissionDefs } from "~/lib/permissions.server";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
 import { z } from "zod";
+import { ArrowUpRight } from "lucide-react";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -83,6 +83,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  if (process.env.NODE_ENV === "development") {
+    console.log(result.data.permissions);
+  }
+
   const enabledPermissions = Object.keys(result.data.permissions).filter(
     (perm) => result.data.permissions[perm] === true
   );
@@ -144,15 +148,33 @@ export default function Screen() {
   return (
     <div className="space-y-4">
       <div>
-        <p className="font-medium">Actions</p>
-        <p className="text-sm">Choose what actions this role will be able to take.</p>
+        <p className="font-medium">Permissions</p>
       </div>
       <FormProvider {...methods}>
         <form method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
           <div>
             <div className="space-y-4">
               {permissionDefs.map((permission) => (
-                <SliderField key={permission.id} label={permission.name} description={permission.description}>
+                <SliderField
+                  key={permission.id}
+                  label={permission.name}
+                  description={
+                    <div>
+                      <p className="text-xs text-gray-500">{permission.description}</p>
+                      {permission.castActionInstallUrl && (
+                        <a
+                          className="text-[8px] no-underline hover:underline uppercase tracking-wide"
+                          target="_blank"
+                          rel="noreferrer"
+                          href={permission.castActionInstallUrl}
+                        >
+                          Install Cast Action
+                          <ArrowUpRight className="inline w-2 h-2 ml-[2px] -mt-[2px] text-primary" />
+                        </a>
+                      )}
+                    </div>
+                  }
+                >
                   <Controller
                     name={`permissions.${permission.id}`}
                     control={control}

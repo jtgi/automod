@@ -3,12 +3,11 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { db } from "~/lib/db.server";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { useClipboard } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { Link } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { PlanType, planTypes, userPlans } from "~/lib/auth.server";
+import { PlanType, userPlans } from "~/lib/auth.server";
 import { Alert } from "~/components/ui/alert";
 import {
   Dialog,
@@ -18,7 +17,6 @@ import {
   DialogContent,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { BatteryWarningIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -231,20 +229,5 @@ export default function FrameConfig() {
         </div>
       )}
     </div>
-  );
-}
-
-export function CopyButton({ frame, env }: { frame: { slug: string }; env: { hostUrl: string } }) {
-  const { copy, copied } = useClipboard();
-
-  return (
-    <Button
-      className="w-[100px]"
-      size={"sm"}
-      variant={"outline"}
-      onClick={() => copy(`${env.hostUrl}/${frame.slug}`)}
-    >
-      {copied ? "Copied!" : "Copy URL"}
-    </Button>
   );
 }

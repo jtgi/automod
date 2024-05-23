@@ -163,8 +163,8 @@ export default function Screen() {
         <div>
           <p className="font-medium">Sweep</p>
           <p className="text-sm text-gray-500">
-            Apply your moderation rules to the last {SWEEP_LIMIT} casts in your channel. Applies to root level
-            casts only.
+            Apply your moderation rules to the last {SWEEP_LIMIT} casts in your channel. This currently does
+            not unhide previously curated casts.
           </p>
         </div>
 

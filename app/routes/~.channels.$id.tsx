@@ -9,38 +9,61 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
 import { commitSession, getSession } from "~/lib/auth.server";
+import { db } from "~/lib/db.server";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
+import { getWarpcastChannel } from "~/lib/warpcast.server";
+
+const automodFid = 368422;
+const automodUsername = "automod";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
+  try {
+    const user = await requireUser({ request });
+    const channel = await requireUserCanModerateChannel({
+      userId: user.id,
+      channelId: params.id,
+    });
 
-  const user = await requireUser({ request });
-  const channel = await requireUserCanModerateChannel({
-    userId: user.id,
-    channelId: params.id,
-  });
+    const session = await getSession(request.headers.get("Cookie"));
 
-  const url = new URL(request.url);
-  const session = await getSession(request.headers.get("Cookie"));
-  const isNewChannel = session.get("newChannel") !== undefined || url.searchParams.get("newChannel") !== null;
+    const [warpcastChannel, signerAlloc] = await Promise.all([
+      getWarpcastChannel({ channel: channel.id }),
+      db.signerAllocation.findFirst({
+        where: {
+          channelId: channel.id,
+        },
+        include: {
+          signer: true,
+        },
+      }),
+    ]);
 
-  return typedjson(
-    {
-      user,
-      channel,
-      isNewChannel,
-    },
-    {
-      headers: {
-        "Set-Cookie": await commitSession(session),
+    return typedjson(
+      {
+        user,
+        channel,
+        warpcastChannel,
+        signerFid: signerAlloc?.signer.fid || automodFid,
+        signerUsername: signerAlloc?.signer.username || automodUsername,
       },
-    }
-  );
+      {
+        headers: {
+          "Set-Cookie": await commitSession(session),
+        },
+      }
+    );
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
 }
 
 export default function ChannelRoot() {
-  const { user, channel, isNewChannel } = useTypedLoaderData<typeof loader>();
+  const { channel, warpcastChannel, signerFid, signerUsername } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
+
+  const isNotConfigured = !signerFid || warpcastChannel.moderatorFid !== +signerFid;
 
   return (
     <div>
@@ -87,14 +110,14 @@ export default function ChannelRoot() {
                 { to: `/~/channels/${channel.id}`, title: "Logs", end: true },
                 { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
                 {
+                  to: `/~/channels/${channel.id}/roles`,
+                  title: "Moderators",
+                },
+                { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
+                {
                   to: `/~/channels/${channel.id}/collaborators`,
                   title: "Collaborators",
                 },
-                {
-                  to: `/~/channels/${channel.id}/roles`,
-                  title: "Community Mods",
-                },
-                { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
               ].filter(Boolean) as SidebarNavProps["items"]
             }
           />
@@ -104,10 +127,10 @@ export default function ChannelRoot() {
         </div>
       </div>
 
-      <Dialog defaultOpen={!!isNewChannel}>
+      <Dialog defaultOpen={!!isNotConfigured}>
         <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>Success! One last step...</DialogTitle>
+            <DialogTitle>One last step...</DialogTitle>
             <DialogDescription asChild>
               <div className="flex flex-col gap-4">
                 <div>
@@ -115,11 +138,11 @@ export default function ChannelRoot() {
                   <a href={`https://warpcast.com/~/channel/${channel.id}`} target="_blank" rel="noreferrer">
                     /{channel.id}
                   </a>{" "}
-                  and add{" "}
-                  <a href="https://warpcast.com/automod" target="_blank" rel="noreferrer">
-                    @automod
+                  and set{" "}
+                  <a href={`https://warpcast.com/${signerUsername}`} target="_blank" rel="noreferrer">
+                    @{signerUsername}
                   </a>{" "}
-                  as a cohost to enable moderation.
+                  as the moderator.
                 </div>
                 <Button asChild>
                   <a

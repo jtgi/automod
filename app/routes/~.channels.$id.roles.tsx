@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { MoreVerticalIcon } from "lucide-react";
-import { CastAction } from "~/lib/types";
 import { actionToInstallLink, grantRoleAction } from "~/lib/utils";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -116,6 +115,10 @@ export default function Screen() {
       return -1;
     }
 
+    if (a.isCohostRole) {
+      return -1;
+    }
+
     return a.name.localeCompare(b.name);
   });
 
@@ -123,9 +126,9 @@ export default function Screen() {
     <div className="space-y-4">
       <div className="flex justify-between gap-4">
         <div>
-          <p className="font-semibold">Community Mods</p>
+          <p className="font-semibold">Moderators</p>
           <p className="text-gray-500">
-            Create roles with limited permissions to allow channel members to take on some moderation
+            Control who can access automod roles to allow channel members to take on some moderation
             responsibilities.{" "}
             <Popover>
               <PopoverTrigger className="underline decoration-dashed">How could I use this?</PopoverTrigger>
@@ -133,17 +136,15 @@ export default function Screen() {
                 <div className="text-sm space-y-2">
                   <p>
                     Let's say you run a large channel like <span className="font-mono">/design</span> with
-                    60k+ members. Staying on top of moderation can be a big job. You likely have a small
-                    population of motivated members who would happily contribute to moderating the channel.
+                    60k+ members. Staying on top of moderation is a job.
                   </p>
                   <p>
-                    You could make them a cohost, but then they'll be able to add/remove other cohosts and ban
-                    other members. It's a bit much.
+                    You likely have a small population of motivated members who would happily contribute to
+                    moderating the channel.
                   </p>
                   <p>
                     With automod roles, you can create a role with just the right level of access. For
-                    example, only allowing them to hide posts–nothing more. A much more appropriate level of
-                    access.
+                    example, only allowing them to hide posts.
                   </p>
                 </div>
               </PopoverContent>
@@ -171,7 +172,7 @@ export default function Screen() {
                   {role.delegates.length} {role.delegates.length ? plur("Member", role.delegates.length) : ""}
                 </p>
               )}
-              {!role.isEveryoneRole && (
+              {!role.isEveryoneRole && !role.isCohostRole && (
                 <DropdownMenu>
                   <DropdownMenuTrigger>
                     <MoreVerticalIcon className="w-5 h-5 text-gray-400" />

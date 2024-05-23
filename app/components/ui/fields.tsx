@@ -1,6 +1,5 @@
 import { cn } from "~/lib/utils";
 import { Input } from "./input";
-import { Controller } from "react-hook-form";
 
 export function FieldLabel(
   props: {
@@ -63,7 +62,7 @@ export function SliderField(
       {...rest}
       className={cn(
         rest.className,
-        "flex items-center justify-between p-3 rounded-lg border border-gray-100"
+        "flex items-center justify-between p-3 gap-6 rounded-lg border border-gray-100"
       )}
     >
       <div className="flex flex-col">
