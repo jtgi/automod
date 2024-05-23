@@ -455,6 +455,8 @@ export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, bu
     },
   });
 
+  console.log(`${moderatedChannel.id} usage`, { usage: usage?.castsProcessed, maxCasts: plan.maxCasts });
+
   if (!usage) {
     console.log(
       `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no usage`,
