@@ -63,25 +63,26 @@ model User {
 }
 
 model ModeratedChannel {
-  id               String          @id
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  active           Boolean         @default(true)
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  imageUrl         String?
-  url              String?
-  userId           String
-  banThreshold     Int?
-  excludeCohosts   Boolean         @default(true)
-  excludeUsernames String          @default("[]")
-  ruleSets         RuleSet[]
-  moderationLogs   ModerationLog[]
-  cooldowns        Cooldown[]
-  comods           Comods[]
-  usage            Usage[]
-  delegates        Delegate[]
-  roles            Role[]
-  downvotes        Downvote[]
+  id                String             @id
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  active            Boolean            @default(true)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  imageUrl          String?
+  url               String?
+  userId            String
+  banThreshold      Int?
+  excludeCohosts    Boolean            @default(true)
+  excludeUsernames  String             @default("[]")
+  ruleSets          RuleSet[]
+  moderationLogs    ModerationLog[]
+  cooldowns         Cooldown[]
+  comods            Comods[]
+  usage             Usage[]
+  delegates         Delegate[]
+  roles             Role[]
+  downvotes         Downvote[]
+  signerAllocations SignerAllocation[]
 }
 
 model Delegate {
@@ -211,4 +212,29 @@ model CastLog {
   updatedAt  DateTime @updatedAt
   status     String
   channelId  String
+}
+
+model Signer {
+  id          String             @id @default(cuid())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  active      Boolean            @default(true)
+  fid         String
+  username    String
+  avatarUrl   String
+  signerUuid  String
+  allocations SignerAllocation[]
+}
+
+model SignerAllocation {
+  id        String           @id @default(cuid())
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  active    Boolean          @default(true)
+  signer    Signer           @relation(fields: [signerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  signerId  String
+  channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  channelId String
+
+  @@unique([signerId, channelId])
 }
