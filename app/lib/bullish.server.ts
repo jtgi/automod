@@ -84,43 +84,7 @@ export const webhookWorker = new Worker(
       return;
     }
 
-    const [cohost, channel, isOverUsage] = await Promise.all([
-      isCohost({
-        fid: +moderatedChannel.userId,
-        channel: moderatedChannel.id,
-      }),
-      getChannel({ name: moderatedChannel.id }).catch(() => null),
-      isUserOverUsage(moderatedChannel, 0.1),
-    ]);
-
-    if (isOverUsage) {
-      console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
-      await toggleWebhook({ channelId: moderatedChannel.id, active: false });
-      throw new UnrecoverableError(`User ${moderatedChannel.userId} is over usage limit`);
-    }
-
-    if (!cohost) {
-      console.log(`User ${moderatedChannel.userId} is no longer a cohost. Disabling moderation.`);
-      await db.moderatedChannel.update({
-        where: {
-          id: moderatedChannel.id,
-        },
-        data: {
-          active: false,
-        },
-      });
-
-      throw new UnrecoverableError("Creator of moderated channel is no longer a cohost");
-    }
-
-    if (!channel) {
-      console.error(
-        `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
-      );
-      throw new UnrecoverableError(`Channel not found: ${moderatedChannel.id}`);
-    }
-
-    const [usage] = await Promise.all([
+    const [usage, channel, isOverUsage] = await Promise.all([
       db.usage.upsert({
         where: {
           channelId_monthYear: {
@@ -140,6 +104,26 @@ export const webhookWorker = new Worker(
           },
         },
       }),
+      getChannel({ name: moderatedChannel.id }).catch(() => null),
+      isUserOverUsage(moderatedChannel, 0.1),
+    ]);
+
+    if (isOverUsage) {
+      console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
+      await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+      throw new UnrecoverableError(`User ${moderatedChannel.userId} is over usage limit`);
+    }
+
+    // TODO: add moderatorFid check here
+
+    if (!channel) {
+      console.error(
+        `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
+      );
+      throw new UnrecoverableError(`Channel not found: ${moderatedChannel.id}`);
+    }
+
+    await Promise.all([
       db.castLog.upsert({
         where: {
           hash: webhookNotif.data.hash,
