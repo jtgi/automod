@@ -1,9 +1,5 @@
 [
     {
-        "channelId": "ITAPofmypet",
-        "count": 1
-    },
-    {
         "channelId": "automod",
         "count": 1
     },
@@ -20,7 +16,11 @@
         "count": 1
     },
     {
-        "channelId": "jtgi",
+        "channelId": "manysuchcases",
+        "count": 1
+    },
+    {
+        "channelId": "powerbadgecabal",
         "count": 1
     },
     {
@@ -29,10 +29,6 @@
     },
     {
         "channelId": "rad",
-        "count": 1
-    },
-    {
-        "channelId": "yakult1000",
         "count": 1
     },
     {
@@ -45,10 +41,6 @@
     },
     {
         "channelId": "lisp",
-        "count": 2
-    },
-    {
-        "channelId": "manysuchcases",
         "count": 2
     },
     {
@@ -65,6 +57,14 @@
     },
     {
         "channelId": "sean",
+        "count": 2
+    },
+    {
+        "channelId": "theburrow",
+        "count": 2
+    },
+    {
+        "channelId": "twocommaclub",
         "count": 2
     },
     {
@@ -88,7 +88,7 @@
         "count": 3
     },
     {
-        "channelId": "scenecoin",
+        "channelId": "tmp",
         "count": 3
     },
     {
@@ -96,20 +96,8 @@
         "count": 4
     },
     {
-        "channelId": "tmp",
+        "channelId": "scenecoin",
         "count": 4
-    },
-    {
-        "channelId": "twocommaclub",
-        "count": 4
-    },
-    {
-        "channelId": "valuesdao",
-        "count": 4
-    },
-    {
-        "channelId": "creatureworld",
-        "count": 5
     },
     {
         "channelId": "paperboy",
@@ -120,12 +108,8 @@
         "count": 5
     },
     {
-        "channelId": "the-glyph",
+        "channelId": "wearesoearly",
         "count": 5
-    },
-    {
-        "channelId": "adp",
-        "count": 6
     },
     {
         "channelId": "cookies",
@@ -152,12 +136,8 @@
         "count": 8
     },
     {
-        "channelId": "nerdery",
-        "count": 8
-    },
-    {
-        "channelId": "running-jp",
-        "count": 8
+        "channelId": "vip",
+        "count": 10
     },
     {
         "channelId": "agust",
@@ -169,7 +149,7 @@
     },
     {
         "channelId": "science",
-        "count": 12
+        "count": 13
     },
     {
         "channelId": "consonant",
@@ -181,7 +161,7 @@
     },
     {
         "channelId": "coop",
-        "count": 19
+        "count": 20
     },
     {
         "channelId": "powerbadgers",
@@ -192,10 +172,6 @@
         "count": 26
     },
     {
-        "channelId": "fashionweb3",
-        "count": 28
-    },
-    {
         "channelId": "tap",
         "count": 35
     },
@@ -204,36 +180,20 @@
         "count": 38
     },
     {
-        "channelId": "lucky",
-        "count": 42
-    },
-    {
-        "channelId": "tabletop",
-        "count": 43
-    },
-    {
         "channelId": "proxyswap",
         "count": 45
     },
     {
-        "channelId": "vip",
-        "count": 50
-    },
-    {
         "channelId": "books",
-        "count": 52
-    },
-    {
-        "channelId": "bycmlab",
         "count": 54
     },
     {
-        "channelId": "amp",
-        "count": 57
+        "channelId": "lucky",
+        "count": 56
     },
     {
-        "channelId": "lounge",
-        "count": 57
+        "channelId": "amp",
+        "count": 58
     },
     {
         "channelId": "purpleday",
@@ -241,51 +201,39 @@
     },
     {
         "channelId": "sofi",
-        "count": 60
-    },
-    {
-        "channelId": "design-pieces",
-        "count": 65
+        "count": 61
     },
     {
         "channelId": "fc-ogs",
         "count": 78
     },
     {
-        "channelId": "powerbadgecabal",
-        "count": 80
-    },
-    {
-        "channelId": "aaron",
-        "count": 81
-    },
-    {
         "channelId": "vandelay",
         "count": 84
     },
     {
+        "channelId": "lounge",
+        "count": 102
+    },
+    {
         "channelId": "memes",
-        "count": 96
+        "count": 107
     },
     {
         "channelId": "replyguys",
         "count": 111
     },
     {
-        "channelId": "theburrow",
-        "count": 111
-    },
-    {
         "channelId": "coop-recs",
-        "count": 113
-    },
-    {
-        "channelId": "degentips",
-        "count": 113
+        "count": 115
     },
     {
         "channelId": "beer",
         "count": 123
+    },
+    {
+        "channelId": "aaron",
+        "count": 128
     },
     {
         "channelId": "fufu",
@@ -293,43 +241,35 @@
     },
     {
         "channelId": "houseofdegen",
-        "count": 157
+        "count": 158
     },
     {
         "channelId": "flying",
-        "count": 159
+        "count": 161
     },
     {
         "channelId": "fitness",
-        "count": 162
-    },
-    {
-        "channelId": "robotics",
-        "count": 218
-    },
-    {
-        "channelId": "human",
-        "count": 220
-    },
-    {
-        "channelId": "banana",
-        "count": 251
+        "count": 164
     },
     {
         "channelId": "hypermod",
-        "count": 259
+        "count": 193
+    },
+    {
+        "channelId": "human",
+        "count": 219
+    },
+    {
+        "channelId": "robotics",
+        "count": 224
+    },
+    {
+        "channelId": "banana",
+        "count": 228
     },
     {
         "channelId": "frontend",
-        "count": 291
-    },
-    {
-        "channelId": "9dcc",
-        "count": 306
-    },
-    {
-        "channelId": "mountains",
-        "count": 329
+        "count": 292
     },
     {
         "channelId": "seaport",
@@ -353,23 +293,11 @@
     },
     {
         "channelId": "commitment",
-        "count": 503
-    },
-    {
-        "channelId": "unko",
-        "count": 511
-    },
-    {
-        "channelId": "yup",
-        "count": 511
-    },
-    {
-        "channelId": "lessoninthere",
-        "count": 515
+        "count": 514
     },
     {
         "channelId": "noreply",
-        "count": 527
+        "count": 530
     },
     {
         "channelId": "farc",
@@ -389,7 +317,11 @@
     },
     {
         "channelId": "ogs",
-        "count": 617
+        "count": 623
+    },
+    {
+        "channelId": "Masks",
+        "count": 637
     },
     {
         "channelId": "powermonday",
@@ -404,95 +336,71 @@
         "count": 858
     },
     {
-        "channelId": "bros",
-        "count": 944
-    },
-    {
-        "channelId": "panda",
-        "count": 949
+        "channelId": "animeoutcasts",
+        "count": 1176
     },
     {
         "channelId": "perl",
-        "count": 1397
+        "count": 1405
     },
     {
         "channelId": "ham",
-        "count": 1441
-    },
-    {
-        "channelId": "animeoutcasts",
-        "count": 1507
+        "count": 1456
     },
     {
         "channelId": "art",
-        "count": 1695
-    },
-    {
-        "channelId": "builtdifferent",
-        "count": 1773
+        "count": 1696
     },
     {
         "channelId": "space",
-        "count": 1819
-    },
-    {
-        "channelId": "wearesoearly",
-        "count": 2018
+        "count": 1831
     },
     {
         "channelId": "360",
-        "count": 2081
-    },
-    {
-        "channelId": "thecryptomasks",
-        "count": 2223
+        "count": 2090
     },
     {
         "channelId": "history",
-        "count": 2248
+        "count": 2265
     },
     {
         "channelId": "rainbow",
-        "count": 2644
+        "count": 2667
     },
     {
         "channelId": "higher",
-        "count": 3765
-    },
-    {
-        "channelId": "Masks",
-        "count": 5934
+        "count": 3802
     },
     {
         "channelId": "farcon",
-        "count": 8286
-    },
-    {
-        "channelId": "banmal-mode",
-        "count": 10962
+        "count": 8501
     },
     {
         "channelId": "base",
-        "count": 12632
+        "count": 12705
+    },
+    {
+        "channelId": "banmal-mode",
+        "count": 15174
     },
     {
         "channelId": "farcasther",
-        "count": 17242
+        "count": 17711
     },
     {
         "channelId": "paidgroup",
-        "count": 67051
+        "count": 24981
     },
     {
         "channelId": "degen",
-        "count": 90758
+        "count": 92196
     },
     {
         "channelId": "design",
-        "count": 121480
+        "count": 122813
     },
     {
         "channelId": "lp",
-        "count": 838830
+        "count": 858423
     }
 ]
