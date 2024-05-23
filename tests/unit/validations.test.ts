@@ -17,7 +17,6 @@ import {
   userFollowerCount,
   userProfileContainsText,
   castLength,
-  userIsNotActive,
 } from "~/lib/validations.server";
 import RE2 from "re2";
 import { NeynarCastWithFrame, WebhookCast } from "~/lib/types";
