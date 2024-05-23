@@ -49,6 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       channel,
       warpcastChannel,
       signerFid: signerAlloc?.signer.fid,
+      signerUsername: signerAlloc?.signer.username,
     },
     {
       headers: {
@@ -59,10 +60,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChannelRoot() {
-  const { channel, warpcastChannel, signerFid } = useTypedLoaderData<typeof loader>();
+  const { channel, warpcastChannel, signerFid, signerUsername } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
 
-  const isNotConfigured = warpcastChannel.moderatorFid !== +signerFid;
+  const isNotConfigured = !signerFid || warpcastChannel.moderatorFid !== +signerFid;
 
   return (
     <div>
@@ -126,10 +127,10 @@ export default function ChannelRoot() {
         </div>
       </div>
 
-      <Dialog defaultOpen={!!isNewChannel}>
+      <Dialog defaultOpen={!!isNotConfigured}>
         <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>Success! One last step...</DialogTitle>
+            <DialogTitle>One last step...</DialogTitle>
             <DialogDescription asChild>
               <div className="flex flex-col gap-4">
                 <div>
@@ -137,11 +138,11 @@ export default function ChannelRoot() {
                   <a href={`https://warpcast.com/~/channel/${channel.id}`} target="_blank" rel="noreferrer">
                     /{channel.id}
                   </a>{" "}
-                  and add{" "}
-                  <a href="https://warpcast.com/automod" target="_blank" rel="noreferrer">
-                    @automod
+                  and set{" "}
+                  <a href={`https://warpcast.com/${signerUsername}`} target="_blank" rel="noreferrer">
+                    @{signerUsername}
                   </a>{" "}
-                  as a cohost to enable moderation.
+                  as the moderator.
                 </div>
                 <Button asChild>
                   <a

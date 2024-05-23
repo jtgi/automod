@@ -236,6 +236,4 @@ model SignerAllocation {
   signerId  String
   channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId String
-
-  @@unique([signerId, channelId])
 }
