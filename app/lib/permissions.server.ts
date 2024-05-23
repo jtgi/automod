@@ -10,13 +10,7 @@ export function actionToPermission(action: ActionType): Permission["id"] {
   return `action:${action}`;
 }
 
-export const defaultPerms = [
-  {
-    id: `automod:*`,
-    name: "Automod Admin",
-    description: "Complete access to automod and ability to configure all settings.",
-  },
-];
+export const defaultPerms = [];
 
 export const permissionDefs = !actionDefinitions
   ? [...defaultPerms]

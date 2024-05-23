@@ -4,7 +4,7 @@ import { cache } from "./cache.server";
 import { FollowResponseUser, Reaction } from "@neynar/nodejs-sdk/build/neynar-api/v1";
 import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
-import { getSharedEnv } from "./utils.server";
+import { getSetCache, getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
 
 export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string }) {
@@ -124,6 +124,19 @@ export async function getChannel(props: { name: string }) {
   cache.set(cacheKey, response.channel, process.env.NODE_ENV === "development" ? 0 : 60 * 60 * 24);
 
   return response.channel;
+}
+
+export async function getUsername(props: { username: string }) {
+  const user = getSetCache({
+    key: `username:${props.username}`,
+    get: async () => {
+      const response = await neynar.lookupUserByUsername(props.username);
+      return response.result.user;
+    },
+    ttlSeconds: 60 * 60 * 4,
+  });
+
+  return user;
 }
 
 export async function getUser(props: { fid: string }) {

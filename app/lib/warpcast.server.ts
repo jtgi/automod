@@ -47,36 +47,9 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
   return Promise.reject(err);
 });
 
-type HostResult = {
-  result: {
-    hosts: Array<{
-      fid: number;
-      username: string;
-      displayName: string;
-      pfp: {
-        url: string;
-        verified: boolean;
-      };
-    }>;
-  };
-};
-
-// create channels: owner or legacy cohosts (until removed)
-// update channels: channel.userId or anyone with automod:*
-// mod security check: remove
-
-export async function isCohost(props: { fid: number; channel: string }) {
-  if (process.env.NODE_ENV === "test") {
-    return props.fid === 1;
-  }
-
-  const hosts = await getWarpcastChannelHosts(props);
-  return hosts.some((host) => host.fid === String(props.fid));
-}
-
-export async function getChannelOwner(props: { channel: string }) {
-  const channelDelegates = await getWarpcastChannelHosts(props);
-  return channelDelegates.find((d) => d.role.isOwnerRole);
+export async function getWarpcastChannelOwner(props: { channel: string }): Promise<number> {
+  const channel = await getWarpcastChannel(props);
+  return channel.leadFid;
 }
 
 export async function getWarpcastChannelHosts(props: { channel: string }) {

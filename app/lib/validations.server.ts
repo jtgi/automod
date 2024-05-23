@@ -9,9 +9,9 @@ import {
   addToBypass,
   cooldown,
   downvote,
+  getWarpcastChannelOwner,
   grantRole,
   hideQuietly,
-  isCohost,
   mute,
   warnAndHide,
 } from "./warpcast.server";
@@ -440,8 +440,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsCohost: {
-    friendlyName: "User Is Cohost",
-    description: "Check if the user is a cohost",
+    friendlyName: "User Is Cohost or Owner",
+    description: "Check if the user is a cohost or owner of the channel",
     hidden: false,
     invertable: true,
     args: {},
@@ -952,7 +952,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userProfileContainsText: userProfileContainsText,
   userDoesNotFollow: userDoesNotFollow,
   userIsNotFollowedBy: userIsNotFollowedBy,
-  userIsCohost: userIsCohost,
+  userIsCohost: userIsCohostOrOwner,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
   userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
@@ -1447,18 +1447,24 @@ export async function userDoesNotFollow(args: CheckFunctionArgs) {
   }
 }
 
-export async function userIsCohost(args: CheckFunctionArgs) {
+export async function userIsCohostOrOwner(args: CheckFunctionArgs) {
   const { channel, rule } = args;
 
-  const isUserCohost = await isCohost({
-    fid: args.cast.author.fid,
-    channel: channel.id,
-  });
+  const [isUserCohost, ownerFid] = await Promise.all([
+    isCohost({
+      fid: args.cast.author.fid,
+      channel: channel.id,
+    }),
+    getWarpcastChannelOwner({ channel: channel.id }),
+  ]);
 
-  if (rule.invert && !isUserCohost) {
-    return `User is not a cohost`;
-  } else if (!rule.invert && isUserCohost) {
-    return `User is a cohost`;
+  const isOwner = ownerFid === args.cast.author.fid;
+  const isCohostOrOwner = isUserCohost || isOwner;
+
+  if (rule.invert && !isCohostOrOwner) {
+    return `User is not a cohost nor owner`;
+  } else if (!rule.invert && isCohostOrOwner) {
+    return `User is a cohost or owner`;
   }
 }
 
@@ -1710,4 +1716,22 @@ function tryParseUrl(url: string) {
   } catch (e) {
     return undefined;
   }
+}
+
+export async function isCohost(props: { fid: number; channel: string }) {
+  const role = await db.role.findFirst({
+    where: {
+      channelId: props.channel,
+      isCohostRole: true,
+    },
+    include: {
+      delegates: true,
+    },
+  });
+
+  if (!role) {
+    return false;
+  }
+
+  return role.delegates.some((d) => d.fid === String(props.fid));
 }

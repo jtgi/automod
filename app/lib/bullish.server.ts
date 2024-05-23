@@ -9,7 +9,6 @@ import { getChannel, neynar, pageChannelCasts } from "./neynar.server";
 import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
-import { isCohost } from "./warpcast.server";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,

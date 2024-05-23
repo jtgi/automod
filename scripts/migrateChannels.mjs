@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import sqlite3 from "sqlite3";
 
 async function main() {
+  const changeExplanations = {};
+
   await fs.copyFile("./sqlite.db", "./sqlite.db.bak");
   const db = new sqlite3.Database("./sqlite.db.bak");
 
@@ -11,15 +13,24 @@ async function main() {
     }
 
     rows.forEach((row) => {
-      let migratedRow = migrate(row);
-      const updatedJson = JSON.stringify(migratedRow);
+      let migratedRow = migrate(row, changeExplanations);
+
+      console.log(changeExplanations);
+
+      const updatedRule = migratedRow.rule;
+      const updatedActions = migratedRow.actions;
+      const updatedActive = migratedRow.active;
 
       // Update each row
-      db.run("UPDATE ruleset SET rule = ? WHERE rowid = ?", [updatedJson, row.rowid], (err) => {
-        if (err) {
-          throw err;
+      db.run(
+        "UPDATE ruleset SET rule = ?, actions = ?, active = ? WHERE id = ?",
+        [updatedRule, updatedActions, updatedActive, row.id],
+        (err) => {
+          if (err) {
+            throw err;
+          }
         }
-      });
+      );
     });
   });
 
@@ -27,79 +38,20 @@ async function main() {
   db.close();
 }
 
-function migrate(row) {
-  let rules = JSON.parse(row.rule);
-  if (row.target === "reply") {
-    row.active = false;
+function migrate(currentRow, changeExplanations) {
+  function addExplanation(channelId, explanation) {
+    changeExplanations[channelId] = changeExplanations[channelId] || [];
+    changeExplanations[channelId].push(explanation);
   }
 
-  rules.conditions.forEach((condition) => {
-    switch (condition.type) {
-      case "textMatchesPattern": {
-        break;
-      }
-      case "textMatchesLanguage": {
-        break;
-      }
-      case "containsText": {
-        break;
-      }
-      case "containsTooManyMentions": {
-        break;
-      }
-      case "containsLinks": {
-        break;
-      }
-      case "containsEmbeds": {
-        break;
-      }
-      case "castInThread": {
-        break;
-      }
-      case "castLength": {
-        break;
-      }
-      case "downvote": {
-        break;
-      }
-      case "userProfileContainsText": {
-        break;
-      }
-      case "userDoesNotFollow": {
-        break;
-      }
-      case "userIsCohost": {
-        break;
-      }
-      case "userDisplayNameContainsText": {
-        break;
-      }
-      case "userFollowerCount": {
-        break;
-      }
-      case "userIsNotActive": {
-        break;
-      }
-      case "userDoesNotHoldPowerBadge": {
-        break;
-      }
-      case "userFidInRange": {
-        break;
-      }
-      case "requireActiveHypersub": {
-        break;
-      }
-      case "requiresErc721": {
-        break;
-      }
-      case "requiresErc20": {
-        break;
-      }
-      case "requiresErc1155": {
-        break;
-      }
-    }
-  });
+  const row = structuredClone(currentRow);
+  if (row.target === "reply") {
+    row.active = false;
+    addExplanation(
+      row.channelId,
+      `Rule was targeted for replies which can no longer be moderated in the new channel design. It has been disabled`
+    );
+  }
 
   let actions = JSON.parse(row.actions || "[]");
   actions.forEach((action) => {
@@ -120,15 +72,26 @@ function migrate(row) {
         break;
       }
       case "like": {
-        // like is by default now, remove the rule
+        addExplanation(
+          row.channelId,
+          `Rule had a "Boost" action but with the Trending tab disappearing the concept of "Boost" has changed. By default, anything that is not caught by your rules will be "Boosted" and shown in the "Main" feed. As a result, this rule is no longer needed and has been disabled.`
+        );
         row.active = false;
         break;
       }
       case "mute": {
+        addExplanation(
+          row.channelId,
+          `Rule used a "Mute" action but Mute is no longer needed. Mute was created because Warpcast did not have the ability to unban, but now you can since bans are managed entirely by you inside automod. Mute has been renamed to "Ban". The action was updated.`
+        );
         action.type = "ban";
         break;
       }
       case "warnAndHide": {
+        addExplanation(
+          row.channelId,
+          `Rule used a "Warn & Hide" but warning is no longer supported. It has been converted to "Hide".`
+        );
         action.type = "hideQuietly";
         break;
       }
@@ -149,24 +112,8 @@ function migrate(row) {
       }
     }
   });
+
+  return row;
 }
-
-/**
- * 
- * action based logic
-  14 ban
-   5 cooldown
-   6 cooldown,hideQuietly
-   3 cooldown,warnAndHide
- 101 hideQuietly
-  36 like
-   4 mute
-  43 warnAndHide
-
-  if action contains cooldown
-    leave it
-
-  if like do nothing
- */
 
 main();

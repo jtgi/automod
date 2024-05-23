@@ -13,7 +13,6 @@ import {
 } from "~/lib/utils.server";
 import { actionFunctions, actionTypes } from "~/lib/validations.server";
 import { isRuleTargetApplicable, logModerationAction } from "./api.webhooks.neynar";
-import { getWarpcastChannelHosts } from "~/lib/warpcast.server";
 import { actions, deprecatedActions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
 import { castQueue } from "~/lib/bullish.server";

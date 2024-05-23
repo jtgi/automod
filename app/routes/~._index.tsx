@@ -26,16 +26,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     where: {
       OR: [
         {
-          roles: {
+          comods: {
             some: {
-              permissions: {
-                contains: `automod:*`,
-              },
-              delegates: {
-                some: {
-                  fid: user.id,
-                },
-              },
+              fid: user.id,
             },
           },
         },
@@ -46,6 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     include: {
       ruleSets: true,
+      comods: true,
     },
   });
 

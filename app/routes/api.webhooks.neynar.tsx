@@ -7,11 +7,18 @@ import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
 import { getModerators, requireValidSignature } from "~/lib/utils.server";
 
-import { Action, Rule, actionDefinitions, actionFunctions, ruleFunctions } from "~/lib/validations.server";
-import { isCohost } from "~/lib/warpcast.server";
+import {
+  Action,
+  Rule,
+  actionDefinitions,
+  actionFunctions,
+  isCohost,
+  ruleFunctions,
+} from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
+import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -256,8 +263,8 @@ export async function validateCast({
 
         if (
           action.type === "ban" &&
-          (await isCohost({
-            fid: cast.author.fid,
+          (await isCohostOrOwner({
+            fid: String(cast.author.fid),
             channel: channel.id,
           }))
         ) {
@@ -467,4 +474,18 @@ export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, bu
   }
 
   return false;
+}
+
+export async function isCohostOrOwner({ fid, channel }: { fid: string; channel: string }) {
+  const [isUserCohost, ownerFid] = await Promise.all([
+    isCohost({
+      fid: +fid,
+      channel,
+    }),
+    getWarpcastChannelOwner({ channel }),
+  ]);
+
+  const isOwner = ownerFid === +fid;
+
+  return isUserCohost || isOwner;
 }

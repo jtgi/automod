@@ -128,7 +128,8 @@ export default function Screen() {
         <div>
           <p className="font-semibold">Moderators</p>
           <p className="text-gray-500">
-            Create roles to allow channel members to take on some moderation responsibilities.{" "}
+            Control who can access automod roles to allow channel members to take on some moderation
+            responsibilities.{" "}
             <Popover>
               <PopoverTrigger className="underline decoration-dashed">How could I use this?</PopoverTrigger>
               <PopoverContent>

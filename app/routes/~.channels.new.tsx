@@ -25,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!hosts.includes(user.id)) {
       return errorResponse({
         request,
-        message: `You must be a cohost to setup a bot.`,
+        message: `You must be a host to setup a bot.`,
       });
     }
   }

@@ -12,7 +12,7 @@ import { redirect, typedjson } from "remix-typedjson";
 import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
-import { getWarpcastChannelHosts } from "./warpcast.server";
+import { getWarpcastChannelHosts, getWarpcastChannelOwner } from "./warpcast.server";
 import { erc20Abi, getAddress, getContract } from "viem";
 import { clientsByChainId } from "./viem.server";
 import { cache } from "./cache.server";
@@ -150,16 +150,9 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
       id: props.channelId,
       OR: [
         {
-          roles: {
+          comods: {
             some: {
-              permissions: {
-                contains: `automod:*`,
-              },
-              delegates: {
-                some: {
-                  fid: props.userId,
-                },
-              },
+              fid: props.userId,
             },
           },
         },
@@ -176,6 +169,7 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
           delegates: true,
         },
       },
+      comods: true,
     },
   });
 

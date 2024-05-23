@@ -86,15 +86,15 @@ export default function ChannelRoot() {
               [
                 { to: `/~/channels/${channel.id}`, title: "Logs", end: true },
                 { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
-                // {
-                //   to: `/~/channels/${channel.id}/collaborators`,
-                //   title: "Collaborators",
-                // },
                 {
                   to: `/~/channels/${channel.id}/roles`,
                   title: "Moderators",
                 },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
+                {
+                  to: `/~/channels/${channel.id}/collaborators`,
+                  title: "Collaborators",
+                },
               ].filter(Boolean) as SidebarNavProps["items"]
             }
           />

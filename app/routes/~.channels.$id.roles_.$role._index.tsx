@@ -82,6 +82,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  if (process.env.NODE_ENV === "development") {
+    console.log(result.data.permissions);
+  }
+
   const enabledPermissions = Object.keys(result.data.permissions).filter(
     (perm) => result.data.permissions[perm] === true
   );
@@ -110,6 +114,7 @@ export default function Screen() {
   const { role, permissionDefs } = useTypedLoaderData<typeof loader>();
   const fetcher = useFetcher();
 
+  console.log({ role });
   const permissionMap = role.permissionsParsed.reduce((acc, perm) => {
     acc[perm] = true;
     return acc;
