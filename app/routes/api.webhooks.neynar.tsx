@@ -441,6 +441,10 @@ export function isRuleTargetApplicable(target: string, cast: Cast) {
 export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
   const plan = userPlans[moderatedChannel.user.plan as PlanType];
   if (!plan) {
+    console.log(
+      `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no plan`,
+      moderatedChannel.user.plan
+    );
     return false;
   }
 
@@ -452,6 +456,10 @@ export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, bu
   });
 
   if (!usage) {
+    console.log(
+      `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no usage`,
+      moderatedChannel.user.plan
+    );
     return false;
   }
 

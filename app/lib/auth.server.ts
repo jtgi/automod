@@ -135,7 +135,7 @@ export type PlanType = (typeof planTypes)[number];
 export const userPlans = {
   basic: {
     maxChannels: 3,
-    maxCasts: 10_000,
+    maxCasts: 1_000,
   },
   prime: {
     maxChannels: 5,
