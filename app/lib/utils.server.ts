@@ -190,7 +190,7 @@ export async function requireUserIsCohost(props: { fid: number; channelId: strin
     channel: props.channelId,
   });
 
-  const cohost = hosts.find((h) => h.fid === String(props.fid));
+  const cohost = hosts.find((fid) => fid === props.fid);
 
   if (!cohost) {
     throw redirect(`/`, { status: 403 });

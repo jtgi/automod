@@ -22,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (process.env.NODE_ENV !== "development") {
     const hosts = await getWarpcastChannelHosts({ channel: data.id });
 
-    if (!hosts.includes(user.id)) {
+    if (!hosts.includes(+user.id)) {
       return errorResponse({
         request,
         message: `You must be a host to setup a bot.`,

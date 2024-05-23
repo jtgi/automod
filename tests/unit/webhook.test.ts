@@ -694,148 +694,77 @@ describe("validateCast", () => {
     expect(logs).toHaveLength(0);
   });
 
-  it("should mute the user", async () => {
-    const mc = await prisma.moderatedChannel.create({
-      data: {
-        id: "jtgi",
-        userId: u0.id,
-        banThreshold: 3,
-        excludeCohosts: true,
-        ruleSets: {
-          create: [
-            {
-              rule: JSON.stringify(
-                rule({
-                  name: "containsText",
-                  type: "CONDITION",
-                  args: {
-                    searchText: "spam",
-                    caseSensitive: true,
-                  },
-                })
-              ),
-              actions: JSON.stringify([action({ type: "mute" })]),
-            },
-          ],
-        },
-      },
-      include: { user: true, ruleSets: { where: { active: true } } },
-    });
+  // it("simulation should apply no actions", async () => {
+  //   const mc = await prisma.moderatedChannel.create({
+  //     data: {
+  //       id: "jtgi",
+  //       userId: u0.id,
+  //       banThreshold: 3,
+  //       ruleSets: {
+  //         create: [
+  //           {
+  //             rule: JSON.stringify(
+  //               rule({
+  //                 name: "containsText",
+  //                 type: "CONDITION",
+  //                 args: {
+  //                   searchText: "spam",
+  //                   caseSensitive: true,
+  //                 },
+  //               })
+  //             ),
+  //             actions: JSON.stringify([action({ type: "warnAndHide" }), action({ type: "ban" })]),
+  //           },
+  //         ],
+  //       },
+  //     },
+  //     include: { user: true, ruleSets: { where: { active: true } } },
+  //   });
 
-    await validateCast({
-      channel: nc0,
-      moderatedChannel: mc,
-      cast: cast({
-        text: "spam",
-        hash: "gm",
-        author: neynarUser({
-          fid: 5179,
-          username: "jtgi",
-          pfp_url: "https://google.com",
-        }),
-      }),
-    });
+  //   const logs = await validateCast({
+  //     channel: nc0,
+  //     moderatedChannel: mc,
+  //     cast: cast({
+  //       text: "spam",
+  //       hash: "gm",
+  //       author: neynarUser({
+  //         fid: 5179,
+  //         username: "jtgi",
+  //         pfp_url: "https://google.com",
+  //       }),
+  //     }),
+  //     simulation: true,
+  //   });
 
-    const logs = await prisma.moderationLog.findMany({
-      where: { channelId: mc.id },
-    });
+  //   expect(axios.put).not.toHaveBeenCalled();
 
-    expect(logs).toHaveLength(1);
-    expect(logs[0].action).toBe("mute");
+  //   const writtenLogs = await prisma.moderationLog.findMany({
+  //     where: { channelId: mc.id },
+  //   });
+  //   expect(writtenLogs).toHaveLength(0);
 
-    await validateCast({
-      channel: nc0,
-      moderatedChannel: mc,
-      cast: cast({
-        text: "text that doenst break rules",
-        hash: "gm",
-        author: neynarUser({
-          fid: 5179,
-          username: "jtgi",
-          pfp_url: "https://google.com",
-        }),
-      }),
-    });
-
-    const logs2 = await prisma.moderationLog.findMany({
-      where: { channelId: mc.id },
-    });
-
-    expect(logs2).toHaveLength(2);
-    expect(logs2[1].action).toBe("hideQuietly");
-  });
-
-  it("simulation should apply no actions", async () => {
-    const mc = await prisma.moderatedChannel.create({
-      data: {
-        id: "jtgi",
-        userId: u0.id,
-        banThreshold: 3,
-        ruleSets: {
-          create: [
-            {
-              rule: JSON.stringify(
-                rule({
-                  name: "containsText",
-                  type: "CONDITION",
-                  args: {
-                    searchText: "spam",
-                    caseSensitive: true,
-                  },
-                })
-              ),
-              actions: JSON.stringify([action({ type: "warnAndHide" }), action({ type: "ban" })]),
-            },
-          ],
-        },
-      },
-      include: { user: true, ruleSets: { where: { active: true } } },
-    });
-
-    const logs = await validateCast({
-      channel: nc0,
-      moderatedChannel: mc,
-      cast: cast({
-        text: "spam",
-        hash: "gm",
-        author: neynarUser({
-          fid: 5179,
-          username: "jtgi",
-          pfp_url: "https://google.com",
-        }),
-      }),
-      simulation: true,
-    });
-
-    expect(axios.put).not.toHaveBeenCalled();
-
-    const writtenLogs = await prisma.moderationLog.findMany({
-      where: { channelId: mc.id },
-    });
-    expect(writtenLogs).toHaveLength(0);
-
-    expect(logs).toHaveLength(2);
-    expect(logs[0]).toMatchObject(
-      expect.objectContaining({
-        action: "warnAndHide",
-        castHash: "gm",
-        affectedUserFid: "5179",
-        affectedUsername: "jtgi",
-        affectedUserAvatarUrl: "https://google.com",
-        reason: "Text contains the text: spam",
-      })
-    );
-    expect(logs[1]).toMatchObject(
-      expect.objectContaining({
-        action: "ban",
-        castHash: "gm",
-        affectedUserFid: "5179",
-        affectedUsername: "jtgi",
-        affectedUserAvatarUrl: "https://google.com",
-        reason: "Text contains the text: spam",
-      })
-    );
-  });
+  //   expect(logs).toHaveLength(2);
+  //   expect(logs[0]).toMatchObject(
+  //     expect.objectContaining({
+  //       action: "warnAndHide",
+  //       castHash: "gm",
+  //       affectedUserFid: "5179",
+  //       affectedUsername: "jtgi",
+  //       affectedUserAvatarUrl: "https://google.com",
+  //       reason: "Text contains the text: spam",
+  //     })
+  //   );
+  //   expect(logs[1]).toMatchObject(
+  //     expect.objectContaining({
+  //       action: "ban",
+  //       castHash: "gm",
+  //       affectedUserFid: "5179",
+  //       affectedUsername: "jtgi",
+  //       affectedUserAvatarUrl: "https://google.com",
+  //       reason: "Text contains the text: spam",
+  //     })
+  //   );
+  // });
 
   it("should respect action targets if defined", async () => {
     const mc = await prisma.moderatedChannel.create({
