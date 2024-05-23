@@ -57,7 +57,20 @@ export async function getWarpcastChannelHosts(props: { channel: string }) {
   return Array.from(new Set([channel.leadFid, ...channel.hostFids]));
 }
 
-export async function getWarpcastChannel(props: { channel: string }) {
+export type WarpcastChannel = {
+  id: string;
+  url: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  leadFid: number;
+  hostFids: number[];
+  moderatorFid: number;
+  createdAt: number;
+  followerCount: number;
+};
+
+export async function getWarpcastChannel(props: { channel: string }): Promise<WarpcastChannel> {
   const rsp = await getSetCache({
     key: `channel:${props.channel}`,
     get: async () => http.get(`https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`),

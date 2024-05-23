@@ -6,10 +6,19 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { SidebarNav, SidebarNavProps } from "~/components/sub-nav";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
 import { commitSession, getSession } from "~/lib/auth.server";
+import { db } from "~/lib/db.server";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
+import { getWarpcastChannel } from "~/lib/warpcast.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -20,15 +29,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     channelId: params.id,
   });
 
-  const url = new URL(request.url);
   const session = await getSession(request.headers.get("Cookie"));
-  const isNewChannel = session.get("newChannel") !== undefined || url.searchParams.get("newChannel") !== null;
+
+  const [warpcastChannel, signerAlloc] = await Promise.all([
+    getWarpcastChannel({ channel: channel.id }),
+    db.signerAllocation.findFirst({
+      where: {
+        channelId: channel.id,
+      },
+      include: {
+        signer: true,
+      },
+    }),
+  ]);
 
   return typedjson(
     {
       user,
       channel,
-      isNewChannel,
+      warpcastChannel,
+      signerFid: signerAlloc?.signer.fid,
     },
     {
       headers: {
@@ -39,8 +59,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChannelRoot() {
-  const { channel, isNewChannel } = useTypedLoaderData<typeof loader>();
+  const { channel, warpcastChannel, signerFid } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
+
+  const isNotConfigured = warpcastChannel.moderatorFid !== +signerFid;
 
   return (
     <div>
