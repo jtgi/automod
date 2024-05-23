@@ -8,7 +8,7 @@ import { neynar } from "~/lib/neynar.server";
 import { getModerators, requireValidSignature } from "~/lib/utils.server";
 
 import { Action, Rule, actionDefinitions, actionFunctions, ruleFunctions } from "~/lib/validations.server";
-import { getWarpcastChannelHosts, isCohost } from "~/lib/warpcast.server";
+import { isCohost } from "~/lib/warpcast.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";

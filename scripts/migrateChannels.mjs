@@ -29,6 +29,10 @@ async function main() {
 
 function migrate(row) {
   let rules = JSON.parse(row.rule);
+  if (row.target === "reply") {
+    row.active = false;
+  }
+
   rules.conditions.forEach((condition) => {
     switch (condition.type) {
       case "textMatchesPattern": {
@@ -107,7 +111,6 @@ function migrate(row) {
         break;
       }
       case "hideQuietly": {
-        action.type = "like";
         break;
       }
       case "downvote": {
@@ -117,12 +120,16 @@ function migrate(row) {
         break;
       }
       case "like": {
+        // like is by default now, remove the rule
+        row.active = false;
         break;
       }
       case "mute": {
+        action.type = "ban";
         break;
       }
       case "warnAndHide": {
+        action.type = "hideQuietly";
         break;
       }
       case "cooldown": {

@@ -54,6 +54,7 @@ import { JobState as BullJobState } from "bullmq";
 import { SimulationResult } from "~/routes/~.channels.$id.tools";
 import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 
 export type FormValues = {
   id?: string;
@@ -159,7 +160,11 @@ export function ChannelForm(props: {
                 onValueChange={(value) => setOpenRule(Number(value.split("-")[1]))}
               >
                 {fields.map((ruleSetField, ruleSetIndex) => (
-                  <AccordionItem key={ruleSetField.id} value={`item-${ruleSetIndex}`}>
+                  <AccordionItem
+                    key={ruleSetField.id}
+                    value={`item-${ruleSetIndex}`}
+                    className={ruleSetField.active ? "" : "opacity-50 "}
+                  >
                     <AccordionTrigger
                       className={cn(
                         "hover:no-underline no-underline w-full py-2 px-4 border bg-slate-50/50 hover:bg-slate-50 data-[state=open]:rounded-b-none",
@@ -170,7 +175,10 @@ export function ChannelForm(props: {
                       )}
                       hideChevron
                     >
-                      <p className="font-semibold">Rule Set {ruleSetIndex + 1}</p>
+                      <p className="font-semibold">
+                        Rule Set {ruleSetIndex + 1}{" "}
+                        {!ruleSetField.active && <span className="text-yellow-700">(Disabled)</span>}
+                      </p>
 
                       <Button
                         type="button"
@@ -189,7 +197,14 @@ export function ChannelForm(props: {
                       </Button>
                     </AccordionTrigger>
 
-                    <AccordionContent className="p-6 border">
+                    <AccordionContent
+                      className={`p-6 border ${ruleSetField.active ? "" : "pointer-events-none"}`}
+                    >
+                      {!ruleSetField.active && (
+                        <Alert variant={"destructive"} className="mb-4 text-yellow-700 border-yellow-500">
+                          This rule is no longer supported and has been disabled. You may delete it anytime.
+                        </Alert>
+                      )}
                       <RuleSetEditor
                         actionDefinitions={props.actionDefinitions}
                         ruleDefinitions={props.ruleDefinitions}
