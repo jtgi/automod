@@ -589,14 +589,14 @@ export const actionDefinitions = {
     friendlyName: "Hide",
     hidden: false,
     castScope: "all",
-    description: "Hide the cast from the Main feed",
+    description: "Hide the cast from the Main feed.",
     args: {},
   },
   addToBypass: {
     friendlyName: "Add to Bypass",
     hidden: true,
     castScope: "all",
-    description: "Add the user to the bypass list. This will exclude them from all moderation rules.",
+    description: "Always curate this user's casts in Main.",
     args: {},
   },
   bypass: {
@@ -626,13 +626,6 @@ export const actionDefinitions = {
     hidden: true,
     castScope: "root",
     description: "Curate the cast into the Main feed. For root casts only.",
-    args: {},
-  },
-  unlike: {
-    friendlyName: "Hide",
-    hidden: true,
-    castScope: "root",
-    description: "Hide the cast from the Main feed. For root casts only.",
     args: {},
   },
   warnAndHide: {
@@ -725,7 +718,6 @@ export const actionTypes = [
   "hideQuietly",
   "downvote",
   "ban",
-  "unlike",
   "like",
   "mute",
   "warnAndHide",
@@ -891,9 +883,13 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
 
 export const ActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("bypass") }),
-  z.object({ type: z.literal("hideQuietly") }),
+  z.object({
+    type: z.literal("hideQuietly"),
+    args: z.object({
+      executeOnProtocol: z.boolean().optional().default(false),
+    }),
+  }),
   z.object({ type: z.literal("like") }),
-  z.object({ type: z.literal("unlike") }),
   z.object({ type: z.literal("ban") }),
   z.object({ type: z.literal("addToBypass") }),
   z.object({
@@ -984,7 +980,6 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   unhide: () => Promise.resolve(),
   ban: ban,
   like: like,
-  unlike: unlike,
   warnAndHide: warnAndHide,
   cooldown: cooldown,
   grantRole: grantRole,

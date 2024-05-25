@@ -9,18 +9,7 @@ export const loader = handler;
 
 async function handler({ params }: LoaderFunctionArgs) {
   const env = getSharedEnv();
-
-  let installAction = params.action;
-
-  // Reverse compatibility with installed actions
-  // hide was changed to unlike but a lot of people
-  // still have it install and Hide is better than
-  // another name.
-  if (params.action === "hideQuietly") {
-    installAction = "unlike";
-  }
-
-  const action = actions.find((a) => a.automodAction === installAction);
+  const action = actions.find((a) => a.automodAction === params.action);
 
   if (!action) {
     return redirect("/404");

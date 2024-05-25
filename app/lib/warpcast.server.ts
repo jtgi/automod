@@ -3,7 +3,7 @@
 import axiosFactory from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { db } from "./db.server";
-import { Action } from "./validations.server";
+import { Action, unlike } from "./validations.server";
 import { neynar } from "./neynar.server";
 
 const token = process.env.WARPCAST_TOKEN!;
@@ -124,7 +124,25 @@ export async function hideQuietly({
   cast: Cast;
   action: Action;
 }) {
-  return Promise.resolve();
+  const args = (
+    action as {
+      args: {
+        executeOnProtocol?: boolean;
+      };
+    }
+  ).args;
+
+  // Since casts are not curated by default,
+  // often we do not need to do anything to hide.
+  // But other times a cast is already curated, now
+  // we want to uncurate it.
+  // Ultimately this is a leaky abstraction. I'm using
+  // actions to hide.
+  if (args.executeOnProtocol) {
+    await unlike({ channel, cast });
+  } else {
+    return Promise.resolve();
+  }
 }
 
 export async function addToBypass({

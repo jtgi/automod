@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
@@ -68,8 +69,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect("/404");
   }
 
-  const validPerms = permissionDefs.map((perm) => perm.id) as [string, ...string[]];
+  const validPerms = ["action:unlike", ...permissionDefs.map((perm) => perm.id)] as [string, ...string[]];
   const json = await request.json();
+
   const result = z
     .object({
       permissions: z.record(z.enum(validPerms), z.boolean()),
