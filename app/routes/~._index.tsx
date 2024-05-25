@@ -161,13 +161,19 @@ export default function FrameConfig() {
                         <>
                           <p>You can upgrade on hypersub.</p>
                           <Button asChild>
-                            <Link className="no-underline" to="/TODO">
-                              Upgrade to Power Plan ($9.69/mo)
+                            <Link
+                              className="no-underline"
+                              to="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
+                            >
+                              Upgrade to Prime ($7.77/mo)
                             </Link>
                           </Button>
                           <Button asChild>
-                            <Link className="no-underline" to="/TODO">
-                              Upgrade to Ultra Plan ($29.69/mo)
+                            <Link
+                              className="no-underline"
+                              to="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
+                            >
+                              Upgrade to Ultra Plan ($23/mo)
                             </Link>
                           </Button>
                         </>
