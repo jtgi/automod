@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChannelRoot() {
-  const { channel, warpcastChannel, signerFid, signerUsername } = useTypedLoaderData<typeof loader>();
+  const { user, channel, warpcastChannel, signerFid, signerUsername } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
 
   const isNotConfigured = !signerFid || warpcastChannel.moderatorFid !== +signerFid;
@@ -114,10 +114,12 @@ export default function ChannelRoot() {
                   title: "Moderators",
                 },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
-                {
-                  to: `/~/channels/${channel.id}/collaborators`,
-                  title: "Collaborators",
-                },
+                user.id === channel.userId
+                  ? {
+                      to: `/~/channels/${channel.id}/collaborators`,
+                      title: "Collaborators",
+                    }
+                  : null,
               ].filter(Boolean) as SidebarNavProps["items"]
             }
           />
