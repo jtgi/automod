@@ -68,7 +68,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw redirect("/404");
   }
 
-  const validPerms = permissionDefs.map((perm) => perm.id) as [string, ...string[]];
+  const validPerms = ["action:hideQuietly", ...permissionDefs.map((perm) => perm.id)] as [
+    string,
+    ...string[]
+  ];
   const json = await request.json();
   const result = z
     .object({
