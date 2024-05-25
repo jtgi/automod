@@ -44,9 +44,9 @@ export const permissionDefs = !actionDefinitions
         castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "like")!),
       },
       {
-        id: `action:hideQuietly`,
-        name: actionDefinitions["hideQuietly"].friendlyName,
-        description: actionDefinitions["hideQuietly"].description,
-        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "hideQuietly")!),
+        id: `action:unlike`,
+        name: actionDefinitions["unlike"].friendlyName,
+        description: actionDefinitions["unlike"].description,
+        castActionInstallUrl: actionToInstallLink(actions.find((a) => a.automodAction === "unlike")!),
       },
     ] as const satisfies Permission[]);
