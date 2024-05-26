@@ -10,6 +10,7 @@ import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getWarpcastChannel } from "./warpcast.server";
+import { automodFid } from "~/routes/~.channels.$id";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -75,7 +76,6 @@ export const webhookWorker = new Worker(
     const warpcastChannel = await getWarpcastChannel({ channel: moderatedChannel.id }).catch(() => null);
     if (!warpcastChannel) {
       console.error(`Channel is not known by warpcast`, webhookNotif.data);
-      await toggleWebhook({ channelId: channelName, active: false });
       throw new UnrecoverableError("Channel is not known by warpcast");
     }
 
@@ -84,11 +84,9 @@ export const webhookWorker = new Worker(
         console.error(
           `Signer allocation mismatch. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}`
         );
-        await toggleWebhook({ channelId: channelName, active: false });
-        throw new UnrecoverableError(
-          `Signer allocation mismatch. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}`
-        );
       }
+    } else if (warpcastChannel.moderatorFid !== automodFid) {
+      console.error(`Moderator fid is not set to automod default fid (${automodFid}).`);
     }
 
     if (moderatedChannel.user.plan === "expired") {

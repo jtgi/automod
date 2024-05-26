@@ -13,8 +13,8 @@ import { db } from "~/lib/db.server";
 import { requireUser, requireUserCanModerateChannel } from "~/lib/utils.server";
 import { getWarpcastChannel } from "~/lib/warpcast.server";
 
-const automodFid = 368422;
-const automodUsername = "automod";
+export const automodFid = 368422;
+export const automodUsername = "automod";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");

@@ -13,19 +13,19 @@ import { db } from "~/lib/db.server";
 import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { ChannelForm } from "~/components/channel-form";
-import { getWarpcastChannelHosts } from "~/lib/warpcast.server";
+import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
   const data = await request.json();
 
   if (process.env.NODE_ENV !== "development") {
-    const hosts = await getWarpcastChannelHosts({ channel: data.id });
+    const leadFid = await getWarpcastChannelOwner({ channel: data.id });
 
-    if (!hosts.includes(+user.id)) {
+    if (leadFid !== +user.id) {
       return errorResponse({
         request,
-        message: `You must be a host to setup a bot.`,
+        message: `You must own the channel to setup a bot.`,
       });
     }
   }

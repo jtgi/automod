@@ -5,6 +5,7 @@ import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { db } from "./db.server";
 import { Action } from "./validations.server";
 import { neynar } from "./neynar.server";
+import { getSetCache } from "./utils.server";
 
 const token = process.env.WARPCAST_TOKEN!;
 export const http = axiosFactory.create({
@@ -50,11 +51,6 @@ export async function getWarpcastChannelOwner(props: { channel: string }): Promi
   return channel.leadFid;
 }
 
-export async function getWarpcastChannelHosts(props: { channel: string }) {
-  const channel = await getWarpcastChannel(props);
-  return Array.from(new Set([channel.leadFid, ...channel.hostFids]));
-}
-
 export type WarpcastChannel = {
   id: string;
   url: string;
@@ -69,8 +65,11 @@ export type WarpcastChannel = {
 };
 
 export async function getWarpcastChannel(props: { channel: string }): Promise<WarpcastChannel> {
-  const rsp = await http.get(`https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`);
-  return rsp.data.result.channel;
+  return getSetCache({
+    key: `getWarpcastChannel:${props.channel}`,
+    get: () => http.get(`https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`),
+    ttlSeconds: 60,
+  });
 }
 
 export async function cooldown({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {

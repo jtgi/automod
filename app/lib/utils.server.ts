@@ -7,12 +7,10 @@ import { authenticator, commitSession, getSession } from "./auth.server";
 import { generateFrameSvg } from "./utils";
 import axios from "axios";
 import { MessageResponse } from "./types";
-import { getChannel } from "./neynar.server";
 import { redirect, typedjson } from "remix-typedjson";
 import { Session, json } from "@remix-run/node";
 import { db } from "./db.server";
 import { ZodIssue, ZodError } from "zod";
-import { getWarpcastChannelHosts, getWarpcastChannelOwner } from "./warpcast.server";
 import { erc20Abi, getAddress, getContract } from "viem";
 import { clientsByChainId } from "./viem.server";
 import { cache } from "./cache.server";
@@ -189,20 +187,6 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
       result: false,
     };
   }
-}
-
-export async function requireUserIsCohost(props: { fid: number; channelId: string }) {
-  const hosts = await getWarpcastChannelHosts({
-    channel: props.channelId,
-  });
-
-  const cohost = hosts.find((fid) => fid === props.fid);
-
-  if (!cohost) {
-    throw redirect(`/`, { status: 403 });
-  }
-
-  return cohost;
 }
 
 export async function generateSystemFrame(message: string) {
