@@ -74,7 +74,7 @@ export const actions = [
     },
     name: actionDefinitions["unlike"].friendlyName,
     description: actionDefinitions["unlike"].description,
-    icon: "thumbsup",
+    icon: "eye-closed",
     postUrl: `${env.hostUrl}/api/actions/unlike`,
     aboutUrl: "https://automod.sh",
     image: `${env.hostUrl}/actions/hideQuietly.png`,
