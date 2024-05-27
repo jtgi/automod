@@ -1,1 +1,3 @@
 # automod
+
+fix lock
