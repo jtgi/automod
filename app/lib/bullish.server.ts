@@ -69,7 +69,11 @@ export const webhookWorker = new Worker(
     ]);
 
     if (!moderatedChannel) {
-      console.error(`Channel ${channelName} is not moderated`, webhookNotif.data);
+      console.error(
+        `Channel ${channelName} is not moderated`,
+        channelName,
+        webhookNotif.data.root_parent_url
+      );
       throw new UnrecoverableError("Channel is not moderated");
     }
 

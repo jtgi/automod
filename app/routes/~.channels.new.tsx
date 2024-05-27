@@ -20,7 +20,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const data = await request.json();
 
   if (process.env.NODE_ENV !== "development") {
-    const leadFid = await getWarpcastChannelOwner({ channel: data.id });
+    let leadFid: number;
+    try {
+      leadFid = await getWarpcastChannelOwner({ channel: data.id.replace("/", "") });
+    } catch (e) {
+      return errorResponse({
+        request,
+        message: `Couldn't find that channel. Spell it right?`,
+      });
+    }
 
     if (leadFid !== +user.id) {
       return errorResponse({
