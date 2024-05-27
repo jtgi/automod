@@ -96,7 +96,11 @@ export const webhookWorker = new Worker(
     if (signerAllocation) {
       if (signerAllocation.signer.fid !== String(warpcastChannel.moderatorFid)) {
         console.error(
-          `Signer allocation mismatch for ${moderatedChannel.id}. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}. Falling back to default.`
+          `Signer allocation mismatch for ${moderatedChannel.id}. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}. Exiting.`
+        );
+
+        throw new UnrecoverableError(
+          `Signer allocation mismatch for ${moderatedChannel.id}, Expected: ${signerAllocation.signer.fid}, got: ${warpcastChannel.moderatorFid}. Exiting.`
         );
       }
     } else if (warpcastChannel.moderatorFid !== automodFid) {
