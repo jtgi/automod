@@ -65,7 +65,8 @@ export type WarpcastChannel = {
 };
 
 export async function getWarpcastChannel(props: { channel: string }): Promise<WarpcastChannel> {
-  return http.get(`https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`);
+  const rsp = await http.get(`https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`);
+  return rsp.data;
 }
 
 export async function cooldown({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
