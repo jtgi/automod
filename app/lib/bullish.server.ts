@@ -80,7 +80,7 @@ export const webhookWorker = new Worker(
 
     if (!warpcastChannel) {
       console.error(`Channel is not known by warpcast`, moderatedChannel.id);
-      throw new UnrecoverableError("Channel is not known by warpcast");
+      throw new Error("Channel is not known by warpcast");
     }
 
     if (signerAllocation) {
