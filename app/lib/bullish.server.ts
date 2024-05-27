@@ -73,9 +73,13 @@ export const webhookWorker = new Worker(
       throw new UnrecoverableError("Channel is not moderated");
     }
 
-    const warpcastChannel = await getWarpcastChannel({ channel: moderatedChannel.id }).catch(() => null);
+    const warpcastChannel = await getWarpcastChannel({ channel: moderatedChannel.id }).catch((e) => {
+      console.error(e);
+      return null;
+    });
+
     if (!warpcastChannel) {
-      console.error(`Channel is not known by warpcast`, webhookNotif.data);
+      console.error(`Channel is not known by warpcast`, moderatedChannel.id);
       throw new UnrecoverableError("Channel is not known by warpcast");
     }
 
