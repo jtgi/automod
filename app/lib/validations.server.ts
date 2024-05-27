@@ -1001,7 +1001,7 @@ export async function like(props: { cast: Cast; channel: string }) {
   });
 
   const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
-  console.log(`liking w/signer: ${uuid}`);
+  console.log(`Liking with @${signerAlloc ? signerAlloc.signer.username : "automod"}, ${uuid}`);
   await neynar.publishReactionToCast(uuid, "like", props.cast.hash);
 }
 

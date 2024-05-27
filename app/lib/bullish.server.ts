@@ -80,17 +80,25 @@ export const webhookWorker = new Worker(
 
     if (!warpcastChannel) {
       console.error(`Channel is not known by warpcast`, moderatedChannel.id);
-      throw new Error("Channel is not known by warpcast");
+      throw new Error(`Channel ${moderatedChannel.id} is not known by warpcast`);
+    }
+
+    if (!signerAllocation && warpcastChannel.moderatorFid !== automodFid) {
+      console.error(`Moderator fid for ${moderatedChannel.id} is not set to automod.`);
+      await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+      throw new UnrecoverableError(`Moderator fid for ${moderatedChannel.id} is not set to automod`);
     }
 
     if (signerAllocation) {
       if (signerAllocation.signer.fid !== String(warpcastChannel.moderatorFid)) {
         console.error(
-          `Signer allocation mismatch. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}`
+          `Signer allocation mismatch for ${moderatedChannel.id}. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}. Falling back to default.`
         );
       }
     } else if (warpcastChannel.moderatorFid !== automodFid) {
-      console.error(`Moderator fid is not set to automod default fid (${automodFid}).`);
+      console.error(
+        `Moderator fid for ${moderatedChannel.id} is not set to automod default fid (${automodFid}).`
+      );
     }
 
     if (moderatedChannel.user.plan === "expired") {
