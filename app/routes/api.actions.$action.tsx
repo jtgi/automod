@@ -133,7 +133,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const cast = await neynar.fetchBulkCasts([message.action.cast.hash]);
+    const [cast, moderators] = await Promise.all([
+      neynar.fetchBulkCasts([message.action.cast.hash]),
+      getModerators({ channel: moderatedChannel.id }),
+    ]);
+
+    if (validation.data.action === "ban") {
+      if (moderators.some((h) => h.fid === String(cast.result.casts[0].author.fid))) {
+        return json(
+          {
+            message: "Can't apply to a host",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+    }
 
     if (validation.data.action === "downvote") {
       const actionFunction = actionFunctions[validation.data.action];
