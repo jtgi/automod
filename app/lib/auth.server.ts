@@ -139,11 +139,11 @@ export const userPlans = {
   },
   prime: {
     maxChannels: 5,
-    maxCasts: 100_000,
+    maxCasts: 50_000,
   },
   ultra: {
     maxChannels: Infinity,
-    maxCasts: 1_000_000,
+    maxCasts: 500_000,
   },
   vip: {
     maxChannels: Infinity,

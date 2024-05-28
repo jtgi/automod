@@ -38,7 +38,7 @@ export const webhookWorker = new Worker(
 
     console.log(`[${webhookNotif.data.root_parent_url}]: cast ${webhookNotif.data.hash}`);
 
-    const [moderatedChannel, alreadyProcessed, signerAllocation] = await Promise.all([
+    const [moderatedChannel, alreadyProcessed] = await Promise.all([
       db.moderatedChannel.findFirst({
         where: {
           OR: [{ id: channelName }, { url: webhookNotif.data.root_parent_url }],
@@ -58,14 +58,6 @@ export const webhookWorker = new Worker(
           hash: webhookNotif.data.hash,
         },
       }),
-      db.signerAllocation.findFirst({
-        where: {
-          channelId: channelName,
-        },
-        include: {
-          signer: true,
-        },
-      }),
     ]);
 
     if (!moderatedChannel) {
@@ -77,10 +69,20 @@ export const webhookWorker = new Worker(
       throw new UnrecoverableError("Channel is not moderated");
     }
 
-    const warpcastChannel = await getWarpcastChannel({ channel: moderatedChannel.id }).catch((e) => {
-      console.error(e);
-      return null;
-    });
+    const [signerAllocation, warpcastChannel] = await Promise.all([
+      db.signerAllocation.findFirst({
+        where: {
+          channelId: moderatedChannel.id,
+        },
+        include: {
+          signer: true,
+        },
+      }),
+      getWarpcastChannel({ channel: moderatedChannel.id }).catch((e) => {
+        console.error(e);
+        return null;
+      }),
+    ]);
 
     if (!warpcastChannel) {
       console.error(`Channel is not known by warpcast`, moderatedChannel.id);
