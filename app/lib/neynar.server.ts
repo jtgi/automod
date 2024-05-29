@@ -2,7 +2,7 @@ import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 
 import { cache } from "./cache.server";
 import { FollowResponseUser, Reaction } from "@neynar/nodejs-sdk/build/neynar-api/v1";
-import { CastWithInteractions, Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { getSetCache, getSharedEnv } from "./utils.server";
 export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
@@ -102,34 +102,13 @@ export async function* pageChannelCasts(props: { id: string }) {
   let cursor: string | null | undefined = undefined;
 
   while (cursor !== null) {
-    const url = new URL(`https://api.neynar.com/v2/farcaster/feed/channels`);
-    url.searchParams.set("channel_ids", props.id);
-    url.searchParams.set("with_recasts", "false");
-    url.searchParams.set("viewer_fid", "5179");
-    url.searchParams.set("with_replies", "false");
+    const response = await neynar.fetchFeedByChannelIds([props.id], {
+      limit: 100,
+      cursor,
+    });
 
-    // can't use the sdk right now because should_moderate is
-    // not included and node needs upgrading
-    url.searchParams.set("should_moderate", "false");
-    url.searchParams.set("limit", "100");
-    console.log({ cursor });
-    if (cursor) {
-      url.searchParams.set("cursor", cursor);
-    }
-
-    console.log(url.toString());
-    const rsp = await axios.get<{ casts: Array<CastWithInteractions>; next: { cursor: string | null } }>(
-      url.toString(),
-      {
-        headers: {
-          api_key: process.env.NEYNAR_API_KEY!,
-        },
-      }
-    );
-
-    console.log(rsp.data.casts.length, rsp.data.next);
-    yield rsp.data;
-    cursor = rsp.data.next.cursor;
+    yield response;
+    cursor = response.next.cursor;
   }
 }
 

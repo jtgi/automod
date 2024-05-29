@@ -2,14 +2,7 @@ import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
 import { ExpressAdapter } from "@bull-board/express";
 import express from "express";
-import {
-  castQueue,
-  recoverQueue,
-  simulationQueue,
-  sweepQueue,
-  syncQueue,
-  webhookQueue,
-} from "~/lib/bullish.server";
+import { castQueue, simulationQueue, sweepQueue, syncQueue, webhookQueue } from "~/lib/bullish.server";
 
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath("/ui");
@@ -21,7 +14,6 @@ createBullBoard({
     new BullMQAdapter(simulationQueue),
     new BullMQAdapter(syncQueue),
     new BullMQAdapter(webhookQueue),
-    new BullMQAdapter(recoverQueue),
   ],
   serverAdapter: serverAdapter,
 });

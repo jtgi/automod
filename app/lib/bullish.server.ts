@@ -3,9 +3,10 @@ import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
 import { ValidateCastArgs, isUserOverUsage, validateCast } from "~/routes/api.webhooks.neynar";
-import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
+import { SimulateArgs, SweepArgs, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
-import { getChannel, pageChannelCasts } from "./neynar.server";
+import { getChannel, neynar, pageChannelCasts } from "./neynar.server";
+import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getWarpcastChannel } from "./warpcast.server";
@@ -239,7 +240,7 @@ export const castWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 100,
-    // autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 castWorker.on("error", (err: Error) => {
@@ -313,33 +314,6 @@ castWorker.on("failed", async (job, err: any) => {
   }
 });
 
-export const recoverQueue = new Queue("recoverQueue", {
-  connection,
-});
-
-export const recoverWorker = new Worker(
-  "recoverQueue",
-  async (job: Job<SweepArgs>) => {
-    try {
-      await recover({
-        channelId: job.data.channelId,
-        limit: job.data.limit,
-        untilTimeUtc: job.data.untilTimeUtc,
-        untilCastHash: job.data.untilCastHash,
-        moderatedChannel: job.data.moderatedChannel,
-      });
-    } catch (e) {
-      Sentry.captureException(e);
-      throw e;
-    }
-  },
-  {
-    connection,
-    concurrency: 25,
-    // autorun: process.env.NODE_ENV === "production"
-  }
-);
-
 // sweeeeep
 export const sweepQueue = new Queue("sweepQueue", {
   connection,
@@ -352,8 +326,6 @@ export const sweepWorker = new Worker(
       await sweep({
         channelId: job.data.channelId,
         limit: job.data.limit,
-        untilTimeUtc: job.data.untilTimeUtc,
-        untilCastHash: job.data.untilCastHash,
         moderatedChannel: job.data.moderatedChannel,
       });
     } catch (e) {
@@ -361,11 +333,7 @@ export const sweepWorker = new Worker(
       throw e;
     }
   },
-  {
-    connection,
-    concurrency: 25,
-    // autorun: process.env.NODE_ENV === "production"
-  }
+  { connection, concurrency: 25, autorun: process.env.NODE_ENV === "production" }
 );
 
 sweepWorker.on("error", Sentry.captureException);
@@ -469,22 +437,73 @@ export const syncWorker = new Worker(
           return;
         }
 
-        if (alreadyProcessed.some((log) => log.hash === rootCast.hash)) {
+        if (
+          alreadyProcessed.some(
+            (log) => log.hash === rootCast.hash && log.replyCount === rootCast.replies.count
+          )
+        ) {
           if (process.env.NODE_ENV === "development") {
             console.log(`[${job.data.channelId}] sync: cast ${rootCast.hash} already processed`);
           }
           continue;
         }
 
-        castQueue.add(
-          "processCast",
-          {
-            channel,
-            moderatedChannel,
-            cast: rootCast,
-          },
-          defaultProcessCastJobArgs(rootCast.hash)
+        const isProcessingReplies = moderatedChannel?.ruleSets.find((ruleSet) =>
+          ["all", "reply"].includes(ruleSet.target)
         );
+
+        if (isProcessingReplies) {
+          const { conversation } = await neynar.lookupCastConversation(rootCast.hash, "hash", {
+            // for now.
+            replyDepth: 1,
+          });
+
+          const replyCasts: CastWithInteractions[] = [];
+          const processQueue = [conversation.cast];
+          while (processQueue.length > 0) {
+            const nextCast = processQueue.shift() as CastWithInteractions & {
+              direct_replies: Array<CastWithInteractions>;
+            };
+
+            replyCasts.push(nextCast);
+            processQueue.push(...nextCast.direct_replies);
+          }
+
+          const alreadyProcessedReplies = await db.castLog.findMany({
+            select: {
+              hash: true,
+            },
+            where: {
+              hash: {
+                in: replyCasts.map((cast) => cast.hash),
+              },
+            },
+          });
+
+          replyCasts
+            .filter((replyCast) => !alreadyProcessedReplies.some((cast) => cast.hash === replyCast.hash))
+            .forEach(async (cast) => {
+              castQueue.add(
+                "processCast",
+                {
+                  channel,
+                  moderatedChannel,
+                  cast: cast,
+                },
+                defaultProcessCastJobArgs(cast.hash)
+              );
+            });
+        } else {
+          castQueue.add(
+            "processCast",
+            {
+              channel,
+              moderatedChannel,
+              cast: rootCast,
+            },
+            defaultProcessCastJobArgs(rootCast.hash)
+          );
+        }
 
         rootCastsChecked++;
       }

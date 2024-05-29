@@ -8,8 +8,8 @@ import { Input } from "~/components/ui/input";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
-import { isRecoverActive } from "./~.channels.$id.tools";
-import { recoverQueue } from "~/lib/bullish.server";
+import { isSweepActive } from "./~.channels.$id.tools";
+import { sweepQueue } from "~/lib/bullish.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -57,21 +57,9 @@ export async function action({ request }: ActionFunctionArgs) {
   } else if (action === "sweep") {
     const channel = (formData.get("channel") as string) ?? "";
     const limit = parseInt((formData.get("limit") as string) ?? "1000");
-    const untilTimeLocal = (formData.get("untilTime") as string) ?? "";
-    const untilHash = (formData.get("untilHash") as string) ?? "";
-
-    let untilTimeUtc: string | undefined;
 
     if (!channel) {
       return errorResponse({ request, message: "Enter a channel to sweep" });
-    }
-
-    if (untilTimeLocal) {
-      untilTimeUtc = new Date(untilTimeLocal).toISOString();
-    }
-
-    if (untilTimeLocal && untilHash) {
-      return errorResponse({ request, message: "Cannot specify both time and hash" });
     }
 
     if (isNaN(limit)) {
@@ -93,36 +81,28 @@ export async function action({ request }: ActionFunctionArgs) {
       },
     });
 
-    console.log({
-      channelId: moderatedChannel.id,
-      limit,
-      untilTimeUtc,
-      untilHash,
-    });
-
-    if (await isRecoverActive(moderatedChannel.id)) {
-      return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
+    if (await isSweepActive(moderatedChannel.id)) {
+      return errorResponse({ request, message: "Sweep already in progress. Hang tight." });
     }
 
-    await recoverQueue.add(
-      "recover",
+    await sweepQueue.add(
+      "sweep",
       {
         channelId: moderatedChannel.id,
         moderatedChannel,
         limit,
-        untilTimeUtc: untilTimeUtc ?? undefined,
-        untilHash: untilHash ?? undefined,
       },
       {
-        removeOnComplete: 300,
-        removeOnFail: 300,
+        removeOnComplete: true,
+        removeOnFail: true,
+        jobId: `sweep-${moderatedChannel.id}`,
         attempts: 3,
       }
     );
 
     return successResponse({
       request,
-      message: "Recovering! This will take a while. Monitor progress in the logs.",
+      message: "Sweeping! This will take a while. Monitor progress in the logs.",
     });
   } else if (action === "status") {
     const message = (formData.get("message") as string) ?? "";
@@ -176,12 +156,6 @@ export default function Admin() {
       <Form method="post" className="space-y-4">
         <FieldLabel label="Sweep Channel" className="flex-col items-start">
           <Input name="channel" placeholder="channel" />
-        </FieldLabel>
-        <FieldLabel label="Until" className="flex-col items-start">
-          <Input type="datetime-local" name="untilTime" />
-        </FieldLabel>
-        <FieldLabel label="Until Cast Hash" className="flex-col items-start">
-          <Input name="untilHash" placeholder="hash" />
         </FieldLabel>
         <FieldLabel label="Limit" className="flex-col items-start">
           <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
