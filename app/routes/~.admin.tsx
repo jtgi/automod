@@ -56,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
         "Set-Cookie": await commitSession(session),
       },
     });
-  } else if (action === "sweep") {
+  } else if (action === "recover") {
     const channel = (formData.get("channel") as string) ?? "";
     const limit = parseInt((formData.get("limit") as string) ?? "1000");
     const untilTimeLocal = (formData.get("untilTime") as string) ?? "";
@@ -80,6 +80,11 @@ export async function action({ request }: ActionFunctionArgs) {
       const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
         where: {
           id: channel,
+          ruleSets: {
+            some: {
+              active: true,
+            },
+          },
         },
         include: {
           ruleSets: true,
@@ -215,7 +220,7 @@ export default function Admin() {
         <FieldLabel label="Limit" className="flex-col items-start">
           <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
         </FieldLabel>
-        <Button name="action" value="sweep">
+        <Button name="action" value="recover">
           Recover
         </Button>
       </Form>
