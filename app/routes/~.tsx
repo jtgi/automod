@@ -76,12 +76,17 @@ export default function Index() {
       {status && (
         <div
           className={cn(
-            "fixed top-0 left-0 w-full text-white text-center py-2",
-            status.type === "warning" ? "bg-yellow-400" : "",
+            "top-0 left-0 w-full text-white text-center py-2",
+            status.type === "warning" ? "bg-yellow-600" : "",
             status.type === "info" ? "bg-primary" : ""
           )}
         >
           {status.message}
+          {status.link && (
+            <a href={status.link} target="_blank" rel="noreferrer" className="underline ml-2">
+              More
+            </a>
+          )}
         </div>
       )}
 

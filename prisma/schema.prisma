@@ -176,6 +176,7 @@ model Status {
   updatedAt DateTime  @updatedAt
   active    Boolean   @default(true)
   message   String
+  link      String?
   expiresAt DateTime?
   type      String
 }

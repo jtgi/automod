@@ -74,6 +74,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
+    if (!message.action.cast.author) {
+      console.error("Cast is not hydrated", message.action.cast);
+      return json(
+        {
+          message: "Cast is unavailable. Contact @jtgi.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
     if (validation.data.action === "like") {
       if (!isRuleTargetApplicable("root", message.action.cast as any)) {
         return json({ message: "Root casts only. This is a reply." }, { status: 400 });
