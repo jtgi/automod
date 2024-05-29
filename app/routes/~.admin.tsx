@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form } from "@remix-run/react";
@@ -10,6 +11,7 @@ import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive } from "./~.channels.$id.tools";
 import { recoverQueue } from "~/lib/bullish.server";
+import { FormEvent } from "react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -154,7 +156,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Admin() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-20">
       <Form method="post" className="space-y-4">
         <FieldLabel label="Grant Access by Fid" className="flex-col items-start">
           <Input name="fid" placeholder="123.." />
@@ -174,11 +176,11 @@ export default function Admin() {
       </Form>
 
       <Form method="post" className="space-y-4">
-        <FieldLabel label="Sweep Channel" className="flex-col items-start">
+        <FieldLabel label="Recover Channel" className="flex-col items-start">
           <Input name="channel" placeholder="channel" />
         </FieldLabel>
         <FieldLabel label="Until" className="flex-col items-start">
-          <Input type="datetime-local" name="untilTime" />
+          <Input name="untilTime" placeholder="2024-05-29T08:22:20.329Z" />
         </FieldLabel>
         <FieldLabel label="Until Cast Hash" className="flex-col items-start">
           <Input name="untilHash" placeholder="hash" />
@@ -187,7 +189,7 @@ export default function Admin() {
           <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
         </FieldLabel>
         <Button name="action" value="sweep">
-          Sweep
+          Recover
         </Button>
       </Form>
 

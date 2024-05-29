@@ -121,7 +121,8 @@ async function main() {
 async function startSweep(channel: string, limit: number) {
   const formData = new FormData();
   formData.append("channel", channel);
-  formData.append("limit", limit.toString());
+  formData.append("limit", "1000");
+  formData.append("untilTime", "2024-05-29T08:35");
   formData.append("action", "sweep");
 
   await axios.post("https://automod.sh/~/admin?_data=routes%2F%7E.admin", formData, {
