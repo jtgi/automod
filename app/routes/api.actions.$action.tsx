@@ -116,6 +116,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
+    console.log({
+      userId: String(userFid),
+      channelId: moderatedChannel.id,
+      action: validation.data.action,
+      moderatedChannel: {
+        id: moderatedChannel.id,
+      },
+      message: message.action.cast,
+    });
+
     const isAllowed = await canUserExecuteAction({
       userId: String(userFid),
       channelId: moderatedChannel.id,
