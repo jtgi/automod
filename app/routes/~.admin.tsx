@@ -104,6 +104,29 @@ export async function action({ request }: ActionFunctionArgs) {
       request,
       message: "Sweeping! This will take a while. Monitor progress in the logs.",
     });
+  } else if (action === "status") {
+    const message = (formData.get("message") as string) ?? "";
+    const link = (formData.get("link") as string) ?? null;
+
+    await db.status.updateMany({
+      where: {
+        active: true,
+      },
+      data: {
+        active: false,
+      },
+    });
+
+    await db.status.create({
+      data: {
+        message,
+        link,
+        active: true,
+        type: "warning",
+      },
+    });
+
+    return successResponse({ request, message: "Status updated" });
   }
 
   return typedjson({ message: "Invalid action" }, { status: 400 });
@@ -139,6 +162,21 @@ export default function Admin() {
         </FieldLabel>
         <Button name="action" value="sweep">
           Sweep
+        </Button>
+      </Form>
+
+      <Form method="post" className="space-y-4">
+        <FieldLabel label="Status" className="flex-col items-start">
+          <Input name="channel" placeholder="channel" />
+        </FieldLabel>
+        <FieldLabel label="Message" className="flex-col items-start">
+          <Input name="message" required />
+        </FieldLabel>
+        <FieldLabel label="Link" className="flex-col items-start">
+          <Input name="link" />
+        </FieldLabel>
+        <Button name="action" value="status">
+          Submit
         </Button>
       </Form>
     </div>
