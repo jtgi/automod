@@ -76,7 +76,7 @@ export default function Index() {
       {status && (
         <div
           className={cn(
-            "top-0 left-0 w-full text-white text-center py-2",
+            "top-0 left-0 w-full text-white text-center p-3",
             status.type === "warning" ? " bg-orange-500" : "",
             status.type === "info" ? "bg-primary" : ""
           )}
