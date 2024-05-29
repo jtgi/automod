@@ -64,10 +64,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
     let untilTimeUtc: string | undefined;
 
-    if (!channel) {
-      return errorResponse({ request, message: "Enter a channel to sweep" });
-    }
-
     if (untilTimeLocal) {
       untilTimeUtc = new Date(untilTimeLocal).toISOString();
     }
@@ -80,47 +76,77 @@ export async function action({ request }: ActionFunctionArgs) {
       return errorResponse({ request, message: "Invalid limit" });
     }
 
-    const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
-      where: {
-        id: channel,
-      },
-      include: {
-        ruleSets: true,
-        user: true,
-        roles: {
-          include: {
-            delegates: true,
+    if (channel) {
+      const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
+        where: {
+          id: channel,
+        },
+        include: {
+          ruleSets: true,
+          user: true,
+          roles: {
+            include: {
+              delegates: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    console.log({
-      channelId: moderatedChannel.id,
-      limit,
-      untilTimeUtc,
-      untilHash,
-    });
-
-    if (await isRecoverActive(moderatedChannel.id)) {
-      return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
-    }
-
-    await recoverQueue.add(
-      "recover",
-      {
-        channelId: moderatedChannel.id,
-        moderatedChannel,
-        limit,
-        untilTimeUtc: untilTimeUtc ?? undefined,
-        untilHash: untilHash ?? undefined,
-      },
-      {
-        removeOnComplete: 300,
-        removeOnFail: 300,
-        attempts: 3,
+      if (await isRecoverActive(moderatedChannel.id)) {
+        return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
       }
-    );
+
+      await recoverQueue.add(
+        "recover",
+        {
+          channelId: moderatedChannel.id,
+          moderatedChannel,
+          limit,
+          untilTimeUtc: untilTimeUtc ?? undefined,
+          untilHash: untilHash ?? undefined,
+        },
+        {
+          removeOnComplete: 300,
+          removeOnFail: 300,
+          attempts: 3,
+        }
+      );
+    } else {
+      // start for all active channels
+      const moderatedChannels = await db.moderatedChannel.findMany({
+        where: {
+          active: true,
+        },
+        include: {
+          ruleSets: true,
+          user: true,
+          roles: {
+            include: {
+              delegates: true,
+            },
+          },
+        },
+      });
+
+      for (const moderatedChannel of moderatedChannels) {
+        console.log(`[global recovery]: enqueuing ${moderatedChannel.id}`);
+        await recoverQueue.add(
+          "recover",
+          {
+            channelId: moderatedChannel.id,
+            moderatedChannel,
+            limit,
+            untilTimeUtc: untilTimeUtc ?? undefined,
+            untilHash: untilHash ?? undefined,
+          },
+          {
+            removeOnComplete: 300,
+            removeOnFail: 300,
+            attempts: 3,
+          }
+        );
+      }
+    }
 
     return successResponse({
       request,
@@ -176,12 +202,13 @@ export default function Admin() {
       </Form>
 
       <Form method="post" className="space-y-4">
-        <FieldLabel label="Recover Channel" className="flex-col items-start">
-          <Input name="channel" placeholder="channel" />
+        <FieldLabel label="Recover Channel (empty for all)" className="flex-col items-start">
+          <Input name="channel" placeholder="all channels" />
         </FieldLabel>
         <FieldLabel label="Until" className="flex-col items-start">
           <Input name="untilTime" placeholder="2024-05-29T08:22:20.329Z" />
         </FieldLabel>
+        <p className="text-[8px]">2024-05-29T08:22:20.329Z</p>
         <FieldLabel label="Until Cast Hash" className="flex-col items-start">
           <Input name="untilHash" placeholder="hash" />
         </FieldLabel>

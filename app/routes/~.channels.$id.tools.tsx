@@ -358,7 +358,6 @@ export async function sweep(args: SweepArgs) {
 }
 
 export async function recover(args: SweepArgs) {
-  console.log(`${args.channelId}: recover`, { args });
   const channel = await getChannel({ name: args.channelId });
 
   //a: we were down, now we're up. we can skip processed casts because the rules have not changed.
@@ -377,22 +376,17 @@ export async function recover(args: SweepArgs) {
       },
     });
 
-    console.log({ casts: page.casts, alreadyProcessed });
     const alreadyProcessedHashes = new Set(
       alreadyProcessed.filter((log): log is { castHash: string } => !!log.castHash).map((log) => log.castHash)
     );
 
     const unprocessedCasts = page.casts.filter((cast) => !alreadyProcessedHashes.has(cast.hash));
 
-    console.log(`${channel.id} recover: found ${unprocessedCasts.length} unprocessed casts.`);
-
     for (const cast of unprocessedCasts) {
       if (isFinished(channel.id, cast, castsChecked, args)) {
-        console.log("finished");
+        console.log(`${channel.id} recover: finished.`);
         return;
       }
-
-      console.log(`${channel.id} recover: processing cast ${cast.hash}...`);
 
       try {
         await castQueue.add(
