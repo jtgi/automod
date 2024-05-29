@@ -112,12 +112,10 @@ export async function* pageChannelCasts(props: { id: string }) {
     // not included and node needs upgrading
     url.searchParams.set("should_moderate", "false");
     url.searchParams.set("limit", "100");
-    console.log({ cursor });
     if (cursor) {
       url.searchParams.set("cursor", cursor);
     }
 
-    console.log(url.toString());
     const rsp = await axios.get<{ casts: Array<CastWithInteractions>; next: { cursor: string | null } }>(
       url.toString(),
       {
@@ -127,7 +125,6 @@ export async function* pageChannelCasts(props: { id: string }) {
       }
     );
 
-    console.log(rsp.data.casts.length, rsp.data.next);
     yield rsp.data;
     cursor = rsp.data.next.cursor;
   }

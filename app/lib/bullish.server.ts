@@ -239,7 +239,7 @@ export const castWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 100,
-    // autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 castWorker.on("error", (err: Error) => {
@@ -336,7 +336,7 @@ export const recoverWorker = new Worker(
   {
     connection,
     concurrency: 25,
-    // autorun: process.env.NODE_ENV === "production"
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 
@@ -364,7 +364,7 @@ export const sweepWorker = new Worker(
   {
     connection,
     concurrency: 25,
-    // autorun: process.env.NODE_ENV === "production"
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 
