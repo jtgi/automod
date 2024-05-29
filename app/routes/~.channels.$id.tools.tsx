@@ -20,7 +20,7 @@ import { FullModeratedChannel, validateCast } from "./api.webhooks.neynar";
 import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
-import { sweepQueue } from "~/lib/bullish.server";
+import { castQueue, defaultProcessCastJobArgs, recoverQueue, sweepQueue } from "~/lib/bullish.server";
 import { ModerationLog } from "@prisma/client";
 import { WebhookCast } from "~/lib/types";
 import { Input } from "~/components/ui/input";
@@ -30,8 +30,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Alert } from "~/components/ui/alert";
 import { ActionType, actionDefinitions } from "~/lib/validations.server";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
-const SWEEP_LIMIT = 1000;
+const SWEEP_LIMIT = 250;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -163,8 +164,8 @@ export default function Screen() {
         <div>
           <p className="font-medium">Sweep</p>
           <p className="text-sm text-gray-500">
-            Apply your moderation rules to the last {SWEEP_LIMIT} casts in your channel. This currently does
-            not unhide previously curated casts.
+            Apply your moderation rules to the last {SWEEP_LIMIT} casts in Recent. This currently does not
+            unhide previously curated casts.
           </p>
         </div>
 
@@ -299,15 +300,25 @@ export type SweepArgs = {
   channelId: string;
   moderatedChannel: FullModeratedChannel;
   limit: number;
+  untilTimeUtc?: string;
+  untilCastHash?: string;
   onProcessed?: () => void;
 };
 
+/**
+ * desired behavior:
+ * - sweep through the last N casts in a channel
+ * - if it was not manually curated, apply moderation rules
+ */
 export async function sweep(args: SweepArgs) {
   const channel = await getChannel({ name: args.channelId });
 
+  //a: we were down, now we're up. we can skip processed casts because the rules have not changed.
+  //b: we were up, but they changed the rules. we need to reprocess all casts because the rules changed.
+  //(except mod casts)
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
-    const alreadyProcessed = await db.moderationLog.findMany({
+    const modOverrides = await db.moderationLog.findMany({
       select: {
         castHash: true,
       },
@@ -315,18 +326,20 @@ export async function sweep(args: SweepArgs) {
         castHash: {
           in: page.casts.map((cast) => cast.hash),
         },
+        actor: {
+          not: "system",
+        },
       },
     });
 
-    const alreadyProcessedHashes = new Set(
-      alreadyProcessed.filter((log): log is { castHash: string } => !!log.castHash).map((log) => log.castHash)
+    const modOverrideHashes = new Set(
+      modOverrides.filter((log): log is { castHash: string } => !!log.castHash).map((log) => log.castHash)
     );
 
-    const unprocessedCasts = page.casts.filter((cast) => !alreadyProcessedHashes.has(cast.hash));
+    const unprocessedCasts = page.casts.filter((cast) => !modOverrideHashes.has(cast.hash));
 
     for (const cast of unprocessedCasts) {
-      if (castsChecked >= args.limit) {
-        console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping sweep`);
+      if (isFinished(channel.id, cast, castsChecked, args)) {
         return;
       }
 
@@ -344,6 +357,62 @@ export async function sweep(args: SweepArgs) {
   }
 }
 
+export async function recover(args: SweepArgs) {
+  console.log(`${args.channelId}: recover`, { args });
+  const channel = await getChannel({ name: args.channelId });
+
+  //a: we were down, now we're up. we can skip processed casts because the rules have not changed.
+  //b: we were up, but they changed the rules. we need to reprocess all casts because the rules changed.
+  //(except mod casts)
+  let castsChecked = 0;
+  for await (const page of pageChannelCasts({ id: args.channelId })) {
+    const alreadyProcessed = await db.moderationLog.findMany({
+      select: {
+        castHash: true,
+      },
+      where: {
+        castHash: {
+          in: page.casts.map((cast) => cast.hash),
+        },
+      },
+    });
+
+    console.log({ casts: page.casts, alreadyProcessed });
+    const alreadyProcessedHashes = new Set(
+      alreadyProcessed.filter((log): log is { castHash: string } => !!log.castHash).map((log) => log.castHash)
+    );
+
+    const unprocessedCasts = page.casts.filter((cast) => !alreadyProcessedHashes.has(cast.hash));
+
+    console.log(`${channel.id} recover: found ${unprocessedCasts.length} unprocessed casts.`);
+
+    for (const cast of unprocessedCasts) {
+      if (isFinished(channel.id, cast, castsChecked, args)) {
+        console.log("finished");
+        return;
+      }
+
+      console.log(`${channel.id} recover: processing cast ${cast.hash}...`);
+
+      try {
+        await castQueue.add(
+          "processCast",
+          {
+            channel,
+            moderatedChannel: args.moderatedChannel,
+            cast,
+          },
+          defaultProcessCastJobArgs(cast.hash)
+        );
+      } catch (e) {
+        console.error(e);
+      }
+
+      castsChecked++;
+    }
+  }
+}
+
 export async function isSweepActive(channelId: string) {
   const job = await getSweepJob(channelId);
   if (!job) {
@@ -354,8 +423,18 @@ export async function isSweepActive(channelId: string) {
   return state === "active";
 }
 
+export async function isRecoverActive(channelId: string) {
+  const job = await recoverQueue.getJob(`recover-${channelId}`);
+  if (!job) {
+    return false;
+  }
+
+  const state = await job.getState();
+  return state === "active";
+}
+
 async function getSweepJob(channelId: string) {
-  return sweepQueue.getJob(`sweep:${channelId}`);
+  return sweepQueue.getJob(`sweep-${channelId}`);
 }
 
 export type SimulateArgs = {
@@ -418,4 +497,30 @@ export async function simulate(args: SimulateArgs) {
   }
 
   return aggregatedResults;
+}
+
+function isFinished(channelId: string, cast: CastWithInteractions, castsChecked: number, args: SweepArgs) {
+  if (args.untilTimeUtc) {
+    const castTime = new Date(cast.timestamp).getTime();
+    const untilTime = new Date(args.untilTimeUtc).getTime();
+
+    if (castTime < untilTime) {
+      console.log(`${channelId} sweep/recover: reached untilTime ${args.untilTimeUtc}, stopping.`);
+      return true;
+    }
+  }
+
+  if (args.untilCastHash) {
+    if (cast.hash === args.untilCastHash) {
+      console.log(`${channelId} sweep/recover: reached untilCastHash ${args.untilCastHash}, stopping.`);
+      return true;
+    }
+  }
+
+  if (castsChecked >= args.limit) {
+    console.log(`${channelId} sweep/recover: reached limit of ${args.limit} casts checked, stopping.`);
+    return true;
+  }
+
+  return false;
 }
