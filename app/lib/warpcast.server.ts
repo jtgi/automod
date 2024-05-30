@@ -3,7 +3,7 @@
 import axiosFactory from "axios";
 import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { db } from "./db.server";
-import { Action } from "./validations.server";
+import { Action, unlike } from "./validations.server";
 import { neynar } from "./neynar.server";
 import { getSetCache } from "./utils.server";
 
@@ -115,12 +115,20 @@ export async function hideQuietly({
   channel,
   cast,
   action,
+  options,
 }: {
   channel: string;
   cast: Cast;
   action: Action;
+  options?: {
+    executeOnProtocol?: boolean;
+  };
 }) {
-  return Promise.resolve();
+  if (options?.executeOnProtocol) {
+    await unlike({ channel, cast });
+  } else {
+    return Promise.resolve();
+  }
 }
 
 export async function addToBypass({

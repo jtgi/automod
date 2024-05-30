@@ -148,8 +148,7 @@ export function ChannelForm(props: {
             <div>
               <p className="font-semibold">Filtering Rules</p>
               <p className="text-gray-500 text-sm">
-                If enabled, by default all casts are included in your Main feed. Use rules to filter out what
-                you don't want.
+                Use rules to filter out the bad stuff. Anything else will be included in Main.
               </p>
             </div>
 

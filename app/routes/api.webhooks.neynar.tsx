@@ -87,6 +87,7 @@ export type ValidateCastArgs = {
   channel: Channel;
   moderatedChannel: FullModeratedChannel;
   cast: WebhookCast;
+  executeOnProtocol?: boolean;
   simulation?: boolean;
 };
 
@@ -94,6 +95,7 @@ export async function validateCast({
   channel,
   moderatedChannel,
   cast,
+  executeOnProtocol = false,
   simulation = false,
 }: ValidateCastArgs): Promise<Array<ModerationLog>> {
   const logs: Array<ModerationLog> = [];
@@ -229,6 +231,9 @@ export async function validateCast({
             channel: channel.id,
             cast,
             action,
+            options: {
+              executeOnProtocol,
+            },
           }).catch((e) => {
             Sentry.captureMessage(`Error in ${action.type} action`, {
               extra: {

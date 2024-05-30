@@ -746,7 +746,12 @@ export type CheckFunctionArgs = {
 };
 
 export type CheckFunction = (props: CheckFunctionArgs) => (string | undefined) | Promise<string | undefined>;
-export type ActionFunction<T = any> = (args: { channel: string; cast: Cast; action: Action }) => Promise<T>;
+export type ActionFunction<T = any> = (args: {
+  channel: string;
+  cast: Cast;
+  action: Action;
+  options?: { executeOnProtocol?: boolean };
+}) => Promise<T>;
 
 const BaseRuleSchema = z.object({
   name: z.enum(ruleNames),

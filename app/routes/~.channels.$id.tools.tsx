@@ -32,7 +32,7 @@ import { ActionType, actionDefinitions } from "~/lib/validations.server";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
-const SWEEP_LIMIT = 250;
+const SWEEP_LIMIT = 100;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -164,8 +164,8 @@ export default function Screen() {
         <div>
           <p className="font-medium">Sweep</p>
           <p className="text-sm text-gray-500">
-            Apply your moderation rules to the last {SWEEP_LIMIT} casts in Recent. This currently does not
-            unhide previously curated casts.
+            Apply your moderation rules to the last {SWEEP_LIMIT} casts in Recent. Casts that were manually
+            curated or hidden by moderators will be unaffected.
           </p>
         </div>
 
@@ -305,17 +305,9 @@ export type SweepArgs = {
   onProcessed?: () => void;
 };
 
-/**
- * desired behavior:
- * - sweep through the last N casts in a channel
- * - if it was not manually curated, apply moderation rules
- */
 export async function sweep(args: SweepArgs) {
   const channel = await getChannel({ name: args.channelId });
 
-  //a: we were down, now we're up. we can skip processed casts because the rules have not changed.
-  //b: we were up, but they changed the rules. we need to reprocess all casts because the rules changed.
-  //(except mod casts)
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
     const modOverrides = await db.moderationLog.findMany({
@@ -349,6 +341,7 @@ export async function sweep(args: SweepArgs) {
         cast: cast as unknown as WebhookCast,
         channel,
         moderatedChannel: args.moderatedChannel,
+        executeOnProtocol: true,
       });
 
       castsChecked++;
@@ -357,12 +350,14 @@ export async function sweep(args: SweepArgs) {
   }
 }
 
+/**
+ * Recover is similar to sweep but it only processes
+ * casts that have not yet been moderated. This is
+ * useful post incident or post downtime.
+ */
 export async function recover(args: SweepArgs) {
   const channel = await getChannel({ name: args.channelId });
 
-  //a: we were down, now we're up. we can skip processed casts because the rules have not changed.
-  //b: we were up, but they changed the rules. we need to reprocess all casts because the rules changed.
-  //(except mod casts)
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
     const alreadyProcessed = await db.moderationLog.findMany({
