@@ -285,12 +285,15 @@ export async function validateCast({
   }
 
   if (passedAllRules) {
-    const like = actionFunctions["like"];
-    await like({
-      channel: channel.id,
-      cast,
-      action: { type: "like" },
-    });
+    if (!simulation) {
+      const like = actionFunctions["like"];
+      await like({
+        channel: channel.id,
+        cast,
+        action: { type: "like" },
+      });
+    }
+
     logs.push(
       await logModerationAction(moderatedChannel.id, "like", "Cast passed all rules", cast, simulation)
     );
