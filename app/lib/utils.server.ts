@@ -28,8 +28,6 @@ export async function requireUser({ request }: { request: Request }) {
     failureRedirect: `/login`,
   });
 
-  await refreshAccountStatus({ fid: user.id });
-
   const refreshedUser = await db.user.findFirstOrThrow({
     where: {
       id: user.id,
