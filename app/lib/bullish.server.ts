@@ -97,7 +97,7 @@ export const webhookWorker = new Worker(
 
     if (!signerAllocation && warpcastChannel.moderatorFid !== automodFid) {
       console.error(`Moderator fid for ${moderatedChannel.id} is not set to automod.`);
-      await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+      // await toggleWebhook({ channelId: moderatedChannel.id, active: false });
       throw new UnrecoverableError(`Moderator fid for ${moderatedChannel.id} is not set to automod`);
     }
 
