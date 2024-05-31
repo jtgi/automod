@@ -2,12 +2,12 @@
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { db } from "~/lib/db.server";
-import { LoaderFunctionArgs } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
-import { getSharedEnv, requireUser } from "~/lib/utils.server";
-import { Link } from "@remix-run/react";
+import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
+import { Form, Link, useFetcher } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { PlanType, userPlans } from "~/lib/auth.server";
+import { PlanType, getSubscriptionPlan, refreshAccountStatus, userPlans } from "~/lib/auth.server";
 import { Alert } from "~/components/ui/alert";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { RefreshCwIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -61,6 +62,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
+export async function action({ request }: ActionFunctionArgs) {
+  const user = await requireUser({ request });
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  if (intent === "checkAccountStatus") {
+    const plan = await refreshAccountStatus({ fid: user.id });
+    return successResponse({
+      request,
+      message: `Refreshed! You are on the ${plan.plan} plan.`,
+    });
+  }
+
+  return typedjson({ success: true });
+}
+
 export default function FrameConfig() {
   const { channels, user, totalCastsProcessed, createdChannels, plans } = useTypedLoaderData<typeof loader>();
 
@@ -92,8 +109,9 @@ export default function FrameConfig() {
           {isNearUsage && !isOverUsage && (
             <Alert>
               <>
+                <p className="font-semibold">You're nearing your monthly usage limit.</p>
                 <p>
-                  You're nearing your monthly usage limit. Upgrade to{" "}
+                  Upgrade to{" "}
                   <a
                     href="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
                     target="_blank"
@@ -114,6 +132,10 @@ export default function FrameConfig() {
                 <p>
                   If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
                 </p>
+                <div className="py-2">
+                  <hr />
+                </div>
+                <RefreshAccountButton />
               </>
             </Alert>
           )}
@@ -121,9 +143,9 @@ export default function FrameConfig() {
           {isOverUsage && (
             <Alert>
               <>
-                <p>You're over your monthly usage limit. Moderation is currently paused.</p>
+                <p className="font-semibold">You're over your monthly usage limit.</p>
                 <p>
-                  Upgrade to{" "}
+                  Automated moderation is currently paused. Upgrade to{" "}
                   <a
                     href="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
                     target="_blank"
@@ -139,8 +161,15 @@ export default function FrameConfig() {
                   >
                     Ultra
                   </a>
-                  . If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
+                  .
                 </p>
+                <p>
+                  If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
+                </p>
+                <div className="py-2">
+                  <hr />
+                </div>
+                <RefreshAccountButton />
               </>
             </Alert>
           )}
@@ -259,5 +288,33 @@ export default function FrameConfig() {
         </div>
       )}
     </div>
+  );
+}
+
+function RefreshAccountButton() {
+  const fetcher = useFetcher();
+  const loading = fetcher.state === "submitting";
+
+  return (
+    <fetcher.Form method="post">
+      <Button
+        disabled={loading}
+        size="sm"
+        variant={"secondary"}
+        name="intent"
+        value="checkAccountStatus"
+        className="w-full sm:w-auto"
+      >
+        {loading ? (
+          <>
+            <RefreshCwIcon className="animate-spin w-3 h-3 mr-1" /> Refreshing...
+          </>
+        ) : (
+          <>
+            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh Account Status
+          </>
+        )}
+      </Button>
+    </fetcher.Form>
   );
 }

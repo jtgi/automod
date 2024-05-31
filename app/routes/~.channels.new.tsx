@@ -138,7 +138,26 @@ export default function FrameConfig() {
         ruleNames={ruleNames}
         defaultValues={{
           excludeCohosts: true,
-          ruleSets: [],
+
+          ruleSets: [
+            {
+              target: "all",
+              active: true,
+              ruleParsed: [
+                {
+                  name: "userDoesNotHoldPowerBadge",
+                  type: "CONDITION",
+                  args: {},
+                },
+              ],
+              actionsParsed: [
+                {
+                  type: "hideQuietly",
+                },
+              ],
+              logicType: "and",
+            },
+          ],
         }}
       />
     </div>

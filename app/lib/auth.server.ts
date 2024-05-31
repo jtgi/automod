@@ -156,7 +156,7 @@ export const userPlans = {
   };
 };
 
-async function getSubscriptionPlan(args: { fid: string }): Promise<{
+export async function getSubscriptionPlan(args: { fid: string }): Promise<{
   plan: PlanType;
   tokenId: string | null;
   expiresAt: Date | null;
@@ -216,4 +216,20 @@ async function getSubscriptionPlan(args: { fid: string }): Promise<{
     expiresAt: null,
     tokenId: null,
   };
+}
+
+export async function refreshAccountStatus(args: { fid: string }) {
+  const plan = await getSubscriptionPlan(args);
+  await db.user.update({
+    where: {
+      id: args.fid,
+    },
+    data: {
+      plan: plan.plan,
+      planExpiry: plan.expiresAt,
+      planTokenId: plan.tokenId,
+    },
+  });
+
+  return plan;
 }
