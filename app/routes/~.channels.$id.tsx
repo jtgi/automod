@@ -149,7 +149,7 @@ export default function ChannelRoot() {
                 <Button asChild>
                   <a
                     className="no-underline"
-                    href={`https://warpcast.com/~/channel/${channel.id}`}
+                    href={`https://warpcast.com/~/channel/${channel.id}/settings/moderation`}
                     target="_blank"
                     rel="noreferrer"
                   >

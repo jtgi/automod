@@ -315,6 +315,11 @@ castWorker.on("failed", async (job, err: any) => {
 
 export const recoverQueue = new Queue("recoverQueue", {
   connection,
+  defaultJobOptions: {
+    removeOnComplete: 300,
+    removeOnFail: 300,
+    attempts: 3,
+  },
 });
 
 export const recoverWorker = new Worker(

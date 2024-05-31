@@ -14,6 +14,7 @@ import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
 import { ChannelForm } from "~/components/channel-form";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
+import { recoverQueue } from "~/lib/bullish.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -93,11 +94,18 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
-  await registerWebhook({
-    rootParentUrl: neynarChannel.url,
-  });
+  const [, , session] = await Promise.all([
+    registerWebhook({
+      rootParentUrl: neynarChannel.url,
+    }),
+    recoverQueue.add("recover", {
+      channelId: newChannel.id,
+      moderatedChannel: newChannel,
+      limit: 200,
+    }),
+    getSession(request.headers.get("Cookie")),
+  ]);
 
-  const session = await getSession(request.headers.get("Cookie"));
   session.flash("newChannel", "yup");
 
   return redirect(`/~/channels/${newChannel.id}`, {

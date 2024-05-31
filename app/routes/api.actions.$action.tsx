@@ -120,7 +120,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (!moderatedChannel) {
       return json(
         {
-          message: "Automod not installed",
+          message: "Automod not installed. Visit: https://automod.sh",
         },
         {
           status: 400,
