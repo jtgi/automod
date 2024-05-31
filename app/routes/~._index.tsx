@@ -43,16 +43,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const createdChannels = channels.filter((channel) => channel.userId === user.id).length;
-  const usage = await db.usage.findFirst({
+  const usages = await db.usage.findMany({
     where: {
       userId: user.id,
     },
   });
+  const totalCastsProcessed = usages.reduce((acc, usage) => acc + usage.castsProcessed, 0);
 
   return typedjson({
     user,
     channels,
-    usage,
+    usages,
+    totalCastsProcessed,
     createdChannels,
     plans: userPlans,
     env: getSharedEnv(),
@@ -60,11 +62,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { channels, user, usage, createdChannels, plans } = useTypedLoaderData<typeof loader>();
+  const { channels, user, totalCastsProcessed, createdChannels, plans } = useTypedLoaderData<typeof loader>();
 
   const plan = plans[user.plan as PlanType];
-  const isNearUsage = usage && usage.castsProcessed >= plan.maxCasts - plan.maxCasts * 0.15;
-  const isOverUsage = usage && usage.castsProcessed >= plan.maxCasts;
+  const isNearUsage = totalCastsProcessed >= plan.maxCasts - plan.maxCasts * 0.15;
+  const isOverUsage = totalCastsProcessed >= plan.maxCasts;
   const isMaxChannels = createdChannels >= plan.maxChannels;
 
   return (
@@ -142,6 +144,28 @@ export default function FrameConfig() {
               </>
             </Alert>
           )}
+          {/* 
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-base font-normal">Casts Processed</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalCastsProcessed.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">/ {plan.maxCasts.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-base font-normal">Channels Created</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {createdChannels} / {plan.maxChannels === Infinity ? "Infinity" : plan.maxChannels}
+                </div>
+              </CardContent>
+            </Card>
+          </section> */}
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">

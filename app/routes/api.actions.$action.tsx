@@ -207,6 +207,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           channel: neynarChannel,
           moderatedChannel,
           cast: cast.result.casts[0],
+          executeOnProtocol: true,
         },
         {
           jobId: `cast-${cast.result.casts[0].hash}-downvote-${message.action.interactor.fid}`,
