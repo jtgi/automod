@@ -16,7 +16,7 @@ import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getWarpcastChannel } from "./warpcast.server";
 import { automodFid } from "~/routes/~.channels.$id";
 import { userPlans } from "./auth.server";
-import { notificationTypes, sendNotification } from "./notifications.server";
+import { sendNotification } from "./notifications.server";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
