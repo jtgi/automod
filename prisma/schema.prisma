@@ -60,6 +60,7 @@ model User {
   inviteCodeId      String?
   otps              Otp[]
   usage             Usage[]
+  notifications     Notification[]
 }
 
 model ModeratedChannel {
@@ -237,4 +238,17 @@ model SignerAllocation {
   signerId  String
   channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId String
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  type      String
+  nonce     String
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([nonce, userId])
 }

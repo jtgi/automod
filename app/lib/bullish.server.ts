@@ -2,7 +2,12 @@
 import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
-import { ValidateCastArgs, isUserOverUsage, validateCast } from "~/routes/api.webhooks.neynar";
+import {
+  ValidateCastArgs,
+  getUsage as getTotalUsage,
+  isUserOverUsage as usageCheck,
+  validateCast,
+} from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
 import { getChannel, pageChannelCasts } from "./neynar.server";
@@ -10,6 +15,8 @@ import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getWarpcastChannel } from "./warpcast.server";
 import { automodFid } from "~/routes/~.channels.$id";
+import { userPlans } from "./auth.server";
+import { notificationTypes, sendNotification } from "./notifications.server";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -130,7 +137,7 @@ export const webhookWorker = new Worker(
       return;
     }
 
-    const [usage, channel, isOverUsage] = await Promise.all([
+    const [usage, channel, totalUsage] = await Promise.all([
       db.usage.upsert({
         where: {
           channelId_monthYear: {
@@ -151,10 +158,31 @@ export const webhookWorker = new Worker(
         },
       }),
       getChannel({ name: moderatedChannel.id }).catch(() => null),
-      isUserOverUsage(moderatedChannel, 0.1),
+      getTotalUsage(moderatedChannel),
     ]);
 
-    if (isOverUsage) {
+    const plan = userPlans[moderatedChannel.user.plan as keyof typeof userPlans];
+    if (totalUsage >= plan.maxCasts - plan.maxCasts * 0.15 && totalUsage < plan.maxCasts) {
+      sendNotification({
+        moderatedChannel,
+        fid: moderatedChannel.user.id,
+        type: "usage",
+        nonce: `cast-usage-warning-${moderatedChannel.id}-${moderatedChannel.user.plan}-${new Date()
+          .toISOString()
+          .substring(0, 7)}`,
+        message: `[Automated] @${moderatedChannel.user.name}, you've used 85% of your usage limit for the month. Upgrade your plan to avoid any disruption.\n\nhttps://automod.sh/~/usage`,
+      });
+    } else if (totalUsage >= plan.maxCasts && totalUsage < plan.maxCasts * 1.05) {
+      sendNotification({
+        moderatedChannel,
+        fid: moderatedChannel.user.id,
+        type: "usage",
+        nonce: `cast-usage-full-${moderatedChannel.id}-${moderatedChannel.user.plan}-${new Date()
+          .toISOString()
+          .substring(0, 7)}`,
+        message: `[Automated] @${moderatedChannel.user.name}, you are over your usage limit for the month. Rule based moderation will be disabled shortly. Upgrade your plan to get back online.\n\nhttps://automod.sh/~/usage`,
+      });
+    } else if (totalUsage >= plan.maxCasts * 1.05) {
       console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
       await toggleWebhook({ channelId: moderatedChannel.id, active: false });
       throw new UnrecoverableError(`User ${moderatedChannel.userId} is over usage limit`);
@@ -214,7 +242,7 @@ export const webhookWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 100,
-    autorun: process.env.NODE_ENV === "production",
+    // autorun: process.env.NODE_ENV === "production",
   }
 );
 
@@ -239,7 +267,7 @@ export const castWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 100,
-    autorun: process.env.NODE_ENV === "production",
+    // autorun: process.env.NODE_ENV === "production",
   }
 );
 castWorker.on("error", (err: Error) => {

@@ -440,6 +440,34 @@ export function isRuleTargetApplicable(target: string, cast: Cast) {
   }
 }
 
+export async function getUsage(moderatedChannel: FullModeratedChannel) {
+  const plan = userPlans[moderatedChannel.user.plan as PlanType];
+  if (!plan) {
+    console.log(
+      `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no plan`,
+      moderatedChannel.user.plan
+    );
+    return 0;
+  }
+
+  const usages = await db.usage.findMany({
+    where: {
+      userId: moderatedChannel.userId,
+      monthYear: new Date().toISOString().substring(0, 7),
+    },
+  });
+
+  if (!usages.length) {
+    console.log(
+      `Channel ${moderatedChannel.id}, User ${moderatedChannel.userId} has no usage`,
+      moderatedChannel.user.plan
+    );
+    return 0;
+  }
+
+  return usages.reduce((acc, u) => acc + u.castsProcessed, 0);
+}
+
 export async function isUserOverUsage(moderatedChannel: FullModeratedChannel, buffer = 0) {
   const plan = userPlans[moderatedChannel.user.plan as PlanType];
   if (!plan) {
