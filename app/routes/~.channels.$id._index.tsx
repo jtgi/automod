@@ -18,7 +18,7 @@ import {
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Form, NavLink } from "@remix-run/react";
+import { Form, NavLink, useLocation, useSearchParams } from "@remix-run/react";
 import { actionDefinitions, like } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import {
@@ -41,11 +41,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     channelId: params.id,
   });
 
+  const url = new URL(request.url);
   const { page, pageSize, skip } = getPageInfo({ request });
+  const showCurated = !!url.searchParams.get("showCurated");
+  const actionFilter = [showCurated ? undefined : "like"].filter(Boolean) as string[];
 
   const moderationLogs = await db.moderationLog.findMany({
     where: {
       channelId: channel.id,
+      action: {
+        notIn: actionFilter,
+      },
     },
     take: pageSize,
     skip,
@@ -205,6 +211,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function Screen() {
   const { page, pageSize, total, moderationLogs, actionDefinitions } = useTypedLoaderData<typeof loader>();
   const [showCastText, setShowCastText] = useLocalStorage("showCastText", true);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const prevPage = Math.max(page - 1, 0);
   const nextPage = page + 1 > Math.ceil(total / pageSize) ? null : page + 1;
@@ -222,6 +229,17 @@ export default function Screen() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
+            <DropdownMenuCheckboxItem
+              checked={!!searchParams.get("showCurated")}
+              onCheckedChange={() => {
+                setSearchParams((prev) => {
+                  prev.get("showCurated") ? prev.delete("showCurated") : prev.set("showCurated", "true");
+                  return prev;
+                });
+              }}
+            >
+              Show Curated
+            </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem checked={showCastText} onCheckedChange={setShowCastText}>
               Show Cast Text
             </DropdownMenuCheckboxItem>
