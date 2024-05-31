@@ -200,7 +200,7 @@ export default function FrameConfig() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2>Bots</h2>
-              {isMaxChannels || true ? (
+              {isMaxChannels ? (
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button>+ New Bot</Button>
@@ -211,7 +211,7 @@ export default function FrameConfig() {
                       <DialogDescription>
                         The maximum number of bots for the {user.plan} plan is {plan.maxChannels}.
                       </DialogDescription>
-                      {user.plan === "basic" || true ? (
+                      {user.plan === "basic" ? (
                         <div className="py-4 w-full flex flex-col gap-2">
                           <Button asChild>
                             <Link
