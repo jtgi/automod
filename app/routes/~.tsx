@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { commitSession, getSession } from "~/lib/auth.server";
+import { commitSession, getSession, refreshAccountStatus } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { cn } from "~/lib/utils";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
@@ -26,15 +26,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (session.get("message") as { id: string; type: string; message: string } | null) ?? undefined;
   const impersonateAs = session.get("impersonateAs") ?? undefined;
 
-  const status = await db.status.findFirst({
-    where: {
-      active: true,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const [status] = await Promise.all([
+    db.status.findFirst({
+      where: {
+        active: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+  ]);
 
   return typedjson(
     {

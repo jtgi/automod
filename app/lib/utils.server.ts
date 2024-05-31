@@ -3,7 +3,7 @@ import sharp from "sharp";
 import { v4 as uuid } from "uuid";
 import * as Sentry from "@sentry/remix";
 import * as crypto from "crypto";
-import { authenticator, commitSession, getSession } from "./auth.server";
+import { authenticator, commitSession, getSession, refreshAccountStatus } from "./auth.server";
 import { generateFrameSvg } from "./utils";
 import axios from "axios";
 import { MessageResponse } from "./types";
@@ -27,6 +27,8 @@ export async function requireUser({ request }: { request: Request }) {
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,
   });
+
+  await refreshAccountStatus({ fid: user.id });
 
   const refreshedUser = await db.user.findFirstOrThrow({
     where: {

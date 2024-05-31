@@ -101,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
     recoverQueue.add("recover", {
       channelId: newChannel.id,
       moderatedChannel: newChannel,
-      limit: 200,
+      limit: 500,
     }),
     getSession(request.headers.get("Cookie")),
   ]);

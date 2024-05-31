@@ -16,8 +16,9 @@ import {
   DialogDescription,
   DialogContent,
   DialogTitle,
+  DialogFooter,
 } from "~/components/ui/dialog";
-import { RefreshCwIcon } from "lucide-react";
+import { ArrowUpRight, RefreshCwIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -199,9 +200,9 @@ export default function FrameConfig() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2>Bots</h2>
-              {isMaxChannels ? (
+              {isMaxChannels || true ? (
                 <Dialog>
-                  <DialogTrigger>
+                  <DialogTrigger asChild>
                     <Button>+ New Bot</Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -210,32 +211,40 @@ export default function FrameConfig() {
                       <DialogDescription>
                         The maximum number of bots for the {user.plan} plan is {plan.maxChannels}.
                       </DialogDescription>
-                      {user.plan === "basic" ? (
-                        <>
-                          <p>You can upgrade on hypersub.</p>
+                      {user.plan === "basic" || true ? (
+                        <div className="py-4 w-full flex flex-col gap-2">
                           <Button asChild>
                             <Link
+                              target="_blank"
                               className="no-underline"
                               to="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
+                              rel="noreferrer"
                             >
-                              Upgrade to Prime ($7.77/mo)
+                              Prime (5 channels, $7.77/mo)
                             </Link>
                           </Button>
                           <Button asChild>
                             <Link
+                              target="_blank"
                               className="no-underline"
                               to="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
+                              rel="noreferrer"
                             >
-                              Upgrade to Ultra Plan ($23/mo)
+                              Ultra (Unlimited Channels, $23/mo)
                             </Link>
                           </Button>
-                        </>
+                        </div>
                       ) : (
                         <p>
                           Reach out to <a href="https://warpcast.com/jtgi">@jtgi</a> to upgrade
                         </p>
                       )}
                     </DialogHeader>
+                    <DialogFooter>
+                      <div className="flex justify-center text-sm border-t gap-2 items-center w-full pt-4">
+                        <p>Already upgraded?</p> <RefreshAccountButton />
+                      </div>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
               ) : (
