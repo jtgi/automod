@@ -380,8 +380,8 @@ function SimulateButton(props: { channelId: string; actionDefs: typeof actionDef
               <DialogHeader>
                 <DialogTitle>Simulation</DialogTitle>
                 <DialogDescription>
-                  Run the last 100 root casts in your channel through your new ruleset. No real actions will
-                  be performed.
+                  Run the last 50 root casts in your channel through your new ruleset. No real actions will be
+                  performed.
                 </DialogDescription>
               </DialogHeader>
               {isError(submitJobFetcher.data) && (
