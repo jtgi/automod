@@ -303,7 +303,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         required: true,
         options: [
           { value: "1", label: "Ethereum" },
+          { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
+          { value: "7777777", label: "Zora" },
         ],
       },
       contractAddress: {
