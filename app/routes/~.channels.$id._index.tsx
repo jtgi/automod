@@ -41,17 +41,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     channelId: params.id,
   });
 
-  const url = new URL(request.url);
   const { page, pageSize, skip } = getPageInfo({ request });
-  const showCurated = !!url.searchParams.get("showCurated");
-  const actionFilter = [showCurated ? undefined : "like"].filter(Boolean) as string[];
 
   const moderationLogs = await db.moderationLog.findMany({
     where: {
       channelId: channel.id,
-      action: {
-        notIn: actionFilter,
-      },
     },
     take: pageSize,
     skip,
@@ -229,7 +223,7 @@ export default function Screen() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
-            <DropdownMenuCheckboxItem
+            {/* <DropdownMenuCheckboxItem
               checked={!!searchParams.get("showCurated")}
               onCheckedChange={() => {
                 setSearchParams((prev) => {
@@ -239,7 +233,7 @@ export default function Screen() {
               }}
             >
               Show Curated
-            </DropdownMenuCheckboxItem>
+            </DropdownMenuCheckboxItem> */}
             <DropdownMenuCheckboxItem checked={showCastText} onCheckedChange={setShowCastText}>
               Show Cast Text
             </DropdownMenuCheckboxItem>
