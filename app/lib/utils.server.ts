@@ -145,6 +145,8 @@ export async function canUserExecuteAction(props: { userId: string; channelId: s
     },
   });
 
+  console.log({ isDelegate, actionPermission, userId: props.userId, channelId: props.channelId });
+
   return isDelegate !== null;
 }
 
