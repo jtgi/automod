@@ -37,6 +37,7 @@ import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export type RuleDefinition = {
   friendlyName: string;
+  checkType: "user" | "cast";
   description: string;
   invertedDescription?: string;
   hidden: boolean;
@@ -59,6 +60,7 @@ export type RuleDefinition = {
 export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
     friendlyName: "And",
+    checkType: "cast",
     description: "Combine multiple rules together",
     hidden: true,
     invertable: false,
@@ -67,6 +69,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   or: {
     friendlyName: "Or",
+    checkType: "cast",
     hidden: true,
     invertable: false,
     description: "Combine multiple rules together",
@@ -75,6 +78,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsText: {
     friendlyName: "Contains Text",
+    checkType: "cast",
     description: "Check if the text contains a specific string",
     hidden: false,
     invertable: true,
@@ -94,8 +98,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   castInThread: {
     friendlyName: "Cast is in Thread",
+    checkType: "cast",
     description: "Check if a cast is a part of a thread",
-    hidden: false,
+    hidden: true,
     invertable: true,
     args: {
       identifiers: {
@@ -110,6 +115,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsEmbeds: {
     friendlyName: "Contains Embedded Content",
+    checkType: "cast",
     description: "Check if the cast contains images, gifs, videos, frames or links",
     hidden: false,
     invertable: true,
@@ -154,6 +160,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   textMatchesPattern: {
     friendlyName: "Matches Pattern (Regex)",
+    checkType: "cast",
     description: "Check if the text matches a specific pattern",
     hidden: false,
     invertable: true,
@@ -173,6 +180,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   textMatchesLanguage: {
     friendlyName: "Matches Language",
+    checkType: "cast",
     description: "Check if the text matches a specific language",
     invertedDescription: "Check if the text is any language *but* the one specified.",
     hidden: false,
@@ -192,6 +200,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   castLength: {
     friendlyName: "Cast Length",
+    checkType: "cast",
     description: "Check if the cast length is within a range",
     hidden: false,
     invertable: false,
@@ -213,6 +222,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsTooManyMentions: {
     friendlyName: "Contains Mentions",
+    checkType: "cast",
     description: "Check if the text contains a certain amount of mentions",
     invertable: true,
     hidden: false,
@@ -227,6 +237,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
   containsLinks: {
     friendlyName: "Contains Links",
+    checkType: "cast",
     description: "Check if the text contains any links",
     hidden: false,
     invertable: true,
@@ -241,6 +252,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   downvote: {
     friendlyName: "Downvote",
+    checkType: "cast",
     description: "Check if the cast has been downvoted by your community",
     hidden: false,
     invertable: false,
@@ -255,8 +267,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotFollow: {
-    friendlyName: "User Does Not Follow",
-    description: "Check if the user does not follow a certain account",
+    friendlyName: "Following",
+    checkType: "user",
+    description: "Check if the cast author follows a certain account",
     invertedDescription: "Trigger this rule when users *do* follow the account",
     hidden: false,
     invertable: true,
@@ -273,8 +286,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsNotFollowedBy: {
-    friendlyName: "User Is Not Followed By",
-    description: "Check if the user is not followed by a certain account",
+    friendlyName: "Followed By",
+    checkType: "user",
+    description: "Check if the cast author is followed by a certain account",
     invertedDescription: "Trigger this rule when user is followed by the account",
     hidden: false,
     invertable: true,
@@ -291,7 +305,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requireActiveHypersub: {
-    friendlyName: "User does not Hypersub",
+    friendlyName: "Active Hypersub",
+    checkType: "user",
     description: "Check if the user has an active subscription to a hypersub.",
     hidden: false,
     invertable: true,
@@ -320,7 +335,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc20: {
-    friendlyName: "User does not hold ERC-20",
+    friendlyName: "Holds ERC-20",
+    checkType: "user",
     description: "Check that the user holds a certain amount of ERC-20 tokens in their connected wallets.",
     invertedDescription: "Check for users who do hold the ERC-20",
     hidden: false,
@@ -357,7 +373,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc1155: {
-    friendlyName: "User does not hold ERC-1155",
+    friendlyName: "Holds ERC-1155",
+    checkType: "user",
     description: "Require users holds a certain ERC-1155 token",
     invertedDescription: "Check for users who *do* hold the ERC-1155 token",
     hidden: false,
@@ -395,7 +412,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc721: {
-    friendlyName: "User does not hold ERC-721",
+    friendlyName: "Holds ERC-721",
+    checkType: "user",
     description: "Require users holds a certain ERC-721 token",
     invertedDescription: "Check for users who *do* hold the ERC-721 token",
     hidden: false,
@@ -433,8 +451,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotHoldPowerBadge: {
-    friendlyName: "User Does Not Hold Power Badge",
-    description: "Check if the user does not hold a power badge",
+    friendlyName: "Power Badge",
+    checkType: "user",
+    description: "Check if the user holds a power badge",
     invertedDescription: "Check for users who *do* hold the power badge",
     hidden: false,
     invertable: true,
@@ -442,7 +461,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsCohost: {
-    friendlyName: "User Is Cohost or Owner",
+    friendlyName: "Cohosts or Owner",
+    checkType: "user",
     description: "Check if the user is a cohost or owner of the channel",
     hidden: false,
     invertable: true,
@@ -450,7 +470,8 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userProfileContainsText: {
-    friendlyName: "User Profile Contains Text",
+    friendlyName: "Profile Contains Text",
+    checkType: "user",
     description: "Check if the user's profile contains a specific string",
     hidden: false,
 
@@ -470,6 +491,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
   userDisplayNameContainsText: {
     friendlyName: "User Display Name Contains Text",
+    checkType: "user",
     description: "Check if the user's display name contains a specific string",
     hidden: false,
 
@@ -491,18 +513,19 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFollowerCount: {
     friendlyName: "User Follower Count",
+    checkType: "user",
     hidden: false,
     invertable: false,
     description: "Check if the user's follower count is within a range",
     args: {
       min: {
         type: "number",
-        friendlyName: "Min",
+        friendlyName: "From",
         description: "The minimum number of followers",
       },
       max: {
         type: "number",
-        friendlyName: "Max",
+        friendlyName: "",
         description: "The maximum number of followers",
       },
     },
@@ -510,6 +533,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFidInList: {
     friendlyName: "User FID is in List",
+    checkType: "user",
     description: "Check if a FID is included on the list",
     invertedDescription: "Check if a FID is not included in the list",
     hidden: false,
@@ -527,6 +551,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFidInRange: {
     friendlyName: "User FID",
+    checkType: "user",
     description: "Check if the user's FID is within a range",
     hidden: false,
     invertable: false,

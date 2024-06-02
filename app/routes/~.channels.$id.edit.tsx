@@ -19,6 +19,7 @@ import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
 import { ChannelForm } from "~/components/channel-form";
 import { v4 as uuid } from "uuid";
+import { CurationForm } from "~/components/curation-form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -120,16 +121,29 @@ export default function Screen() {
   console.log(patchedRuleSets);
   return (
     <div className="space-y-4 w-full">
-      <ChannelForm
-        actionDefinitions={actionDefinitions}
-        ruleDefinitions={ruleDefinitions}
-        ruleNames={ruleNames}
-        defaultValues={{
-          ...channel,
-          excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-          ruleSets: patchedRuleSets,
-        }}
-      />
+      {process.env.NODE_ENV === "production" ? (
+        <ChannelForm
+          actionDefinitions={actionDefinitions}
+          ruleDefinitions={ruleDefinitions}
+          ruleNames={ruleNames}
+          defaultValues={{
+            ...channel,
+            excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
+            ruleSets: patchedRuleSets,
+          }}
+        />
+      ) : (
+        <CurationForm
+          actionDefinitions={actionDefinitions}
+          ruleDefinitions={ruleDefinitions}
+          ruleNames={ruleNames}
+          defaultValues={{
+            ...channel,
+            excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
+            ruleSet: patchedRuleSets[0],
+          }}
+        />
+      )}
     </div>
   );
 }
