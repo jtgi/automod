@@ -525,7 +525,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       },
       max: {
         type: "number",
-        friendlyName: "",
+        friendlyName: "To",
         description: "The maximum number of followers",
       },
     },

@@ -129,31 +129,21 @@ export function CurationForm(props: {
             <hr />
           </div>
 
-          <fieldset disabled={isSubmitting} className="space-y-6">
+          <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-medium">Bypass</p>
-              <p className="text-gray-500 text-sm">
-                Users in this list will always have their casts curated into Main.
-              </p>
+              <p className="font-semibold">Who should be excluded?</p>
             </div>
 
-            <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
-              <Controller
-                name={`excludeCohosts`}
+            <div>
+              <RuleSetEditor
+                actionDefinitions={props.actionDefinitions}
+                ruleDefinitions={props.ruleDefinitions}
+                rulesNames={props.ruleNames}
+                watch={watch}
                 control={control}
-                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+                register={register}
               />
-            </SliderField>
-            <FieldLabel
-              label="Farcaster Usernames"
-              description="One per line."
-              className="flex-col items-start"
-            >
-              <Textarea
-                placeholder="jtgi&#10;wake&#10;deployer"
-                {...register("excludeUsernames")}
-              />
-            </FieldLabel>
+            </div>
           </fieldset>
 
           <div className="py-6">
