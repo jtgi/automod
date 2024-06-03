@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, defer, json } from "@remix-run/node";
+import { Await, Form, useLoaderData } from "@remix-run/react";
 import { redirect, typedjson } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
@@ -11,12 +11,46 @@ import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive } from "./~.channels.$id.tools";
 import { recoverQueue } from "~/lib/bullish.server";
-import { FormEvent } from "react";
+import { FormEvent, Suspense } from "react";
+import axios from "axios";
+import { automodFid } from "./~.channels.$id";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
+  const dau = getDau();
+  return defer({
+    dau,
+  });
+}
 
-  return json({});
+async function getDau() {
+  const rsp = await axios.get(`https://api.warpcast.com/v2/all-channels`);
+  const channels = rsp.data.result.channels;
+  const moderatedChannels = await db.moderatedChannel.findMany({
+    select: {
+      id: true,
+    },
+  });
+
+  const signerFids = await db.signer.findMany({});
+  const automodFids = [...signerFids.map((s) => +s.fid), automodFid];
+  const active = [];
+  const setupIncomplete = [];
+
+  for (const channel of channels) {
+    if (automodFids.includes(channel.moderatorFid)) {
+      active.push(channel);
+    } else {
+      if (moderatedChannels.find((mc) => mc.id.toLowerCase() === channel.id.toLowerCase())) {
+        setupIncomplete.push(channel);
+      }
+    }
+  }
+
+  return {
+    active,
+    setupIncomplete,
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -186,59 +220,105 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Admin() {
+  const { dau } = useLoaderData<typeof loader>();
   return (
-    <div className="space-y-20">
-      <Form method="post" className="space-y-4">
-        <FieldLabel label="Grant Access by Fid" className="flex-col items-start">
-          <Input name="fid" placeholder="123.." />
-        </FieldLabel>
-        <Button name="action" value="add-user">
-          Grant Access
-        </Button>
-      </Form>
+    <div className="flex flex-col sm:flex-row gap-8 w-full">
+      <div className="space-y-20 min-w-[300px] text-sm">
+        <Suspense fallback="Loading">
+          <Await resolve={dau}>
+            {(_dau) => {
+              return (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <h3>Active Channels - {_dau.active.length.toLocaleString()}</h3>
+                    {_dau.active
+                      .sort((a, b) => b.followerCount - a.followerCount)
+                      .map((c) => (
+                        <ChannelStat key={c.id} c={c} />
+                      ))}
+                  </div>
 
-      <Form method="post" className="space-y-4">
-        <FieldLabel label="Impersonate Username" className="flex-col items-start">
-          <Input name="username" placeholder="username" />
-        </FieldLabel>
-        <Button name="action" value="impersonate">
-          Impersonate
-        </Button>
-      </Form>
+                  <div className="flex flex-col gap-2">
+                    <h2>Setup Incomplete - {_dau.setupIncomplete.length.toLocaleString()}</h2>
+                    {_dau.setupIncomplete.map((c) => (
+                      <ChannelStat key={c.id} c={c} />
+                    ))}
+                  </div>
+                </>
+              );
+            }}
+          </Await>
+        </Suspense>
+      </div>
+      <div className="w-full">
+        <h3>Admin</h3>
+        <div className="space-y-20">
+          <Form method="post" className="space-y-4">
+            <FieldLabel label="Grant Access by Fid" className="flex-col items-start">
+              <Input name="fid" placeholder="123.." />
+            </FieldLabel>
+            <Button name="action" value="add-user">
+              Grant Access
+            </Button>
+          </Form>
 
-      <Form method="post" className="space-y-4">
-        <FieldLabel label="Recover Channel (empty for all)" className="flex-col items-start">
-          <Input name="channel" placeholder="all channels" />
-        </FieldLabel>
-        <FieldLabel label="Until" className="flex-col items-start">
-          <Input name="untilTime" placeholder="2024-05-29T08:22:20.329Z" />
-        </FieldLabel>
-        <p className="text-[8px]">2024-05-29T08:22:20.329Z</p>
-        <FieldLabel label="Until Cast Hash" className="flex-col items-start">
-          <Input name="untilHash" placeholder="hash" />
-        </FieldLabel>
-        <FieldLabel label="Limit" className="flex-col items-start">
-          <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
-        </FieldLabel>
-        <Button name="action" value="recover">
-          Recover
-        </Button>
-      </Form>
+          <Form method="post" className="space-y-4">
+            <FieldLabel label="Impersonate Username" className="flex-col items-start">
+              <Input name="username" placeholder="username" />
+            </FieldLabel>
+            <Button name="action" value="impersonate">
+              Impersonate
+            </Button>
+          </Form>
 
-      <Form method="post" className="space-y-4">
-        <FieldLabel label="Status" className="flex-col items-start">
-          <Input name="channel" placeholder="channel" />
-        </FieldLabel>
-        <FieldLabel label="Message" className="flex-col items-start">
-          <Input name="message" required />
-        </FieldLabel>
-        <FieldLabel label="Link" className="flex-col items-start">
-          <Input name="link" />
-        </FieldLabel>
-        <Button name="action" value="status">
-          Submit
-        </Button>
-      </Form>
+          <Form method="post" className="space-y-4">
+            <FieldLabel label="Recover Channel (empty for all)" className="flex-col items-start">
+              <Input name="channel" placeholder="all channels" />
+            </FieldLabel>
+            <FieldLabel label="Until" className="flex-col items-start">
+              <Input name="untilTime" placeholder="2024-05-29T08:22:20.329Z" />
+            </FieldLabel>
+            <p className="text-[8px]">2024-05-29T08:22:20.329Z</p>
+            <FieldLabel label="Until Cast Hash" className="flex-col items-start">
+              <Input name="untilHash" placeholder="hash" />
+            </FieldLabel>
+            <FieldLabel label="Limit" className="flex-col items-start">
+              <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
+            </FieldLabel>
+            <Button name="action" value="recover">
+              Recover
+            </Button>
+          </Form>
+
+          <Form method="post" className="space-y-4">
+            <FieldLabel label="Status" className="flex-col items-start">
+              <Input name="channel" placeholder="channel" />
+            </FieldLabel>
+            <FieldLabel label="Message" className="flex-col items-start">
+              <Input name="message" required />
+            </FieldLabel>
+            <FieldLabel label="Link" className="flex-col items-start">
+              <Input name="link" />
+            </FieldLabel>
+            <Button name="action" value="status">
+              Submit
+            </Button>
+          </Form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChannelStat({ c }: { c: any }) {
+  return (
+    <div className="flex gap-2">
+      <div className="w-[200px]">
+        <a target="_blank" href={`https://warpcast.com/~/channel/${c.id}`} rel="noreferrer">
+          /{c.id}
+        </a>
+      </div>
+      <div>{c.followerCount.toLocaleString()}</div>
     </div>
   );
 }
