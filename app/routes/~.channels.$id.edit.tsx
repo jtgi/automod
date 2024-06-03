@@ -112,7 +112,7 @@ export default function Screen() {
 
     return {
       ...ruleSet,
-      logicType: (ruleParsed.operation === "AND" ? "and" : "or") as "and" | "or",
+      logicType: ruleParsed.operation === "OR",
       ruleParsed: ruleParsed.conditions,
       actionsParsed: JSON.parse(ruleSet.actions),
     };

@@ -53,6 +53,7 @@ import { SimulationResult } from "~/routes/~.channels.$id.tools";
 import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
+import { cn } from "~/lib/utils";
 
 export type FormValues = {
   id?: string;
@@ -64,7 +65,7 @@ export type FormValues = {
     id?: string;
     active: boolean;
     target: string;
-    logicType: "and" | "or";
+    logicType: boolean;
     ruleParsed: Array<Rule>;
     actionsParsed: Array<Action>;
   };
@@ -410,7 +411,7 @@ function isFailure(data?: any): data is JobState {
 function prepareFormValues(data: FormValues) {
   const newRuleSets = [];
   const ruleSet = data.ruleSet;
-  if (ruleSet.logicType === "and") {
+  if (!ruleSet.logicType) {
     const rule: Rule = {
       name: "and",
       type: "LOGICAL",
@@ -424,7 +425,7 @@ function prepareFormValues(data: FormValues) {
       rule,
       ruleParsed: rule,
     });
-  } else if (ruleSet.logicType === "or") {
+  } else {
     const rule: Rule = {
       name: "or",
       type: "LOGICAL",
@@ -471,6 +472,15 @@ function RuleSetEditor(props: {
 
   const [isRuleDialogOpen, setIsRuleDialogOpen] = useState(false);
 
+  const duplicatesAllowed: RuleName[] = [
+    "requireActiveHypersub",
+    "requiresErc1155",
+    "requiresErc20",
+    "requiresErc721",
+    "userIsNotFollowedBy",
+    "userDoesNotFollow",
+  ];
+
   return (
     <div>
       <div className="space-y-4">
@@ -481,7 +491,7 @@ function RuleSetEditor(props: {
             return (
               <Card key={ruleField.id} className="w-full rounded-md">
                 <CardHeader>
-                  <div className="flex justify-between items-center gap-2">
+                  <div className="flex justify-between items-start gap-2">
                     <div>
                       <p className="font-semibold">{props.ruleDefinitions[ruleName].friendlyName}</p>
                       <p className="text-gray-500 text-xs">{props.ruleDefinitions[ruleName].description}</p>
@@ -522,68 +532,52 @@ function RuleSetEditor(props: {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
               {Object.entries(props.ruleDefinitions)
                 .filter((args) => !args[1].hidden && args[1].checkType === "user")
-                .map(([name, ruleDef]) => (
-                  <div
-                    key={name}
-                    id={name}
-                    className="p-4 rounded-md border hover:border-gray-300 hover:shadow-sm hover:cursor-pointer transition-all flex"
-                    onClick={() => {
-                      appendRule({
-                        name: name as RuleName,
-                        type: "CONDITION",
-                        args: {},
-                      });
+                .map(([name, ruleDef]) => {
+                  if (
+                    ruleFields.find((rf) => rf.name === name) &&
+                    !duplicatesAllowed.includes(name as RuleName)
+                  ) {
+                    return (
+                      <div
+                        key={name}
+                        id={name}
+                        className={cn("opacity-50 p-4 rounded-md border hover:cursor:not-allowed flex")}
+                      >
+                        <div>
+                          <p className="text-sm font-semibold">{ruleDef.friendlyName}</p>
+                          <p className="text-sm text-gray-500">{ruleDef.description}</p>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div
+                        key={name}
+                        id={name}
+                        className={cn(
+                          "p-4 rounded-md border hover:border-gray-300 hover:shadow-sm hover:cursor-pointer transition-all flex"
+                        )}
+                        onClick={() => {
+                          appendRule({
+                            name: name as RuleName,
+                            type: "CONDITION",
+                            args: {},
+                          });
 
-                      setIsRuleDialogOpen(false);
-                    }}
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">{ruleDef.friendlyName}</p>
-                      <p className="text-sm text-gray-500">{ruleDef.description}</p>
-                    </div>
-                  </div>
-                ))}
+                          setIsRuleDialogOpen(false);
+                        }}
+                      >
+                        <div>
+                          <p className="text-sm font-semibold">{ruleDef.friendlyName}</p>
+                          <p className="text-sm text-gray-500">{ruleDef.description}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                })}
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <div className="py-12">
-        <hr />
-      </div>
-
-      <div className="space-y-4">
-        <p className=" font-medium">Curate when...</p>
-        <Controller
-          name={`ruleSet.logicType`}
-          control={control}
-          render={(controllerProps) => (
-            <RadioGroup
-              name={`ruleSet.logicType`}
-              onValueChange={controllerProps.field.onChange}
-              defaultValue={controllerProps.field.value}
-            >
-              <FieldLabel
-                label="All rules match"
-                position="right"
-                labelProps={{
-                  htmlFor: `ruleSet.logicType.and`,
-                }}
-              >
-                <RadioGroupItem value="and" id={`ruleSet.logicType.and`} />
-              </FieldLabel>
-              <FieldLabel
-                label="Any rule matches"
-                position="right"
-                labelProps={{
-                  htmlFor: `ruleSet.logicType.or`,
-                }}
-              >
-                <RadioGroupItem value="or" id={`ruleSet.logicType.or`} />
-              </FieldLabel>
-            </RadioGroup>
-          )}
-        />
       </div>
     </div>
   );
@@ -702,72 +696,6 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) 
             render={({ field: { onChange, name, value } }) => (
               <Checkbox
                 id={`ruleSet.ruleParsed.${props.ruleIndex}.args.${argName}`}
-                name={name}
-                onCheckedChange={onChange}
-                checked={value}
-              />
-            )}
-          />
-        </FieldLabel>
-      );
-    }
-  });
-}
-
-function ActionArgs(props: { actionDefinition: ActionDefinition; actionIndex: number }) {
-  const { register, control } = useFormContext<FormValues>();
-  const actionDef = props.actionDefinition;
-
-  return Object.entries(actionDef.args).map(([argName, argDef]) => {
-    if (argDef.type === "number") {
-      return (
-        <FieldLabel
-          key={argName}
-          label={argDef.friendlyName}
-          description={argDef.description}
-          className="flex-col items-start"
-        >
-          <Input
-            type="number"
-            required={argDef.required}
-            {...register(`ruleSet.actionsParsed.${props.actionIndex}.args.${argName}` as any)}
-          />
-        </FieldLabel>
-      );
-    }
-    if (argDef.type === "string") {
-      return (
-        <FieldLabel
-          key={argName}
-          label={argDef.friendlyName}
-          description={argDef.description}
-          className="flex-col items-start"
-        >
-          <Input
-            required={argDef.required}
-            {...register(`ruleSet.actionsParsed.${props.actionIndex}.args.${argName}` as any)}
-          />
-        </FieldLabel>
-      );
-    }
-    if (argDef.type === "boolean") {
-      return (
-        <FieldLabel
-          key={argName}
-          label={argDef.friendlyName}
-          className="gap-2"
-          labelProps={{
-            htmlFor: `ruleSet.actionsParsed.${props.actionIndex}.args.${argName}`,
-          }}
-          // description={argDef.description}
-          position="right"
-        >
-          <Controller
-            control={control}
-            name={`ruleSet.actionsParsed.${props.actionIndex}.args.${argName}` as any}
-            render={({ field: { onChange, name, value } }) => (
-              <Checkbox
-                id={`ruleSet.actionsParsed.${props.actionIndex}.args.${argName}`}
                 name={name}
                 onCheckedChange={onChange}
                 checked={value}
