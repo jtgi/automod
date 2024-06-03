@@ -107,7 +107,7 @@ export function CurationForm(props: {
         <form id="channel-form" method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Who should be curated?</p>
+              <p className="font-semibold">What should be curated?</p>
               <p className="text-gray-500 text-sm">
                 Setup automated rules to curate casts into Main from Recent.
               </p>
@@ -131,7 +131,7 @@ export function CurationForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Who should be excluded?</p>
+              <p className="font-semibold">What should be excluded?</p>
             </div>
 
             <div>
@@ -509,7 +509,7 @@ function RuleSetEditor(props: {
         </div>
         <Dialog open={isRuleDialogOpen} onOpenChange={setIsRuleDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant={"secondary"}>
+            <Button className="w-full sm:w-auto" variant={"secondary"}>
               <PlusIcon className="w-4 h-4 mr-1" /> Rule
             </Button>
           </DialogTrigger>
@@ -521,7 +521,7 @@ function RuleSetEditor(props: {
             </DialogHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
               {Object.entries(props.ruleDefinitions)
-                .filter((args) => !args[1].hidden && args[1].checkType === "user")
+                .filter((args) => !args[1].hidden)
                 .map(([name, ruleDef]) => {
                   if (
                     ruleFields.find((rf) => rf.name === name) &&

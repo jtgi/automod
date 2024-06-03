@@ -76,6 +76,15 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
+  not: {
+    friendlyName: "Nand",
+    checkType: "cast",
+    description: "Invert the result of a rule",
+    hidden: true,
+    invertable: false,
+    args: {},
+  },
+
   containsText: {
     friendlyName: "Contains Text",
     checkType: "cast",
