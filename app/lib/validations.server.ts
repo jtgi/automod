@@ -497,13 +497,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {
       min: {
         type: "number",
-        friendlyName: "Min",
-        description: "The minimum number of followers",
+        friendlyName: "At Least",
+        description: "If you enter 1, the user must have at least 1 follower.",
       },
       max: {
         type: "number",
-        friendlyName: "Max",
-        description: "The maximum number of followers",
+        friendlyName: "At Most",
+        description: "If you enter 50, the user must have 50 or fewer followers.",
       },
     },
   },
