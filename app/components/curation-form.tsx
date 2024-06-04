@@ -26,11 +26,9 @@ import { loader as jobStatusLoader } from "~/routes/api.channels.$id.simulations
 import { Input } from "~/components/ui/input";
 import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
-import { Bot, Plus, PlusIcon, ServerCrash, X } from "lucide-react";
 import {
   Control,
   Controller,
@@ -54,6 +52,7 @@ import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
+import { Bot, PlusIcon, ServerCrash, X } from "lucide-react";
 
 export type FormValues = {
   id?: string;
@@ -107,7 +106,7 @@ export function CurationForm(props: {
         <form id="channel-form" method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">What should be curated?</p>
+              <p className="font-semibold">What casts should be included in Main?</p>
               <p className="text-gray-500 text-sm">
                 Setup automated rules to curate casts into Main from Recent.
               </p>
@@ -131,7 +130,11 @@ export function CurationForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">What should be excluded?</p>
+              <p className="font-semibold">What should be excluded from Main?</p>
+              <p className="text-gray-500 text-sm">
+                Casts that match these rules will not be curated into Main. If the inclusion rules also match
+                exclusion will win.
+              </p>
             </div>
 
             <div>
@@ -144,6 +147,72 @@ export function CurationForm(props: {
                 register={register}
               />
             </div>
+          </fieldset>
+
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <fieldset disabled={isSubmitting} className="space-y-6">
+            <div>
+              <p className="font-medium">Bypass</p>
+              <p className="text-gray-500 text-sm">
+                Users in this list will always have their casts curated into Main.
+              </p>
+            </div>
+
+            <SliderField label="Cohosts" description="Always include casts from cohosts in Main">
+              <Controller
+                name={`excludeCohosts`}
+                control={control}
+                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+              />
+            </SliderField>
+            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
+              <Textarea
+                rows={5}
+                placeholder="jtgi&#10;nonlinear.eth&#10;v"
+                {...register("excludeUsernames")}
+              />
+            </FieldLabel>
+          </fieldset>
+
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <fieldset disabled={isSubmitting} className="space-y-6">
+            <div>
+              <p className="font-medium">Ban List</p>
+              <p className="text-gray-500 text-sm">
+                Users in this list will never have their casts curated into Main
+              </p>
+            </div>
+
+            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
+              <Textarea
+                rows={5}
+                placeholder="jtgi&#10;nonlinear.eth&#10;v"
+                {...register("excludeUsernames")}
+              />
+            </FieldLabel>
+          </fieldset>
+
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <fieldset disabled={isSubmitting} className="space-y-6">
+            <div>
+              <p className="font-medium">Downvote</p>
+              <p className="text-gray-500 text-sm">
+                Configure the threshold for downvotes before a cast is curated into Main.
+              </p>
+            </div>
+
+            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
+              <Input type="number" placeholder="0" />
+            </FieldLabel>
           </fieldset>
 
           <div className="py-6">
@@ -479,11 +548,11 @@ function RuleSetEditor(props: {
             const ruleName = props.watch(`ruleSet.ruleParsed.${ruleIndex}.name`);
 
             return (
-              <Card key={ruleField.id} className="w-full rounded-md">
+              <Card key={ruleField.id} className="w-full rounded-lg">
                 <CardHeader>
                   <div className="flex justify-between items-start gap-2">
                     <div>
-                      <p className="font-semibold">{props.ruleDefinitions[ruleName].friendlyName}</p>
+                      <p className="font-medium text-md">{props.ruleDefinitions[ruleName].friendlyName}</p>
                       <p className="text-gray-500 text-xs">{props.ruleDefinitions[ruleName].description}</p>
                     </div>
                     <Button

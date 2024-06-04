@@ -118,7 +118,6 @@ export default function Screen() {
     };
   });
 
-  console.log(patchedRuleSets);
   return (
     <div className="space-y-4 w-full">
       {process.env.NODE_ENV === "production" ? (

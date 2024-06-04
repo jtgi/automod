@@ -314,7 +314,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requireActiveHypersub: {
-    friendlyName: "Active Hypersub",
+    friendlyName: "Subscribes on Hypersub",
     checkType: "user",
     description: "Check if the user has an active subscription to a hypersub.",
     hidden: false,
