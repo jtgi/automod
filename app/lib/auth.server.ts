@@ -103,11 +103,14 @@ export async function verifyFarcasterUser(args: FarcasterUser & { request: Reque
         const existingUser = await db.user.findFirst({
           where: {
             planTokenId: subscription.tokenId,
+            plan: subscription.plan,
           },
         });
 
         if (existingUser) {
-          Sentry.captureMessage(`Token ${subscription.tokenId} already in use.`);
+          Sentry.captureMessage(
+            `Token ${subscription.tokenId} for ${subscription.plan} already in use by ${existingUser.name}.`
+          );
           throw new Error(`Token already in use. Contact support.`);
         }
       }
