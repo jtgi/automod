@@ -129,6 +129,16 @@ export default function Screen() {
 
   return (
     <div className="space-y-4 w-full">
+      <div className="">
+        <p className="font-semibold">Rules</p>
+        <p className="text-gray-500">
+          The following settings control what casts appear in Main. Recent cannot be moderated.
+        </p>
+      </div>
+
+      <div className="py-4">
+        <hr />
+      </div>
       <ChannelForm
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}

@@ -237,7 +237,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
-              <p className="font-medium">Always Include in Main</p>
+              <p className="font-semibold">Always Include in Main</p>
               <p className="text-gray-500 text-sm">
                 Users in this list will always have their casts curated into Main.
               </p>
@@ -252,13 +252,10 @@ export function ChannelForm(props: {
                 />
               </SliderField>
             )}
-            <FieldLabel
-              label="Farcaster Usernames"
-              description="One per line."
-              className="flex-col items-start"
-            >
+            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
               <Textarea
-                placeholder="jtgi&#10;wake&#10;deployer"
+                rows={5}
+                placeholder="jtgi&#10;nonlinear.eth&#10;v"
                 {...register("excludeUsernames")}
               />
             </FieldLabel>
