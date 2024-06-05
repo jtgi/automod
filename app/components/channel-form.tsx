@@ -125,18 +125,6 @@ export function ChannelForm(props: {
                     {...register("id", { required: true })}
                   />
                 </FieldLabel>
-
-                {/* <FieldLabel
-                label="Warns Before Permanently Banned"
-                className="flex-col items-start"
-                description="The number of warns before a user is permanently banned. Banning is not reversable. Example, if its set to 2, when the user breaks rules the 3rd time they are banned."
-              >
-                <Input
-                  type="number"
-                  placeholder="∞"
-                  {...register("banThreshold")}
-                />
-              </FieldLabel> */}
               </fieldset>
 
               <div className="py-6">
@@ -147,7 +135,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Filtering Rules</p>
+              <p className="font-semibold">Automated Filtering Rules</p>
               <p className="text-gray-500 text-sm">
                 Use rules to filter out the bad stuff. Anything else will be included in Main.
               </p>
@@ -249,7 +237,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
-              <p className="font-medium">Bypass</p>
+              <p className="font-medium">Always Include in Main</p>
               <p className="text-gray-500 text-sm">
                 Users in this list will always have their casts curated into Main.
               </p>
