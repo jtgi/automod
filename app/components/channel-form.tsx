@@ -73,6 +73,7 @@ export type FormValues = {
 export function ChannelForm(props: {
   actionDefinitions: typeof actionDefinitions;
   ruleDefinitions: typeof ruleDefinitions;
+  showCohostBypass?: boolean;
   ruleNames: readonly RuleName[];
   defaultValues: FormValues;
 }) {
@@ -254,13 +255,15 @@ export function ChannelForm(props: {
               </p>
             </div>
 
-            <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
-              <Controller
-                name={`excludeCohosts`}
-                control={control}
-                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
-              />
-            </SliderField>
+            {props.showCohostBypass && (
+              <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
+                <Controller
+                  name={`excludeCohosts`}
+                  control={control}
+                  render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+                />
+              </SliderField>
+            )}
             <FieldLabel
               label="Farcaster Usernames"
               description="One per line."

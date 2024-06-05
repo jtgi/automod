@@ -88,10 +88,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserCanModerateChannel({
-    userId: user.id,
-    channelId: params.id,
-  });
+  const [channel, cohostRole] = await Promise.all([
+    requireUserCanModerateChannel({
+      userId: user.id,
+      channelId: params.id,
+    }),
+    db.role.findFirst({
+      where: {
+        channelId: params.id,
+        isCohostRole: true,
+      },
+    }),
+  ]);
 
   return typedjson({
     user,
@@ -99,12 +107,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     actionDefinitions,
     ruleDefinitions,
     ruleNames,
+    cohostRole,
     env: getSharedEnv(),
   });
 }
 
 export default function Screen() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole } =
+    useTypedLoaderData<typeof loader>();
 
   const patchedRuleSets = channel.ruleSets.map((ruleSet) => {
     const ruleParsed = JSON.parse(ruleSet.rule);
@@ -117,13 +127,13 @@ export default function Screen() {
     };
   });
 
-  console.log(patchedRuleSets);
   return (
     <div className="space-y-4 w-full">
       <ChannelForm
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}
         ruleNames={ruleNames}
+        showCohostBypass={!!cohostRole}
         defaultValues={{
           ...channel,
           excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
