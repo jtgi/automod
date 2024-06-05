@@ -585,6 +585,8 @@ function RuleSetEditor(props: {
     "requiresErc721",
     "userIsNotFollowedBy",
     "userDoesNotFollow",
+    "containsText",
+    "textMatchesPattern",
   ];
 
   return (
