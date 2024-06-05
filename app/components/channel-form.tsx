@@ -135,7 +135,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Automated Filtering Rules</p>
+              <p className=" font-medium">Automated Filtering Rules</p>
               <p className="text-gray-500 text-sm">
                 Use rules to filter out the bad stuff. Anything else will be included in Main.
               </p>
@@ -237,7 +237,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
-              <p className="font-semibold">Always Include in Main</p>
+              <p className="font-medium">Always Include in Main</p>
               <p className="text-gray-500 text-sm">
                 Users in this list will always have their casts curated into Main.
               </p>
