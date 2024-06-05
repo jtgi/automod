@@ -52,7 +52,16 @@ import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
-import { Bot, PlusIcon, ServerCrash, X } from "lucide-react";
+import {
+  Bot,
+  CheckCircle2,
+  CheckCircleIcon,
+  CheckIcon,
+  PlusIcon,
+  ServerCrash,
+  X,
+  XCircleIcon,
+} from "lucide-react";
 
 export type FormValues = {
   id?: string;
@@ -106,10 +115,19 @@ export function CurationForm(props: {
         <form id="channel-form" method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">What casts should be included in Main?</p>
-              <p className="text-gray-500 text-sm">
-                Setup automated rules to curate casts into Main from Recent.
-              </p>
+              <p className="font-semibold">Automatic Moderation</p>
+            </div>
+
+            <div className="text-md flex items-start gap-2">
+              <CheckCircle2 className="text-green-500 inline w-5 h-5 shrink-0 mt-1" />
+              <div>
+                When{" "}
+                <select className="p-1 bg-primary/10 rounded-md">
+                  <option>any</option>
+                  <option>all</option>
+                </select>{" "}
+                of the following rules are met, include the cast from Main.
+              </div>
             </div>
 
             <div>
@@ -129,12 +147,16 @@ export function CurationForm(props: {
           </div>
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
-            <div>
-              <p className="font-semibold">What should be excluded from Main?</p>
-              <p className="text-gray-500 text-sm">
-                Casts that match these rules will not be curated into Main. If the inclusion rules also match
-                exclusion will win.
-              </p>
+            <div className="text-md flex items-start gap-2">
+              <XCircleIcon className="text-red-500 w-5 h-5 mt-1 shrink-0" />
+              <div>
+                When{" "}
+                <select className="p-1 bg-primary/10 rounded-md">
+                  <option>any</option>
+                  <option>all</option>
+                </select>{" "}
+                of the following rules are met, exclude the cast in Main.
+              </div>
             </div>
 
             <div>
@@ -196,6 +218,31 @@ export function CurationForm(props: {
                 {...register("excludeUsernames")}
               />
             </FieldLabel>
+          </fieldset>
+
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <fieldset disabled={isSubmitting} className="space-y-2">
+            <div>
+              <p className="font-medium">Content Settings</p>
+            </div>
+
+            <SliderField label="Block Hate Speech">
+              <Controller
+                name={`excludeCohosts`}
+                control={control}
+                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+              />
+            </SliderField>
+            <SliderField label="Block Nudity">
+              <Controller
+                name={`excludeCohosts`}
+                control={control}
+                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+              />
+            </SliderField>
           </fieldset>
 
           <div className="py-6">
