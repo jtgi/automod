@@ -20,6 +20,7 @@ import invariant from "tiny-invariant";
 import { ChannelForm } from "~/components/channel-form";
 import { v4 as uuid } from "uuid";
 import { CurationForm } from "~/components/curation-form";
+import { RuleSet } from "@prisma/client";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -107,16 +108,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function Screen() {
   const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
-  const patchedRuleSets = channel.ruleSets.map((ruleSet) => {
+  const patchedRuleSets = channel.ruleSets.map((ruleSet) => {});
+
+  function patchRule(rule: string) {
     const ruleParsed = JSON.parse(ruleSet.rule);
 
     return {
       ...ruleSet,
-      logicType: ruleParsed.operation === "OR",
+      logicType: ruleParsed.operation === "OR" ? ("or" as const) : ("and" as const),
       ruleParsed: ruleParsed.conditions,
       actionsParsed: JSON.parse(ruleSet.actions),
     };
-  });
+  }
 
   return (
     <div className="space-y-4 w-full">
@@ -139,7 +142,7 @@ export default function Screen() {
           defaultValues={{
             ...channel,
             excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-            ruleSet: patchedRuleSets[0],
+            inclusionRuleSet,
           }}
         />
       )}

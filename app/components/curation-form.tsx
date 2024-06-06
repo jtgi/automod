@@ -13,7 +13,6 @@ import {
 } from "~/components/ui/table";
 import {
   Action,
-  ActionDefinition,
   ActionType,
   Rule,
   RuleDefinition,
@@ -26,7 +25,7 @@ import { loader as jobStatusLoader } from "~/routes/api.channels.$id.simulations
 import { Input } from "~/components/ui/input";
 import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
 import {
@@ -42,7 +41,7 @@ import {
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { Button } from "./ui/button";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Textarea } from "./ui/textarea";
 import { Dialog, DialogTitle, DialogContent, DialogDescription, DialogHeader } from "./ui/dialog";
 import { action } from "~/routes/api.channels.$id.simulations";
@@ -52,16 +51,7 @@ import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
-import {
-  Bot,
-  CheckCircle2,
-  CheckCircleIcon,
-  CheckIcon,
-  PlusIcon,
-  ServerCrash,
-  X,
-  XCircleIcon,
-} from "lucide-react";
+import { Bot, CheckCircle2, PlusIcon, ServerCrash, X, XCircleIcon } from "lucide-react";
 
 export type FormValues = {
   id?: string;
@@ -69,7 +59,15 @@ export type FormValues = {
   excludeUsernames?: string;
   excludeCohosts: boolean;
 
-  ruleSet: {
+  inclusionRuleSet: {
+    id?: string;
+    active: boolean;
+    target: string;
+    logicType: boolean;
+    ruleParsed: Array<Rule>;
+    actionsParsed: Array<Action>;
+  };
+  exclusionRuleSet: {
     id?: string;
     active: boolean;
     target: string;
@@ -126,7 +124,7 @@ export function CurationForm(props: {
                   <option>any</option>
                   <option>all</option>
                 </select>{" "}
-                of the following rules are met, include the cast from Main.
+                of the following rules are met, include the cast in Main.
               </div>
             </div>
 
@@ -138,6 +136,7 @@ export function CurationForm(props: {
                 watch={watch}
                 control={control}
                 register={register}
+                name="inclusionRuleSet.ruleParsed"
               />
             </div>
           </fieldset>
@@ -155,7 +154,7 @@ export function CurationForm(props: {
                   <option>any</option>
                   <option>all</option>
                 </select>{" "}
-                of the following rules are met, exclude the cast in Main.
+                of the following rules are met, exclude the cast from Main.
               </div>
             </div>
 
@@ -167,6 +166,7 @@ export function CurationForm(props: {
                 watch={watch}
                 control={control}
                 register={register}
+                name="exclusionRuleSet.ruleParsed"
               />
             </div>
           </fieldset>
@@ -217,48 +217,6 @@ export function CurationForm(props: {
                 placeholder="jtgi&#10;nonlinear.eth&#10;v"
                 {...register("excludeUsernames")}
               />
-            </FieldLabel>
-          </fieldset>
-
-          <div className="py-6">
-            <hr />
-          </div>
-
-          <fieldset disabled={isSubmitting} className="space-y-2">
-            <div>
-              <p className="font-medium">Content Settings</p>
-            </div>
-
-            <SliderField label="Block Hate Speech">
-              <Controller
-                name={`excludeCohosts`}
-                control={control}
-                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
-              />
-            </SliderField>
-            <SliderField label="Block Nudity">
-              <Controller
-                name={`excludeCohosts`}
-                control={control}
-                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
-              />
-            </SliderField>
-          </fieldset>
-
-          <div className="py-6">
-            <hr />
-          </div>
-
-          <fieldset disabled={isSubmitting} className="space-y-6">
-            <div>
-              <p className="font-medium">Downvote</p>
-              <p className="text-gray-500 text-sm">
-                Configure the threshold for downvotes before a cast is curated into Main.
-              </p>
-            </div>
-
-            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
-              <Input type="number" placeholder="0" />
             </FieldLabel>
           </fieldset>
 
@@ -515,36 +473,36 @@ function isFailure(data?: any): data is JobState {
 }
 
 function prepareFormValues(data: FormValues) {
-  const newRuleSets = [];
-  const ruleSet = data.ruleSet;
-  if (!ruleSet.logicType) {
-    const rule: Rule = {
-      name: "and",
-      type: "LOGICAL",
-      args: {},
-      operation: "AND",
-      conditions: ruleSet.ruleParsed,
-    };
+  function transformRuleSet(ruleSet: FormValues["inclusionRuleSet"] | FormValues["exclusionRuleSet"]) {
+    if (!ruleSet.logicType) {
+      const rule: Rule = {
+        name: "and",
+        type: "LOGICAL",
+        args: {},
+        operation: "AND",
+        conditions: ruleSet.ruleParsed,
+      };
 
-    newRuleSets.push({
-      ...ruleSet,
-      rule,
-      ruleParsed: rule,
-    });
-  } else {
-    const rule: Rule = {
-      name: "or",
-      type: "LOGICAL",
-      args: {},
-      operation: "OR",
-      conditions: ruleSet.ruleParsed,
-    };
+      return {
+        ...ruleSet,
+        rule,
+        ruleParsed: rule,
+      };
+    } else {
+      const rule: Rule = {
+        name: "or",
+        type: "LOGICAL",
+        args: {},
+        operation: "OR",
+        conditions: ruleSet.ruleParsed,
+      };
 
-    newRuleSets.push({
-      ...ruleSet,
-      rule,
-      ruleParsed: rule,
-    });
+      return {
+        ...ruleSet,
+        rule,
+        ruleParsed: rule,
+      };
+    }
   }
 
   const excludeUsernamesParsed = data.excludeUsernames?.split(/\r\n|\r|\n/);
@@ -553,7 +511,8 @@ function prepareFormValues(data: FormValues) {
     ...data,
     excludeUsernames: excludeUsernamesParsed ?? null,
     banThreshold: data.banThreshold || null,
-    ruleSets: newRuleSets,
+    inclusionRuleSet: transformRuleSet(data.inclusionRuleSet),
+    exclusionRuleSet: transformRuleSet(data.exclusionRuleSet),
   };
 }
 
@@ -565,6 +524,7 @@ function RuleSetEditor(props: {
   control: Control<FormValues, any, FormValues>;
   register: UseFormRegister<FormValues>;
   watch: UseFormWatch<FormValues>;
+  name: "inclusionRuleSet.ruleParsed" | "exclusionRuleSet.ruleParsed";
 }) {
   const { control } = props;
   const {
@@ -573,7 +533,7 @@ function RuleSetEditor(props: {
     append: appendRule,
   } = useFieldArray({
     control,
-    name: `ruleSet.ruleParsed`,
+    name: props.name,
   });
 
   const [isRuleDialogOpen, setIsRuleDialogOpen] = useState(false);
@@ -594,7 +554,7 @@ function RuleSetEditor(props: {
       <div className="space-y-4">
         <div className="space-y-4">
           {ruleFields.map((ruleField, ruleIndex) => {
-            const ruleName = props.watch(`ruleSet.ruleParsed.${ruleIndex}.name`);
+            const ruleName = props.watch(`${props.name}.${ruleIndex}.name`);
 
             return (
               <Card key={ruleField.id} className="w-full rounded-lg">
@@ -617,7 +577,11 @@ function RuleSetEditor(props: {
                 {Object.entries(props.ruleDefinitions[ruleName].args).length > 0 && (
                   <CardContent>
                     <div className="space-y-6">
-                      <RuleArgs ruleDefinition={props.ruleDefinitions[ruleName]} ruleIndex={ruleIndex} />
+                      <RuleArgs
+                        ruleDefinition={props.ruleDefinitions[ruleName]}
+                        ruleIndex={ruleIndex}
+                        name={props.name}
+                      />
                     </div>
                   </CardContent>
                 )}
@@ -691,7 +655,11 @@ function RuleSetEditor(props: {
   );
 }
 
-function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) {
+function RuleArgs(props: {
+  ruleDefinition: RuleDefinition;
+  ruleIndex: number;
+  name: "inclusionRuleSet.ruleParsed" | "exclusionRuleSet.ruleParsed";
+}) {
   const { register, control } = useFormContext<FormValues>();
   const ruleDef = props.ruleDefinition;
 
@@ -711,7 +679,7 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) 
             required={argDef.required}
             placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as number | undefined}
-            {...register(`ruleSet.ruleParsed.${props.ruleIndex}.args.${argName}`)}
+            {...register(`${props.name}.${props.ruleIndex}.args.${argName}`)}
           />
         </FieldLabel>
       );
@@ -729,7 +697,7 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) 
             required={argDef.required}
             placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as string | undefined}
-            {...register(`ruleSet.ruleParsed.${props.ruleIndex}.args.${argName}`)}
+            {...register(`${props.name}.${props.ruleIndex}.args.${argName}`)}
           />
         </FieldLabel>
       );
@@ -744,7 +712,7 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) 
           className="flex-col items-start"
         >
           <Controller
-            name={`ruleSet.ruleParsed.${props.ruleIndex}.args.${argName}`}
+            name={`${props.name}.${props.ruleIndex}.args.${argName}`}
             defaultValue={argDef.defaultValue as string | undefined}
             control={control}
             render={({ field }) => (
@@ -780,7 +748,7 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) 
             pattern={argDef.pattern}
             placeholder={argDef.placeholder}
             defaultValue={argDef.defaultValue as string | undefined}
-            {...register(`ruleSet.ruleParsed.${props.ruleIndex}.args.${argName}`)}
+            {...register(`${props.name}.${props.ruleIndex}.args.${argName}`)}
           />
         </FieldLabel>
       );
@@ -799,7 +767,7 @@ function RuleArgs(props: { ruleDefinition: RuleDefinition; ruleIndex: number }) 
         >
           <Controller
             control={control}
-            name={`ruleSet.ruleParsed.${props.ruleIndex}.args.${argName}`}
+            name={`${props.name}.${props.ruleIndex}.args.${argName}`}
             defaultValue={argDef.defaultValue as boolean | undefined}
             render={({ field: { onChange, name, value } }) => (
               <Checkbox

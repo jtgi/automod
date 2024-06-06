@@ -64,17 +64,18 @@ model User {
 }
 
 model ModeratedChannel {
-  id                String             @id
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  active            Boolean            @default(true)
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  imageUrl          String?
-  url               String?
-  userId            String
-  banThreshold      Int?
-  excludeCohosts    Boolean            @default(true)
-  excludeUsernames  String             @default("[]")
+  id               String   @id
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  active           Boolean  @default(true)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  imageUrl         String?
+  url              String?
+  userId           String
+  banThreshold     Int?
+  excludeCohosts   Boolean  @default(true)
+  excludeUsernames String   @default("[]")
+
   ruleSets          RuleSet[]
   moderationLogs    ModerationLog[]
   cooldowns         Cooldown[]
@@ -150,6 +151,7 @@ model RuleSet {
   target    String   @default("all")
   rule      String // Stores JSON string of rules
   actions   String // Stores JSON string of actions
+  type      String?
 
   channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   channelId String

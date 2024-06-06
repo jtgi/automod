@@ -177,6 +177,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       pattern: {
         type: "string",
         friendlyName: "Pattern",
+        required: true,
         description: "The regular expression to match against. No leading or trailing slashes.",
       },
       caseInsensitive: {
