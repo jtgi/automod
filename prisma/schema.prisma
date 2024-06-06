@@ -76,7 +76,10 @@ model ModeratedChannel {
   excludeCohosts   Boolean  @default(true)
   excludeUsernames String   @default("[]")
 
-  ruleSets          RuleSet[]
+  inclusionRuleSet String?
+  exclusionRuleSet String?
+
+  ruleSets          RuleSet[] //deprecated
   moderationLogs    ModerationLog[]
   cooldowns         Cooldown[]
   comods            Comods[]

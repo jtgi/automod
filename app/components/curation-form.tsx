@@ -63,7 +63,7 @@ export type FormValues = {
     id?: string;
     active: boolean;
     target: string;
-    logicType: boolean;
+    logicType: "AND" | "OR";
     ruleParsed: Array<Rule>;
     actionsParsed: Array<Action>;
   };
@@ -71,7 +71,7 @@ export type FormValues = {
     id?: string;
     active: boolean;
     target: string;
-    logicType: boolean;
+    logicType: "AND" | "OR";
     ruleParsed: Array<Rule>;
     actionsParsed: Array<Action>;
   };
@@ -111,6 +111,25 @@ export function CurationForm(props: {
     <div className="w-full">
       <FormProvider {...methods}>
         <form id="channel-form" method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
+          {!props.defaultValues.id && (
+            <>
+              <fieldset disabled={isSubmitting} className="space-y-7">
+                <FieldLabel label="Channel Name" className="flex-col items-start">
+                  <Input
+                    disabled={!!props.defaultValues.id}
+                    placeholder="base"
+                    pattern="^[a-zA-Z0-9\-]+$"
+                    required
+                    {...register("id", { required: true })}
+                  />
+                </FieldLabel>
+              </fieldset>
+
+              <div className="py-6">
+                <hr />
+              </div>
+            </>
+          )}
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
               <p className="font-semibold">Automatic Moderation</p>
@@ -120,9 +139,9 @@ export function CurationForm(props: {
               <CheckCircle2 className="text-green-500 inline w-5 h-5 shrink-0 mt-1" />
               <div>
                 When{" "}
-                <select className="p-1 bg-primary/10 rounded-md">
-                  <option>any</option>
-                  <option>all</option>
+                <select className="p-1 bg-primary/10 rounded-md" {...register("inclusionRuleSet.logicType")}>
+                  <option value="AND">any</option>
+                  <option value="OR">all</option>
                 </select>{" "}
                 of the following rules are met, include the cast in Main.
               </div>
@@ -150,9 +169,9 @@ export function CurationForm(props: {
               <XCircleIcon className="text-red-500 w-5 h-5 mt-1 shrink-0" />
               <div>
                 When{" "}
-                <select className="p-1 bg-primary/10 rounded-md">
-                  <option>any</option>
-                  <option>all</option>
+                <select className="p-1 bg-primary/10 rounded-md" {...register("exclusionRuleSet.logicType")}>
+                  <option value="OR">any</option>
+                  <option value="AND">all</option>
                 </select>{" "}
                 of the following rules are met, exclude the cast from Main.
               </div>
@@ -177,7 +196,7 @@ export function CurationForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
-              <p className="font-medium">Bypass</p>
+              <p className="font-medium">Always Include in Main</p>
               <p className="text-gray-500 text-sm">
                 Users in this list will always have their casts curated into Main.
               </p>
@@ -474,7 +493,7 @@ function isFailure(data?: any): data is JobState {
 
 function prepareFormValues(data: FormValues) {
   function transformRuleSet(ruleSet: FormValues["inclusionRuleSet"] | FormValues["exclusionRuleSet"]) {
-    if (!ruleSet.logicType) {
+    if (ruleSet.logicType === "AND") {
       const rule: Rule = {
         name: "and",
         type: "LOGICAL",
@@ -513,6 +532,7 @@ function prepareFormValues(data: FormValues) {
     banThreshold: data.banThreshold || null,
     inclusionRuleSet: transformRuleSet(data.inclusionRuleSet),
     exclusionRuleSet: transformRuleSet(data.exclusionRuleSet),
+    ruleSets: [],
   };
 }
 

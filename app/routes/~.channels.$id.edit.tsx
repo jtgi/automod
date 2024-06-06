@@ -10,6 +10,9 @@ import {
 } from "~/lib/utils.server";
 import {
   ModeratedChannelSchema,
+  Rule,
+  RuleSetSchema,
+  RuleSetSchemaType,
   actionDefinitions,
   ruleDefinitions,
   ruleNames,
@@ -59,6 +62,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       banThreshold: ch.data.banThreshold,
       excludeCohosts: ch.data.excludeCohosts,
       excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
+      inclusionRuleSet: JSON.stringify(ch.data.inclusionRuleSet),
+      exclusionRuleSet: JSON.stringify(ch.data.exclusionRuleSet),
       ruleSets: {
         deleteMany: {},
         create: ch.data.ruleSets.map((ruleSet) => {
@@ -115,12 +120,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function Screen() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole } =
-    useTypedLoaderData<typeof loader>();
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
   const patchedRuleSets = channel.ruleSets.map((ruleSet) => patchRule(ruleSet));
 
-  function patchRule(ruleSet: (typeof channel)["ruleSets"][number]) {
+  function patchRule(ruleSet: RuleSet) {
     const ruleParsed = JSON.parse(ruleSet.rule);
 
     return {
@@ -128,6 +132,19 @@ export default function Screen() {
       logicType: ruleParsed.operation === "OR" ? ("or" as const) : ("and" as const),
       ruleParsed: ruleParsed.conditions,
       actionsParsed: JSON.parse(ruleSet.actions),
+    };
+  }
+
+  console.log(JSON.stringify({ inc: channel.inclusionRuleSetParsed, exlc: channel.exclusionRuleSetParsed }));
+
+  function patchNewRuleSet(ruleSet: RuleSetSchemaType) {
+    return {
+      id: ruleSet?.id,
+      target: ruleSet?.target || "all",
+      active: ruleSet?.active || true,
+      ruleParsed: ruleSet?.ruleParsed.conditions || [],
+      actionsParsed: ruleSet?.actionsParsed || [],
+      logicType: ruleSet?.ruleParsed.operation || ("OR" as const),
     };
   }
 
@@ -158,7 +175,8 @@ export default function Screen() {
           defaultValues={{
             ...channel,
             excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-            inclusionRuleSet,
+            exclusionRuleSet: patchNewRuleSet(channel.exclusionRuleSetParsed),
+            inclusionRuleSet: patchNewRuleSet(channel.inclusionRuleSetParsed),
           }}
         />
       )}

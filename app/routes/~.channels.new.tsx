@@ -15,6 +15,7 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { ChannelForm } from "~/components/channel-form";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
 import { recoverQueue } from "~/lib/bullish.server";
+import { CurationForm } from "~/components/curation-form";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -82,6 +83,8 @@ export async function action({ request }: ActionFunctionArgs) {
       banThreshold: channelResult.data.banThreshold,
       excludeCohosts: channelResult.data.excludeCohosts,
       excludeUsernames: JSON.stringify(channelResult.data.excludeUsernames),
+      inclusionRuleSet: JSON.stringify(channelResult.data.inclusionRuleSet),
+      exclusionRuleSet: JSON.stringify(channelResult.data.exclusionRuleSet),
       ruleSets: {
         create: channelResult.data.ruleSets.map((ruleSet) => {
           return {
@@ -132,35 +135,75 @@ export default function FrameConfig() {
 
   return (
     <div className="space-y-4">
-      <ChannelForm
-        actionDefinitions={actionDefinitions}
-        ruleDefinitions={ruleDefinitions}
-        ruleNames={ruleNames}
-        showCohostBypass={false}
-        defaultValues={{
-          excludeCohosts: true,
-
-          ruleSets: [
-            {
+      {process.env.NODE_ENV === "development" ? (
+        <CurationForm
+          actionDefinitions={actionDefinitions}
+          ruleDefinitions={ruleDefinitions}
+          ruleNames={ruleNames}
+          defaultValues={{
+            excludeCohosts: true,
+            inclusionRuleSet: {
               target: "all",
               active: true,
               ruleParsed: [
                 {
                   name: "userDoesNotHoldPowerBadge",
                   type: "CONDITION",
+                  invert: true,
                   args: {},
                 },
               ],
               actionsParsed: [
                 {
+                  type: "like",
+                },
+              ],
+              logicType: true,
+            },
+            exclusionRuleSet: {
+              target: "all",
+              active: true,
+              ruleParsed: [],
+              actionsParsed: [
+                {
                   type: "hideQuietly",
                 },
               ],
-              logicType: "and",
+              logicType: true,
             },
-          ],
-        }}
-      />
+          }}
+        />
+      ) : (
+        <ChannelForm
+          actionDefinitions={actionDefinitions}
+          ruleDefinitions={ruleDefinitions}
+          ruleNames={ruleNames}
+          showCohostBypass={false}
+          defaultValues={{
+            excludeCohosts: true,
+
+            ruleSets: [
+              {
+                target: "all",
+                active: true,
+                ruleParsed: [
+                  {
+                    name: "userDoesNotHoldPowerBadge",
+                    type: "CONDITION",
+                    args: {},
+                  },
+                ],
+                actionsParsed: [
+                  {
+                    type: "hideQuietly",
+                  },
+                ],
+                logicType: "and",
+              },
+            ],
+          }}
+        />
+      )}
     </div>
   );
 }

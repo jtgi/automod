@@ -958,8 +958,11 @@ export const RuleSetSchema = z.object({
   id: z.string().optional(),
   target: z.enum(["all", "root", "reply"]).default("all"),
   ruleParsed: RuleSchema,
+  active: z.boolean().default(true),
   actionsParsed: z.array(ActionSchema).min(1, { message: "At least one action is required." }),
 });
+
+export type RuleSetSchemaType = z.infer<typeof RuleSetSchema>;
 
 export const ModeratedChannelSchema = z.object({
   id: z.string(),
@@ -977,6 +980,9 @@ export const ModeratedChannelSchema = z.object({
     .default([]),
   excludeCohosts: z.boolean().default(true),
   ruleSets: z.array(RuleSetSchema),
+
+  inclusionRuleSet: RuleSetSchema.optional(),
+  exclusionRuleSet: RuleSetSchema.optional(),
 });
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
