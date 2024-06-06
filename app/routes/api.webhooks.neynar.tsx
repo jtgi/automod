@@ -204,6 +204,11 @@ export async function validateCast({
     return logs;
   }
 
+  if (!moderatedChannel.ruleSets.length) {
+    console.log(`[${channel.id}] No rules for channel.`);
+    return logs;
+  }
+
   let passedAllRules = true;
   for (const ruleSet of moderatedChannel.ruleSets) {
     if (!isRuleTargetApplicable(ruleSet.target, cast)) {

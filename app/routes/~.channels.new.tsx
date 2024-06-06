@@ -136,6 +136,7 @@ export default function FrameConfig() {
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}
         ruleNames={ruleNames}
+        showCohostBypass={false}
         defaultValues={{
           excludeCohosts: true,
 

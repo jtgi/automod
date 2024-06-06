@@ -76,15 +76,6 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
-  not: {
-    friendlyName: "Nand",
-    checkType: "cast",
-    description: "Invert the result of a rule",
-    hidden: true,
-    invertable: false,
-    args: {},
-  },
-
   containsText: {
     friendlyName: "Contains Text",
     checkType: "cast",
@@ -530,13 +521,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {
       min: {
         type: "number",
-        friendlyName: "From",
-        description: "The minimum number of followers",
+        friendlyName: "At Least",
+        description: "If you enter 1, the user must have at least 1 follower.",
       },
       max: {
         type: "number",
-        friendlyName: "To",
-        description: "The maximum number of followers",
+        friendlyName: "At Most",
+        description: "If you enter 50, the user must have 50 or fewer followers.",
       },
     },
   },

@@ -90,10 +90,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
 
   const user = await requireUser({ request });
-  const channel = await requireUserCanModerateChannel({
-    userId: user.id,
-    channelId: params.id,
-  });
+  const [channel, cohostRole] = await Promise.all([
+    requireUserCanModerateChannel({
+      userId: user.id,
+      channelId: params.id,
+    }),
+    db.role.findFirst({
+      where: {
+        channelId: params.id,
+        isCohostRole: true,
+      },
+    }),
+  ]);
 
   return typedjson({
     user,
@@ -101,16 +109,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     actionDefinitions,
     ruleDefinitions,
     ruleNames,
+    cohostRole,
     env: getSharedEnv(),
   });
 }
 
 export default function Screen() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole } =
+    useTypedLoaderData<typeof loader>();
 
-  const patchedRuleSets = channel.ruleSets.map((ruleSet) => {});
+  const patchedRuleSets = channel.ruleSets.map((ruleSet) => patchRule(ruleSet));
 
-  function patchRule(rule: string) {
+  function patchRule(ruleSet: (typeof channel)["ruleSets"][number]) {
     const ruleParsed = JSON.parse(ruleSet.rule);
 
     return {
@@ -123,6 +133,12 @@ export default function Screen() {
 
   return (
     <div className="space-y-4 w-full">
+      <div className="">
+        <p className="font-semibold">Rules</p>
+        <p className="text-gray-500">
+          The following settings control what casts appear in Main. Recent cannot be moderated.
+        </p>
+      </div>
       {process.env.NODE_ENV === "production" ? (
         <ChannelForm
           actionDefinitions={actionDefinitions}

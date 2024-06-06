@@ -73,6 +73,7 @@ export type FormValues = {
 export function ChannelForm(props: {
   actionDefinitions: typeof actionDefinitions;
   ruleDefinitions: typeof ruleDefinitions;
+  showCohostBypass?: boolean;
   ruleNames: readonly RuleName[];
   defaultValues: FormValues;
 }) {
@@ -134,7 +135,7 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
-              <p className="font-semibold">Filtering Rules</p>
+              <p className=" font-medium">Automated Filtering Rules</p>
               <p className="text-gray-500 text-sm">
                 Use rules to filter out the bad stuff. Anything else will be included in Main.
               </p>
@@ -236,26 +237,25 @@ export function ChannelForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
-              <p className="font-medium">Bypass</p>
+              <p className="font-medium">Always Include in Main</p>
               <p className="text-gray-500 text-sm">
                 Users in this list will always have their casts curated into Main.
               </p>
             </div>
 
-            <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
-              <Controller
-                name={`excludeCohosts`}
-                control={control}
-                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
-              />
-            </SliderField>
-            <FieldLabel
-              label="Farcaster Usernames"
-              description="One per line."
-              className="flex-col items-start"
-            >
+            {props.showCohostBypass && (
+              <SliderField label="Cohosts" description="Exclude cohosts from all moderation">
+                <Controller
+                  name={`excludeCohosts`}
+                  control={control}
+                  render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+                />
+              </SliderField>
+            )}
+            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
               <Textarea
-                placeholder="jtgi&#10;wake&#10;deployer"
+                rows={5}
+                placeholder="jtgi&#10;nonlinear.eth&#10;v"
                 {...register("excludeUsernames")}
               />
             </FieldLabel>

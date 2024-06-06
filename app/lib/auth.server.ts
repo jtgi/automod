@@ -103,11 +103,14 @@ export async function verifyFarcasterUser(args: FarcasterUser & { request: Reque
         const existingUser = await db.user.findFirst({
           where: {
             planTokenId: subscription.tokenId,
+            plan: subscription.plan,
           },
         });
 
         if (existingUser) {
-          Sentry.captureMessage(`Token ${subscription.tokenId} already in use.`);
+          Sentry.captureMessage(
+            `Token ${subscription.tokenId} for ${subscription.plan} already in use by ${existingUser.name}.`
+          );
           throw new Error(`Token already in use. Contact support.`);
         }
       }
@@ -162,11 +165,11 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
   expiresAt: Date | null;
 }> {
   const client = clientsByChainId[base.id];
-  const powerContractAddress = process.env.PRIME_CONTRACT_ADDRESS!;
+  const primeContractAddress = process.env.PRIME_CONTRACT_ADDRESS!;
   const ultraContractAddress = process.env.ULTRA_CONTRACT_ADDRESS!;
 
-  const powerContract = getContract({
-    address: getAddress(powerContractAddress),
+  const primeContract = getContract({
+    address: getAddress(primeContractAddress),
     abi: hypersubAbi721,
     client,
   });
@@ -185,8 +188,8 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
 
   const user = rsp.users[0];
   for (const address of user.verified_addresses.eth_addresses) {
-    const [powerSecondsRemaining, ultraSecondsRemaining] = await Promise.all([
-      powerContract.read.balanceOf([getAddress(address)]),
+    const [primeSecondsRemaining, ultraSecondsRemaining] = await Promise.all([
+      primeContract.read.balanceOf([getAddress(address)]),
       ultraContract.read.balanceOf([getAddress(address)]),
     ]);
 
@@ -199,14 +202,14 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
         tokenId: tokenId.toString(),
         expiresAt: new Date(Date.now() + Number(ultraSecondsRemaining * 1000n)),
       };
-    } else if (powerSecondsRemaining > 0) {
-      const subInfo = await ultraContract.read.subscriptionOf([getAddress(address)]);
+    } else if (primeSecondsRemaining > 0) {
+      const subInfo = await primeContract.read.subscriptionOf([getAddress(address)]);
       const tokenId = subInfo[0];
 
       return {
         plan: "prime",
         tokenId: tokenId.toString(),
-        expiresAt: new Date(Date.now() + Number(powerSecondsRemaining * 1000n)),
+        expiresAt: new Date(Date.now() + Number(primeSecondsRemaining * 1000n)),
       };
     }
   }
