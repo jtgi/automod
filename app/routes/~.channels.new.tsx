@@ -149,7 +149,6 @@ export default function FrameConfig() {
                 {
                   name: "userDoesNotHoldPowerBadge",
                   type: "CONDITION",
-                  invert: true,
                   args: {},
                 },
               ],
@@ -158,7 +157,7 @@ export default function FrameConfig() {
                   type: "like",
                 },
               ],
-              logicType: true,
+              logicType: "OR",
             },
             exclusionRuleSet: {
               target: "all",
@@ -169,7 +168,7 @@ export default function FrameConfig() {
                   type: "hideQuietly",
                 },
               ],
-              logicType: true,
+              logicType: "OR",
             },
           }}
         />

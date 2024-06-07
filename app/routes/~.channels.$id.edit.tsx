@@ -152,9 +152,11 @@ export default function Screen() {
     <div className="space-y-4 w-full">
       <div className="">
         <p className="font-semibold">Rules</p>
-        <p className="text-gray-500">
-          The following settings control what casts appear in Main. Recent cannot be moderated.
-        </p>
+        <p className="text-gray-500">The following settings control what casts appear in Main.</p>
+      </div>
+
+      <div className="py-4">
+        <hr />
       </div>
       {process.env.NODE_ENV === "production" ? (
         <ChannelForm
@@ -175,8 +177,8 @@ export default function Screen() {
           defaultValues={{
             ...channel,
             excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-            exclusionRuleSet: patchNewRuleSet(channel.exclusionRuleSetParsed),
-            inclusionRuleSet: patchNewRuleSet(channel.inclusionRuleSetParsed),
+            exclusionRuleSet: patchNewRuleSet(channel.exclusionRuleSetParsed!),
+            inclusionRuleSet: patchNewRuleSet(channel.inclusionRuleSetParsed!),
           }}
         />
       )}

@@ -140,8 +140,8 @@ export function CurationForm(props: {
               <div>
                 When{" "}
                 <select className="p-1 bg-primary/10 rounded-md" {...register("inclusionRuleSet.logicType")}>
-                  <option value="AND">any</option>
-                  <option value="OR">all</option>
+                  <option value="OR">any</option>
+                  <option value="AND">all</option>
                 </select>{" "}
                 of the following rules are met, include the cast in Main.
               </div>

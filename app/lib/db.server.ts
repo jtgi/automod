@@ -1,7 +1,7 @@
 import { PrismaClient, RuleSet } from "@prisma/client";
 
 import { singleton } from "./singleton.server";
-import { Action, Rule, RuleSetSchema } from "./validations.server";
+import { Action, Rule, RuleSetSchema, RuleSetSchemaType } from "./validations.server";
 import { Permission } from "./permissions.server";
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
@@ -13,7 +13,7 @@ const db = singleton("prisma", () =>
           needs: {
             inclusionRuleSet: true,
           },
-          compute(data): RuleSetSchema | undefined {
+          compute(data): RuleSetSchemaType | undefined {
             if (data.inclusionRuleSet) {
               return JSON.parse(data.inclusionRuleSet);
             }
@@ -23,7 +23,7 @@ const db = singleton("prisma", () =>
           needs: {
             exclusionRuleSet: true,
           },
-          compute(data): RuleSetSchema | undefined {
+          compute(data): RuleSetSchemaType | undefined {
             if (data.exclusionRuleSet) {
               return JSON.parse(data.exclusionRuleSet);
             }

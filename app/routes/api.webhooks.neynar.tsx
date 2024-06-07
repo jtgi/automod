@@ -10,9 +10,11 @@ import { getModerators, requireValidSignature } from "~/lib/utils.server";
 import {
   Action,
   Rule,
+  RuleSetSchemaType,
   actionDefinitions,
   actionFunctions,
   isCohost,
+  ruleDefinitions,
   ruleFunctions,
 } from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
@@ -31,7 +33,10 @@ const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs
   },
 });
 
-export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel>;
+export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel> & {
+  inclusionRuleSetParsed: RuleSetSchemaType | undefined;
+  exclusionRuleSetParsed: RuleSetSchemaType | undefined;
+};
 
 export async function action({ request }: ActionFunctionArgs) {
   const rawPayload = await request.text();
@@ -204,11 +209,133 @@ export async function validateCast({
     return logs;
   }
 
-  if (!moderatedChannel.ruleSets.length) {
+  console.log(JSON.stringify(moderatedChannel, null, 2));
+
+  if (
+    !moderatedChannel.ruleSets.length &&
+    !moderatedChannel.inclusionRuleSet &&
+    !moderatedChannel.exclusionRuleSet
+  ) {
     console.log(`[${channel.id}] No rules for channel.`);
     return logs;
   }
 
+  if (moderatedChannel.inclusionRuleSetParsed && moderatedChannel.exclusionRuleSetParsed) {
+    const exclusionCheck = await evaluateRules(
+      moderatedChannel,
+      cast,
+      moderatedChannel.exclusionRuleSetParsed?.ruleParsed
+    );
+
+    console.log(`[${channel.id}] Exclusion check`, exclusionCheck);
+    // exclusion overrides inclusion so we check it first
+    // some checks are expensive so we do this serially
+    if (exclusionCheck.passedRule) {
+      for (const action of moderatedChannel.exclusionRuleSetParsed.actionsParsed) {
+        const actionDef = actionDefinitions[action.type];
+        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
+          continue;
+        }
+
+        if (!simulation) {
+          const actionFn = actionFunctions[action.type];
+
+          await actionFn({
+            channel: channel.id,
+            cast,
+            action,
+            options: {
+              executeOnProtocol,
+            },
+          }).catch((e) => {
+            Sentry.captureMessage(`Error in ${action.type} action`, {
+              extra: {
+                cast,
+                action,
+              },
+            });
+            console.error(e?.response?.data || e?.message || e);
+            throw e;
+          });
+        }
+
+        logs.push(
+          await logModerationAction(
+            moderatedChannel.id,
+            action.type,
+            exclusionCheck.explanation,
+            cast,
+            simulation
+          )
+        );
+      }
+
+      return logs;
+    }
+
+    const inclusionCheck = await evaluateRules(
+      moderatedChannel,
+      cast,
+      moderatedChannel.inclusionRuleSetParsed.ruleParsed
+    );
+
+    //TODO: why are both rules returning non violations?
+    console.log(`[${channel.id}] inclusion check`, inclusionCheck);
+    if (inclusionCheck.passedRule) {
+      for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
+        const actionDef = actionDefinitions[action.type];
+        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
+          continue;
+        }
+
+        if (!simulation) {
+          const actionFn = actionFunctions[action.type];
+
+          await actionFn({
+            channel: channel.id,
+            cast,
+            action,
+            options: {
+              executeOnProtocol,
+            },
+          }).catch((e) => {
+            Sentry.captureMessage(`Error in ${action.type} action`, {
+              extra: {
+                cast,
+                action,
+              },
+            });
+            console.error(e?.response?.data || e?.message || e);
+            throw e;
+          });
+        }
+
+        logs.push(
+          await logModerationAction(
+            moderatedChannel.id,
+            action.type,
+            inclusionCheck.explanation,
+            cast,
+            simulation
+          )
+        );
+      }
+      return logs;
+    }
+
+    logs.push(
+      await logModerationAction(
+        moderatedChannel.id,
+        "hideQuietly",
+        "Cast didn't match any rules",
+        cast,
+        simulation
+      )
+    );
+    return logs;
+  }
+
+  // legacy
   let passedAllRules = true;
   for (const ruleSet of moderatedChannel.ruleSets) {
     if (!isRuleTargetApplicable(ruleSet.target, cast)) {
@@ -220,7 +347,7 @@ export async function validateCast({
 
     const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
 
-    if (ruleEvaluation.didViolateRule) {
+    if (ruleEvaluation.passedRule) {
       passedAllRules = false;
 
       for (const action of actions) {
@@ -353,16 +480,10 @@ async function evaluateRules(
   moderatedChannel: ModeratedChannel,
   cast: WebhookCast,
   rule: Rule
-): Promise<
-  | {
-      didViolateRule: true;
-      failedRule: Rule;
-      explanation: string;
-    }
-  | {
-      didViolateRule: false;
-    }
-> {
+): Promise<{
+  passedRule: boolean;
+  explanation: string;
+}> {
   if (rule.type === "CONDITION") {
     return evaluateRule(moderatedChannel, cast, rule);
   } else if (rule.type === "LOGICAL" && rule.conditions) {
@@ -370,66 +491,50 @@ async function evaluateRules(
       const evaluations = await Promise.all(
         rule.conditions.map((subRule) => evaluateRules(moderatedChannel, cast, subRule))
       );
-      if (evaluations.every((e) => e.didViolateRule)) {
+      if (evaluations.every((e) => e.passedRule)) {
         return {
-          didViolateRule: true,
-          failedRule: rule,
-          explanation: `${evaluations
-            // @ts-expect-error ts doesnt acknowledge `every`
-            // in discriminated union
-            .map((e) => e.explanation)
-            .join(", ")}`,
+          passedRule: true,
+          explanation: `${evaluations.map((e) => e.explanation).join(", ")}`,
         };
       } else {
-        return { didViolateRule: false };
+        return { passedRule: false, explanation: evaluations.map((e) => e.explanation).join(", ") };
       }
     } else if (rule.operation === "OR") {
       const results = await Promise.all(
         rule.conditions.map((subRule) => evaluateRules(moderatedChannel, cast, subRule))
       );
 
-      const violation = results.find((r) => r.didViolateRule);
-      if (violation) {
-        return violation;
+      const onePassed = results.find((r) => r.passedRule);
+      if (onePassed) {
+        return onePassed;
       } else {
-        return { didViolateRule: false };
+        return {
+          passedRule: false,
+          explanation: `Did not pass one of: ${results.map((e) => e.explanation).join(", ")}`,
+        };
       }
     }
   }
 
-  return { didViolateRule: false };
+  return { passedRule: false, explanation: "No rules" };
 }
 
 async function evaluateRule(
   channel: ModeratedChannel,
   cast: WebhookCast,
   rule: Rule
-): Promise<
-  | {
-      didViolateRule: true;
-      failedRule: Rule;
-      explanation: string;
-    }
-  | {
-      didViolateRule: false;
-    }
-> {
+): Promise<{ passedRule: boolean; explanation: string }> {
   const check = ruleFunctions[rule.name];
   if (!check) {
     throw new Error(`No function for rule ${rule.name}`);
   }
 
-  const error = await check({ channel, cast, rule });
+  const success = await check({ channel, cast, rule });
 
-  if (error) {
-    return {
-      didViolateRule: Boolean(error),
-      failedRule: rule,
-      explanation: error,
-    };
-  } else {
-    return { didViolateRule: false };
-  }
+  return {
+    passedRule: success,
+    explanation: ruleDefinitions[rule.name].friendlyName,
+  };
 }
 
 export function isRuleTargetApplicable(target: string, cast: Cast) {
