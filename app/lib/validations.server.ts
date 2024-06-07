@@ -936,7 +936,7 @@ export const RuleSetSchema = z.object({
 });
 
 export const ModeratedChannelSchema = z.object({
-  id: z.string(),
+  id: z.string().transform((id) => id.toLowerCase()),
   banThreshold: z.coerce.number().nullable(),
   excludeUsernames: z
     .array(z.string())

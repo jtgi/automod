@@ -23,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (process.env.NODE_ENV !== "development") {
     let leadFid: number;
     try {
-      leadFid = await getWarpcastChannelOwner({ channel: data.id.replace("/", "") });
+      leadFid = await getWarpcastChannelOwner({ channel: data.id.replace("/", "").toLowerCase() });
     } catch (e) {
       return errorResponse({
         request,

@@ -17,6 +17,7 @@ import {
   userFollowerCount,
   userProfileContainsText,
   castLength,
+  userFidInList,
 } from "~/lib/validations.server";
 import RE2 from "re2";
 import { NeynarCastWithFrame, WebhookCast } from "~/lib/types";
@@ -514,6 +515,26 @@ describe("userProfileContainsText", () => {
     } as any);
     const r = rule({ args: { searchText: "artist", caseSensitive: false } });
     expect(userProfileContainsText({ channel: m, cast: c, rule: r })).toBeUndefined();
+  });
+});
+
+describe("userFidIsInList", () => {
+  it("should return message if FID is not in the list", () => {
+    const c = cast({ author: { fid: 500 } as any });
+    const r = rule({ args: { fids: [1000, 2000] } });
+    expect(userFidInList({ channel: m, cast: c, rule: r })).not.toBeUndefined();
+  });
+
+  it("should return undefined if FID is in the list", () => {
+    const c = cast({ author: { fid: 2000 } as any });
+    const r = rule({ args: { fids: `1000\n2000` } });
+    expect(userFidInList({ channel: m, cast: c, rule: r })).toBeUndefined();
+  });
+
+  it("should invert the check if the rule is inverted", () => {
+    const c = cast({ author: { fid: 3000 } as any });
+    const r = rule({ args: { fids: `1000\n2000` }, invert: true });
+    expect(userFidInList({ channel: m, cast: c, rule: r })).not.toBeUndefined();
   });
 });
 
