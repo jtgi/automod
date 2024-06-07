@@ -1117,7 +1117,7 @@ export async function userFidInList(args: CheckFunctionArgs) {
   const fidsArr = fids.split(/\r?\n/);
   if (!rule.invert && fidsArr.includes(String(cast.author.fid))) {
     return `FID #${cast.author.fid} is in the blocked FID list`;
-  } else if (rule.invert && !fidsArr.includes(cast.hash)) {
+  } else if (rule.invert && !fidsArr.includes(String(cast.author.fid))) {
     return `FID #${cast.author.fid} was not in the allowed FID list`;
   }
 }
