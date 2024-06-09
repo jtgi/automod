@@ -48,6 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const usages = await db.usage.findMany({
     where: {
       userId: user.id,
+      monthYear: new Date().toISOString().slice(0, 7),
     },
   });
   const totalCastsProcessed = usages.reduce((acc, usage) => acc + usage.castsProcessed, 0);

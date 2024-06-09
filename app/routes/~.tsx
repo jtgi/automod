@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { commitSession, getSession, refreshAccountStatus } from "~/lib/auth.server";
+import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { cn } from "~/lib/utils";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
