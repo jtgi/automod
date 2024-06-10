@@ -98,11 +98,17 @@ export async function action({ request }: ActionFunctionArgs) {
     registerWebhook({
       rootParentUrl: neynarChannel.url,
     }),
-    recoverQueue.add("recover", {
-      channelId: newChannel.id,
-      moderatedChannel: newChannel,
-      limit: 500,
-    }),
+    recoverQueue.add(
+      "recover",
+      {
+        channelId: newChannel.id,
+        moderatedChannel: newChannel,
+        limit: 500,
+      },
+      {
+        delay: 120_000,
+      }
+    ),
     getSession(request.headers.get("Cookie")),
   ]);
 
