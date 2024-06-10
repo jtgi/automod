@@ -2,6 +2,7 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link, Outlet, useFetcher } from "@remix-run/react";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { SidebarNav, SidebarNavProps } from "~/components/sub-nav";
@@ -62,8 +63,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ChannelRoot() {
   const { user, channel, warpcastChannel, signerFid, signerUsername } = useTypedLoaderData<typeof loader>();
   const enableFetcher = useFetcher();
+  const [isNotConfigured, setIsNotConfigured] = useState<boolean>(false);
 
-  const isNotConfigured = !signerFid || warpcastChannel.moderatorFid !== +signerFid;
+  useEffect(() => {
+    setIsNotConfigured(!signerFid || warpcastChannel.moderatorFid !== +signerFid);
+  }, []);
 
   return (
     <div>
