@@ -492,6 +492,7 @@ function isFailure(data?: any): data is JobState {
 }
 
 function prepareFormValues(data: FormValues) {
+  console.log("raw", data);
   function transformRuleSet(ruleSet: FormValues["inclusionRuleSet"] | FormValues["exclusionRuleSet"]) {
     if (ruleSet.logicType === "AND") {
       const rule: Rule = {
@@ -526,7 +527,7 @@ function prepareFormValues(data: FormValues) {
 
   const excludeUsernamesParsed = data.excludeUsernames?.split(/\r\n|\r|\n/);
 
-  return {
+  const tx = {
     ...data,
     excludeUsernames: excludeUsernamesParsed ?? null,
     banThreshold: data.banThreshold || null,
@@ -534,6 +535,9 @@ function prepareFormValues(data: FormValues) {
     exclusionRuleSet: transformRuleSet(data.exclusionRuleSet),
     ruleSets: [],
   };
+
+  console.log(tx);
+  return tx;
 }
 
 function RuleSetEditor(props: {

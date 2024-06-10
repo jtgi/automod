@@ -221,106 +221,110 @@ export async function validateCast({
   }
 
   if (moderatedChannel.inclusionRuleSetParsed && moderatedChannel.exclusionRuleSetParsed) {
-    const exclusionCheck = await evaluateRules(
-      moderatedChannel,
-      cast,
-      moderatedChannel.exclusionRuleSetParsed?.ruleParsed
-    );
+    if (moderatedChannel.exclusionRuleSetParsed.ruleParsed.conditions?.length) {
+      const exclusionCheck = await evaluateRules(
+        moderatedChannel,
+        cast,
+        moderatedChannel.exclusionRuleSetParsed?.ruleParsed
+      );
 
-    console.log(`[${channel.id}] Exclusion check`, exclusionCheck);
-    // exclusion overrides inclusion so we check it first
-    // some checks are expensive so we do this serially
-    if (exclusionCheck.passedRule) {
-      for (const action of moderatedChannel.exclusionRuleSetParsed.actionsParsed) {
-        const actionDef = actionDefinitions[action.type];
-        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
-          continue;
-        }
+      console.log(`[${channel.id}] Exclusion check`, exclusionCheck);
+      // exclusion overrides inclusion so we check it first
+      // some checks are expensive so we do this serially
+      if (exclusionCheck.passedRule) {
+        for (const action of moderatedChannel.exclusionRuleSetParsed.actionsParsed) {
+          const actionDef = actionDefinitions[action.type];
+          if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
+            continue;
+          }
 
-        if (!simulation) {
-          const actionFn = actionFunctions[action.type];
+          if (!simulation) {
+            const actionFn = actionFunctions[action.type];
 
-          await actionFn({
-            channel: channel.id,
-            cast,
-            action,
-            options: {
-              executeOnProtocol,
-            },
-          }).catch((e) => {
-            Sentry.captureMessage(`Error in ${action.type} action`, {
-              extra: {
-                cast,
-                action,
+            await actionFn({
+              channel: channel.id,
+              cast,
+              action,
+              options: {
+                executeOnProtocol,
               },
+            }).catch((e) => {
+              Sentry.captureMessage(`Error in ${action.type} action`, {
+                extra: {
+                  cast,
+                  action,
+                },
+              });
+              console.error(e?.response?.data || e?.message || e);
+              throw e;
             });
-            console.error(e?.response?.data || e?.message || e);
-            throw e;
-          });
+          }
+
+          logs.push(
+            await logModerationAction(
+              moderatedChannel.id,
+              action.type,
+              exclusionCheck.explanation,
+              cast,
+              simulation
+            )
+          );
         }
 
-        logs.push(
-          await logModerationAction(
-            moderatedChannel.id,
-            action.type,
-            exclusionCheck.explanation,
-            cast,
-            simulation
-          )
-        );
+        return logs;
       }
-
-      return logs;
     }
 
-    const inclusionCheck = await evaluateRules(
-      moderatedChannel,
-      cast,
-      moderatedChannel.inclusionRuleSetParsed.ruleParsed
-    );
+    if (moderatedChannel.inclusionRuleSetParsed.ruleParsed.conditions?.length) {
+      const inclusionCheck = await evaluateRules(
+        moderatedChannel,
+        cast,
+        moderatedChannel.inclusionRuleSetParsed.ruleParsed
+      );
 
-    //TODO: why are both rules returning non violations?
-    console.log(`[${channel.id}] inclusion check`, inclusionCheck);
-    if (inclusionCheck.passedRule) {
-      for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
-        const actionDef = actionDefinitions[action.type];
-        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
-          continue;
-        }
+      //TODO: why are both rules returning non violations?
+      console.log(`[${channel.id}] inclusion check`, inclusionCheck);
+      if (inclusionCheck.passedRule) {
+        for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
+          const actionDef = actionDefinitions[action.type];
+          if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
+            continue;
+          }
 
-        if (!simulation) {
-          const actionFn = actionFunctions[action.type];
+          if (!simulation) {
+            const actionFn = actionFunctions[action.type];
 
-          await actionFn({
-            channel: channel.id,
-            cast,
-            action,
-            options: {
-              executeOnProtocol,
-            },
-          }).catch((e) => {
-            Sentry.captureMessage(`Error in ${action.type} action`, {
-              extra: {
-                cast,
-                action,
+            await actionFn({
+              channel: channel.id,
+              cast,
+              action,
+              options: {
+                executeOnProtocol,
               },
+            }).catch((e) => {
+              Sentry.captureMessage(`Error in ${action.type} action`, {
+                extra: {
+                  cast,
+                  action,
+                },
+              });
+              console.error(e?.response?.data || e?.message || e);
+              throw e;
             });
-            console.error(e?.response?.data || e?.message || e);
-            throw e;
-          });
-        }
+          }
 
-        logs.push(
-          await logModerationAction(
-            moderatedChannel.id,
-            action.type,
-            inclusionCheck.explanation,
-            cast,
-            simulation
-          )
-        );
+          logs.push(
+            await logModerationAction(
+              moderatedChannel.id,
+              action.type,
+              inclusionCheck.explanation,
+              cast,
+              simulation
+            )
+          );
+        }
+        return logs;
       }
-      return logs;
     }
 
     logs.push(
@@ -531,6 +535,7 @@ async function evaluateRule(
 
   const success = await check({ channel, cast, rule });
 
+  console.log({ success });
   return {
     passedRule: success,
     explanation: ruleDefinitions[rule.name].friendlyName,

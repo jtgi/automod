@@ -986,8 +986,8 @@ export const ModeratedChannelSchema = z.object({
 });
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
-  and: () => undefined,
-  or: () => undefined, // TODO
+  and: () => true,
+  or: () => true,
   textMatchesPattern: textMatchesPattern,
   textMatchesLanguage: textMatchesLanguage,
   containsText: containsText,
@@ -1288,7 +1288,6 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
   return isLanguage;
 }
 
-// Rule: contains too many mentions (@...)
 export function containsTooManyMentions(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { maxMentions } = rule.args;
@@ -1538,15 +1537,7 @@ export async function holdsErc1155(args: CheckFunctionArgs) {
     });
 
     const isOwner = nfts.count && nfts.count > 0;
-
-    if (!rule.invert && !isOwner) {
-      return `Wallet doesn't hold any ERC-1155 token from ${contractAddress}`;
-    } else if (rule.invert && isOwner) {
-      return `Wallet holds ERC-1155 token: ${contractAddress}`;
-    }
-
-    // all good
-    return undefined;
+    return isOwner;
   } else {
     const contract = getContract({
       address: getAddress(contractAddress),

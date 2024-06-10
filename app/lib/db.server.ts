@@ -13,7 +13,7 @@ const db = singleton("prisma", () =>
           needs: {
             inclusionRuleSet: true,
           },
-          compute(data): RuleSetSchemaType | undefined {
+          compute(data): RuleSet | undefined {
             if (data.inclusionRuleSet) {
               return JSON.parse(data.inclusionRuleSet);
             }
@@ -23,7 +23,7 @@ const db = singleton("prisma", () =>
           needs: {
             exclusionRuleSet: true,
           },
-          compute(data): RuleSetSchemaType | undefined {
+          compute(data): RuleSet | undefined {
             if (data.exclusionRuleSet) {
               return JSON.parse(data.exclusionRuleSet);
             }

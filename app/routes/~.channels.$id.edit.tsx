@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
@@ -135,16 +136,19 @@ export default function Screen() {
     };
   }
 
-  console.log(JSON.stringify({ inc: channel.inclusionRuleSetParsed, exlc: channel.exclusionRuleSetParsed }));
-
-  function patchNewRuleSet(ruleSet: RuleSetSchemaType) {
+  function patchNewRuleSet(
+    ruleSet: RuleSet & {
+      ruleParsed: Rule;
+      actionsParsed: any;
+    }
+  ) {
     return {
       id: ruleSet?.id,
       target: ruleSet?.target || "all",
       active: ruleSet?.active || true,
-      ruleParsed: ruleSet?.ruleParsed.conditions || [],
-      actionsParsed: ruleSet?.actionsParsed || [],
-      logicType: ruleSet?.ruleParsed.operation || ("OR" as const),
+      ruleParsed: ruleSet.ruleParsed.conditions || [],
+      actionsParsed: ruleSet.actionsParsed || [],
+      logicType: ruleSet.ruleParsed.operation || ("OR" as const),
     };
   }
 
