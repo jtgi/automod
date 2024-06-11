@@ -218,11 +218,11 @@ export function CurationForm(props: {
             </FieldLabel>
           </fieldset>
 
-          <div className="py-6">
+          {/* <div className="py-6">
             <hr />
-          </div>
+          </div> */}
 
-          <fieldset disabled={isSubmitting} className="space-y-6">
+          {/* <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
               <p className="font-medium">Ban List</p>
               <p className="text-gray-500 text-sm">
@@ -237,7 +237,7 @@ export function CurationForm(props: {
                 {...register("excludeUsernames")}
               />
             </FieldLabel>
-          </fieldset>
+          </fieldset> */}
 
           <div className="py-6">
             <hr />

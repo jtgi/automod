@@ -63,8 +63,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       banThreshold: ch.data.banThreshold,
       excludeCohosts: ch.data.excludeCohosts,
       excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
-      inclusionRuleSet: JSON.stringify(ch.data.inclusionRuleSet),
-      exclusionRuleSet: JSON.stringify(ch.data.exclusionRuleSet),
+      inclusionRuleSet: JSON.stringify({
+        rule: ch.data.inclusionRuleSet?.ruleParsed,
+        actions: ch.data.inclusionRuleSet?.actionsParsed,
+      }),
+      exclusionRuleSet: JSON.stringify({
+        rule: ch.data.exclusionRuleSet?.ruleParsed,
+        actions: ch.data.exclusionRuleSet?.actionsParsed,
+      }),
       ruleSets: {
         deleteMany: {},
         create: ch.data.ruleSets.map((ruleSet) => {
@@ -137,6 +143,7 @@ export default function Screen() {
   }
 
   function patchNewRuleSet(
+    inclusion: boolean,
     ruleSet: RuleSet & {
       ruleParsed: Rule;
       actionsParsed: any;
@@ -146,9 +153,13 @@ export default function Screen() {
       id: ruleSet?.id,
       target: ruleSet?.target || "all",
       active: ruleSet?.active || true,
-      ruleParsed: ruleSet.ruleParsed.conditions || [],
-      actionsParsed: ruleSet.actionsParsed || [],
-      logicType: ruleSet.ruleParsed.operation || ("OR" as const),
+      ruleParsed: ruleSet?.ruleParsed?.conditions || [],
+      actionsParsed: ruleSet?.actionsParsed.length
+        ? ruleSet.actionsParsed
+        : inclusion
+        ? [{ type: "like" }]
+        : [{ type: "hideQuietly" }],
+      logicType: ruleSet?.ruleParsed?.operation || ("OR" as const),
     };
   }
 
@@ -181,8 +192,8 @@ export default function Screen() {
           defaultValues={{
             ...channel,
             excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-            exclusionRuleSet: patchNewRuleSet(channel.exclusionRuleSetParsed!),
-            inclusionRuleSet: patchNewRuleSet(channel.inclusionRuleSetParsed!),
+            exclusionRuleSet: patchNewRuleSet(false, channel.exclusionRuleSetParsed!),
+            inclusionRuleSet: patchNewRuleSet(true, channel.inclusionRuleSetParsed!),
           }}
         />
       )}

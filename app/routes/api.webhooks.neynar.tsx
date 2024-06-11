@@ -1,6 +1,6 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import * as Sentry from "@sentry/remix";
-import { ModeratedChannel, ModerationLog, Prisma } from "@prisma/client";
+import { ModeratedChannel, ModerationLog, Prisma, RuleSet } from "@prisma/client";
 import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
@@ -10,7 +10,6 @@ import { getModerators, requireValidSignature } from "~/lib/utils.server";
 import {
   Action,
   Rule,
-  RuleSetSchemaType,
   actionDefinitions,
   actionFunctions,
   isCohost,
@@ -34,8 +33,8 @@ const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs
 });
 
 export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel> & {
-  inclusionRuleSetParsed: RuleSetSchemaType | undefined;
-  exclusionRuleSetParsed: RuleSetSchemaType | undefined;
+  inclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
+  exclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
 };
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -209,8 +208,6 @@ export async function validateCast({
     return logs;
   }
 
-  console.log(JSON.stringify(moderatedChannel, null, 2));
-
   if (
     !moderatedChannel.ruleSets.length &&
     !moderatedChannel.inclusionRuleSet &&
@@ -228,7 +225,6 @@ export async function validateCast({
         moderatedChannel.exclusionRuleSetParsed?.ruleParsed
       );
 
-      console.log(`[${channel.id}] Exclusion check`, exclusionCheck);
       // exclusion overrides inclusion so we check it first
       // some checks are expensive so we do this serially
       if (exclusionCheck.passedRule) {
@@ -282,8 +278,6 @@ export async function validateCast({
         moderatedChannel.inclusionRuleSetParsed.ruleParsed
       );
 
-      //TODO: why are both rules returning non violations?
-      console.log(`[${channel.id}] inclusion check`, inclusionCheck);
       if (inclusionCheck.passedRule) {
         for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
           const actionDef = actionDefinitions[action.type];
@@ -535,7 +529,6 @@ async function evaluateRule(
 
   const success = await check({ channel, cast, rule });
 
-  console.log({ success });
   return {
     passedRule: success,
     explanation: ruleDefinitions[rule.name].friendlyName,

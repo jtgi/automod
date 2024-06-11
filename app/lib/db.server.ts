@@ -13,9 +13,13 @@ const db = singleton("prisma", () =>
           needs: {
             inclusionRuleSet: true,
           },
-          compute(data): RuleSet | undefined {
+          compute(data): (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined {
+            console.log("inclusionrset", data.inclusionRuleSet);
             if (data.inclusionRuleSet) {
-              return JSON.parse(data.inclusionRuleSet);
+              const ruleSet = JSON.parse(data.inclusionRuleSet);
+              ruleSet.ruleParsed = JSON.parse(ruleSet.rule);
+              ruleSet.actionsParsed = JSON.parse(ruleSet.actions);
+              return ruleSet;
             }
           },
         },
@@ -23,9 +27,12 @@ const db = singleton("prisma", () =>
           needs: {
             exclusionRuleSet: true,
           },
-          compute(data): RuleSet | undefined {
+          compute(data): (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined {
             if (data.exclusionRuleSet) {
-              return JSON.parse(data.exclusionRuleSet);
+              const ruleSet = JSON.parse(data.exclusionRuleSet);
+              ruleSet.ruleParsed = JSON.parse(ruleSet.rule);
+              ruleSet.actionsParsed = JSON.parse(ruleSet.actions);
+              return ruleSet;
             }
           },
         },
