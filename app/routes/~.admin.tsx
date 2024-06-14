@@ -6,7 +6,7 @@ import { redirect, typedjson } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
 import { Input } from "~/components/ui/input";
-import { commitSession, getSession } from "~/lib/auth.server";
+import { commitSession, getSession, refreshAccountStatus } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive } from "./~.channels.$id.tools";
@@ -59,23 +59,31 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const action = formData.get("action");
 
-  if (action === "add-user") {
-    const fid = (formData.get("fid") as string) ?? "";
-    if (!fid) {
-      return errorResponse({ request, message: "Please enter a fid" });
+  if (action === "refreshAccount") {
+    const username = (formData.get("username") as string) ?? "";
+    if (!username) {
+      return errorResponse({ request, message: "Please enter a username" });
     }
 
-    await db.order.upsert({
-      where: {
-        fid: fid,
+    const fid = await db.user.findFirst({
+      select: {
+        id: true,
       },
-      update: {},
-      create: {
-        fid: fid,
+      where: {
+        name: username.toLowerCase(),
       },
     });
 
-    return successResponse({ request, message: "User added" });
+    if (!fid) {
+      return errorResponse({ request, message: "User not found" });
+    }
+
+    const plan = await refreshAccountStatus({ fid: fid.id });
+
+    return successResponse({
+      request,
+      message: `Refreshed. Plan is ${plan.plan}, expiring ${plan.expiresAt?.toISOString()}`,
+    });
   } else if (action === "impersonate") {
     const username = (formData.get("username") as string) ?? "";
 
@@ -254,11 +262,11 @@ export default function Admin() {
         <h3>Admin</h3>
         <div className="space-y-20">
           <Form method="post" className="space-y-4">
-            <FieldLabel label="Grant Access by Fid" className="flex-col items-start">
-              <Input name="fid" placeholder="123.." />
+            <FieldLabel label="Refresh Account Status" className="flex-col items-start">
+              <Input name="username" placeholder="jtgi" />
             </FieldLabel>
-            <Button name="action" value="add-user">
-              Grant Access
+            <Button name="action" value="refreshAccount">
+              Refresh Account
             </Button>
           </Form>
 
