@@ -263,7 +263,7 @@ export default function FrameConfig() {
                   key={channel.id}
                   prefetch="intent"
                 >
-                  <div className="flex gap-2 rounded-lg p-4 shadow border hover:border-orange-200 hover:shadow-orange-200 transition-all duration-300">
+                  <div className="flex gap-2 rounded-lg p-4 shadow border hover:border-orange-200 hover:shadow-orange-200 transition-all duration-300 items-center">
                     <img
                       src={channel.imageUrl ?? undefined}
                       alt={channel.id}
@@ -277,17 +277,6 @@ export default function FrameConfig() {
                       >
                         /{channel.id}
                       </h3>
-                      <div className="flex w-full justify-between">
-                        <p className="text-sm text-gray-400">
-                          {channel.ruleSets.length === 0 ? (
-                            "No rules yet."
-                          ) : (
-                            <>
-                              {channel.ruleSets.length} {channel.ruleSets.length === 1 ? "rule" : "rules"}
-                            </>
-                          )}
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </Link>

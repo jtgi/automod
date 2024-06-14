@@ -521,13 +521,15 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {
       min: {
         type: "number",
-        friendlyName: "At Least",
-        description: "If you enter 1, the user must have at least 1 follower.",
+        friendlyName: "Less than",
+        placeholder: "No Minimum",
+        description: "If you enter 10, the rule will trigger if the user has less than 10 followers.",
       },
       max: {
         type: "number",
-        friendlyName: "At Most",
-        description: "If you enter 50, the user must have 50 or fewer followers.",
+        friendlyName: "More than",
+        placeholder: "No Maximum",
+        description: "If you enter 50, the rule will trigger if the user has more than 50 followers.",
       },
     },
   },
@@ -773,7 +775,11 @@ export type CheckFunctionArgs = {
   rule: Rule;
 };
 
-export type CheckFunction = (props: CheckFunctionArgs) => boolean | Promise<boolean>;
+export type CheckFunctionResult = {
+  result: boolean;
+  message: string;
+};
+export type CheckFunction = (props: CheckFunctionArgs) => CheckFunctionResult | Promise<CheckFunctionResult>;
 export type ActionFunction<T = any> = (args: {
   channel: string;
   cast: Cast;
@@ -986,8 +992,8 @@ export const ModeratedChannelSchema = z.object({
 });
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
-  and: () => true,
-  or: () => true,
+  and: () => ({ result: true, message: "And rule always passes" }),
+  or: () => ({ result: true, message: "Or rule always passes" }),
   textMatchesPattern: textMatchesPattern,
   textMatchesLanguage: textMatchesLanguage,
   containsText: containsText,
@@ -1087,7 +1093,11 @@ export function containsText(props: CheckFunctionArgs) {
   const text = caseSensitive ? cast.text : cast.text.toLowerCase();
   const search = caseSensitive ? searchText : searchText.toLowerCase();
 
-  return text.includes(search);
+  const result = text.includes(search);
+  return {
+    result,
+    message: result ? `Cast contains "${searchText}"` : `Cast does not contain "${searchText}"`,
+  };
 }
 
 export async function castInThread(args: CheckFunctionArgs) {
@@ -1112,7 +1122,13 @@ export async function castInThread(args: CheckFunctionArgs) {
     throw new Error(`Cast ${cast.hash} has not thread_hash`);
   }
 
-  return hashes.includes(cast.thread_hash.toLowerCase());
+  const result = hashes.includes(cast.thread_hash.toLowerCase());
+  return {
+    result,
+    message: result
+      ? `Cast is in thread ${formatHash(cast.thread_hash)}`
+      : `Cast is not in thread ${formatHash(cast.thread_hash)}`,
+  };
 }
 
 export async function userFidInList(args: CheckFunctionArgs) {
@@ -1120,7 +1136,11 @@ export async function userFidInList(args: CheckFunctionArgs) {
   const { fids } = rule.args;
 
   const fidsArr = fids.split(/\r?\n/);
-  return fidsArr.includes(String(cast.author.fid));
+  const result = fidsArr.includes(String(cast.author.fid));
+  return {
+    result,
+    message: result ? `FID #${cast.author.fid} is in the list` : `FID #${cast.author.fid} is not in the list`,
+  };
 }
 
 export function castLength(args: CheckFunctionArgs) {
@@ -1129,17 +1149,26 @@ export function castLength(args: CheckFunctionArgs) {
 
   if (min) {
     if (cast.text.length > min) {
-      return false;
+      return {
+        result: false,
+        message: `Cast is greater than ${min} characters`,
+      };
     }
   }
 
   if (max) {
     if (cast.text.length < max) {
-      return false;
+      return {
+        result: false,
+        message: `Cast is less than ${max} characters`,
+      };
     }
   }
 
-  return true;
+  return {
+    result: true,
+    message: "Cast is within length limits",
+  };
 }
 
 export async function downvoteRule(args: CheckFunctionArgs) {
@@ -1152,7 +1181,11 @@ export async function downvoteRule(args: CheckFunctionArgs) {
     },
   });
 
-  return downvotes >= parseInt(threshold);
+  const result = downvotes >= parseInt(threshold);
+  return {
+    result,
+    message: result ? `Cast reached downvote threshold of ${downvotes}` : `Cast has ${downvotes} downvotes`,
+  };
 }
 
 export async function containsEmbeds(args: CheckFunctionArgs) {
@@ -1248,7 +1281,13 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
   }
 
   const violatingEmbeds = checkForEmbeds.filter((embedType) => embedTypesFound.includes(embedType));
-  return violatingEmbeds.length > 0;
+  const result = violatingEmbeds.length > 0;
+  return {
+    result,
+    message: result
+      ? `Cast contains ${violatingEmbeds.join(", ")}`
+      : `Cast does not contain any forbidden embeds`,
+  };
 }
 
 export function textMatchesPattern(args: CheckFunctionArgs) {
@@ -1258,7 +1297,10 @@ export function textMatchesPattern(args: CheckFunctionArgs) {
   const re2 = new RE2(pattern, caseInsensitive ? "i" : "");
   const isMatch = re2.test(cast.text);
 
-  return isMatch;
+  return {
+    result: isMatch,
+    message: isMatch ? `Cast matches pattern ${pattern}` : `Cast does not match pattern ${pattern}`,
+  };
 }
 
 export function textMatchesLanguage(args: CheckFunctionArgs) {
@@ -1266,12 +1308,18 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
   const { language } = rule.args;
 
   if (!cast.text.length) {
-    return false;
+    return {
+      result: false,
+      message: "Language detection is not available for empty casts.",
+    };
   }
 
   try {
     new URL(cast.text);
-    return false;
+    return {
+      result: false,
+      message: "URLs are not supported for language detection.",
+    };
   } catch (e) {
     // not a url
   }
@@ -1281,11 +1329,17 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
 
   if (cast.text.length < 20) {
     // model not reliable here
-    return true;
+    return {
+      result: true,
+      message: "Language detection is not reliable for short casts.",
+    };
   }
 
   const isLanguage = detect(withoutEmojis, { only: [language] }) !== "";
-  return isLanguage;
+  return {
+    result: isLanguage,
+    message: isLanguage ? `Cast is in ${language}` : `Cast is not in ${language}`,
+  };
 }
 
 export function containsTooManyMentions(args: CheckFunctionArgs) {
@@ -1294,7 +1348,12 @@ export function containsTooManyMentions(args: CheckFunctionArgs) {
 
   const mentions = cast.text.match(/@\w+/g) || [];
 
-  return mentions.length > maxMentions;
+  const result = mentions.length > maxMentions;
+
+  return {
+    result,
+    message: result ? `Too many mentions. Max is ${maxMentions}` : `Mentions are within limits`,
+  };
 }
 
 export function containsLinks(args: CheckFunctionArgs) {
@@ -1303,7 +1362,11 @@ export function containsLinks(args: CheckFunctionArgs) {
   const regex = /https?:\/\/\S+/gi;
   const matches = cast.text.match(regex) || [];
 
-  return matches.length > maxLinks;
+  const result = matches.length > maxLinks;
+  return {
+    result,
+    message: result ? `Too many links. Max is ${maxLinks}` : `Links are within limits`,
+  };
 }
 
 export function userProfileContainsText(args: CheckFunctionArgs) {
@@ -1313,7 +1376,10 @@ export function userProfileContainsText(args: CheckFunctionArgs) {
     ? cast.author.profile.bio.text?.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.profile.bio.text?.includes(searchText);
 
-  return containsText;
+  return {
+    result: containsText,
+    message: containsText ? `Profile contains "${searchText}"` : `Profile does not contain "${searchText}"`,
+  };
 }
 
 export function userDisplayNameContainsText(args: CheckFunctionArgs) {
@@ -1327,14 +1393,22 @@ export function userDisplayNameContainsText(args: CheckFunctionArgs) {
       },
     });
 
-    return false;
+    return {
+      result: false,
+      message: "User has no display name",
+    };
   }
 
   const containsText = !caseSensitive
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.display_name.includes(searchText);
 
-  return containsText;
+  return {
+    result: containsText,
+    message: containsText
+      ? `Display name contains "${searchText}"`
+      : `Display name does not contain "${searchText}"`,
+  };
 }
 
 export function userFollowerCount(props: CheckFunctionArgs) {
@@ -1343,17 +1417,26 @@ export function userFollowerCount(props: CheckFunctionArgs) {
 
   if (min) {
     if (cast.author.follower_count < min) {
-      return false;
+      return {
+        result: true,
+        message: `User has less than ${min} followers`,
+      };
     }
   }
 
   if (max) {
     if (cast.author.follower_count > max) {
-      return false;
+      return {
+        result: true,
+        message: `User has more than ${max} followers`,
+      };
     }
   }
 
-  return true;
+  return {
+    result: false,
+    message: "User follower count is within limits",
+  };
 }
 
 export async function userFollowedBy(args: CheckFunctionArgs) {
@@ -1377,12 +1460,18 @@ export async function userFollowedBy(args: CheckFunctionArgs) {
   // some bad action, if it is inverted, assume
   // its a positive action (like boost).
   if (cast.author.username === username) {
-    return true;
+    return {
+      result: true,
+      message: "Cast author is the same as the user being checked for follow status",
+    };
   }
 
   const isFollowedBy = user.result.user.viewerContext?.followedBy;
 
-  return !!isFollowedBy;
+  return {
+    result: !!isFollowedBy,
+    message: isFollowedBy ? `User is followed by ${username}` : `User is not followed by ${username}`,
+  };
 }
 
 export async function userFollows(args: CheckFunctionArgs) {
@@ -1406,15 +1495,21 @@ export async function userFollows(args: CheckFunctionArgs) {
   // some bad action, if it is inverted, assume
   // its a positive action (like boost).
   if (cast.author.username === username) {
-    return true;
+    return {
+      result: true,
+      message: "Cast author is the same as the user being checked for follow status",
+    };
   }
 
   const isFollowing = user.result.user.viewerContext?.following;
-  return !!isFollowing;
+  return {
+    result: !!isFollowing,
+    message: isFollowing ? `User follows ${username}` : `User does not follow ${username}`,
+  };
 }
 
 export async function userIsCohostOrOwner(args: CheckFunctionArgs) {
-  const { channel, rule } = args;
+  const { channel } = args;
 
   const [isUserCohost, ownerFid] = await Promise.all([
     isCohost({
@@ -1427,14 +1522,20 @@ export async function userIsCohostOrOwner(args: CheckFunctionArgs) {
   const isOwner = ownerFid === args.cast.author.fid;
   const isCohostOrOwner = isUserCohost || isOwner;
 
-  return isCohostOrOwner;
+  return {
+    result: isCohostOrOwner,
+    message: isCohostOrOwner ? "User is a cohost or owner" : "User is not a cohost or owner",
+  };
 }
 
 export function userHoldsPowerBadge(args: CheckFunctionArgs) {
-  const { cast, rule } = args;
+  const { cast } = args;
   const author = cast.author as Cast["author"] & { power_badge: boolean };
 
-  return author.power_badge;
+  return {
+    result: author.power_badge,
+    message: author.power_badge ? "User holds a power badge" : "User does not hold a power badge",
+  };
 }
 
 export async function holdsErc721(args: CheckFunctionArgs) {
@@ -1479,7 +1580,12 @@ export async function holdsErc721(args: CheckFunctionArgs) {
     }
   }
 
-  return isOwner;
+  return {
+    result: isOwner,
+    message: isOwner
+      ? `User holds ERC-721 (${formatHash(contractAddress)})`
+      : `User does not hold ERC-721 (${formatHash(contractAddress)})`,
+  };
 }
 
 export async function holdsActiveHypersub(args: CheckFunctionArgs) {
@@ -1511,7 +1617,12 @@ export async function holdsActiveHypersub(args: CheckFunctionArgs) {
     }
   }
 
-  return isSubscribed;
+  return {
+    result: isSubscribed,
+    message: isSubscribed
+      ? `User holds an active hypersub (${formatHash(contractAddress)})`
+      : `User does not hold an active hypersub (${formatHash(contractAddress)})`,
+  };
 }
 
 export async function holdsErc1155(args: CheckFunctionArgs) {
@@ -1537,7 +1648,12 @@ export async function holdsErc1155(args: CheckFunctionArgs) {
     });
 
     const isOwner = nfts.count && nfts.count > 0;
-    return isOwner;
+    return {
+      result: isOwner,
+      message: isOwner
+        ? `User holds ERC-1155 (${formatHash(contractAddress)})`
+        : `User does not hold ERC-1155 (${formatHash(contractAddress)})`,
+    };
   } else {
     const contract = getContract({
       address: getAddress(contractAddress),
@@ -1559,7 +1675,12 @@ export async function holdsErc1155(args: CheckFunctionArgs) {
       }
     }
 
-    return isOwner;
+    return {
+      result: isOwner,
+      message: isOwner
+        ? `User holds ERC-1155 (${formatHash(contractAddress)}), Token #${tokenId}`
+        : `User does not hold ERC-1155 (${formatHash(contractAddress)}), Token #${tokenId}`,
+    };
   }
 }
 
@@ -1588,7 +1709,12 @@ export async function holdsErc20(args: CheckFunctionArgs) {
     ttlSeconds: 60 * 60 * 2,
   });
 
-  return hasEnough;
+  return {
+    result: hasEnough,
+    message: hasEnough
+      ? `User holds ERC-20 (${formatHash(contractAddress)})`
+      : `User does not hold enough ERC-20 (${formatHash(contractAddress)})`,
+  };
 }
 
 export async function verifyErc20Balance({
@@ -1630,17 +1756,26 @@ export function userFidInRange(args: CheckFunctionArgs) {
 
   if (minFid) {
     if (cast.author.fid < minFid) {
-      return false;
+      return {
+        result: false,
+        message: `FID #${cast.author.fid} is less than ${minFid}`,
+      };
     }
   }
 
   if (maxFid) {
     if (cast.author.fid > maxFid) {
-      return false;
+      return {
+        result: false,
+        message: `FID #${cast.author.fid} is greater than ${maxFid}`,
+      };
     }
   }
 
-  return true;
+  return {
+    result: true,
+    message: `FID #${cast.author.fid} is within range`,
+  };
 }
 
 function tryParseUrl(url: string) {

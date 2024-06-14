@@ -436,7 +436,10 @@ export const simulationWorker = new Worker(
 
     return result;
   },
-  { connection, autorun: process.env.NODE_ENV === "production" }
+  {
+    connection,
+    // autorun: process.env.NODE_ENV === "production"
+  }
 );
 
 simulationWorker.on("error", Sentry.captureException);

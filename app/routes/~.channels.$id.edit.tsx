@@ -12,8 +12,6 @@ import {
 import {
   ModeratedChannelSchema,
   Rule,
-  RuleSetSchema,
-  RuleSetSchemaType,
   actionDefinitions,
   ruleDefinitions,
   ruleNames,
@@ -72,7 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         actions: ch.data.exclusionRuleSet?.actionsParsed,
       }),
       ruleSets: {
-        deleteMany: {},
+        // deleteMany: {}, : remove incase we need to rollback
         create: ch.data.ruleSets.map((ruleSet) => {
           return {
             target: ruleSet.target,

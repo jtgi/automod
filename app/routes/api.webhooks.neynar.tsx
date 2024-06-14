@@ -218,7 +218,7 @@ export async function validateCast({
   }
 
   if (moderatedChannel.inclusionRuleSetParsed && moderatedChannel.exclusionRuleSetParsed) {
-    if (moderatedChannel.exclusionRuleSetParsed.ruleParsed.conditions?.length) {
+    if (moderatedChannel.exclusionRuleSetParsed.ruleParsed?.conditions?.length) {
       const exclusionCheck = await evaluateRules(
         moderatedChannel,
         cast,
@@ -271,7 +271,7 @@ export async function validateCast({
       }
     }
 
-    if (moderatedChannel.inclusionRuleSetParsed.ruleParsed.conditions?.length) {
+    if (moderatedChannel.inclusionRuleSetParsed.ruleParsed?.conditions?.length) {
       const inclusionCheck = await evaluateRules(
         moderatedChannel,
         cast,
@@ -321,15 +321,38 @@ export async function validateCast({
       }
     }
 
-    logs.push(
-      await logModerationAction(
-        moderatedChannel.id,
-        "hideQuietly",
-        "Cast didn't match any rules",
-        cast,
-        simulation
-      )
-    );
+    if (moderatedChannel.includeWhenNoMatch) {
+      if (!simulation) {
+        const like = actionFunctions["like"];
+        await like({
+          channel: channel.id,
+          cast,
+          action: { type: "like" },
+        });
+      }
+
+      logs.push(
+        await logModerationAction(
+          moderatedChannel.id,
+          "like",
+          "Cast did not match any rules.",
+          cast,
+          simulation
+        )
+      );
+      return logs;
+    } else {
+      logs.push(
+        await logModerationAction(
+          moderatedChannel.id,
+          "hideQuietly",
+          "Cast didn't match any rules",
+          cast,
+          simulation
+        )
+      );
+    }
+
     return logs;
   }
 
@@ -527,11 +550,11 @@ async function evaluateRule(
     throw new Error(`No function for rule ${rule.name}`);
   }
 
-  const success = await check({ channel, cast, rule });
+  const result = await check({ channel, cast, rule });
 
   return {
-    passedRule: success,
-    explanation: ruleDefinitions[rule.name].friendlyName,
+    passedRule: result.result,
+    explanation: result.message,
   };
 }
 
