@@ -152,7 +152,7 @@ export default function Screen() {
       target: ruleSet?.target || "all",
       active: ruleSet?.active || true,
       ruleParsed: ruleSet?.ruleParsed?.conditions || [],
-      actionsParsed: ruleSet?.actionsParsed.length
+      actionsParsed: ruleSet?.actionsParsed?.length
         ? ruleSet.actionsParsed
         : inclusion
         ? [{ type: "like" }]

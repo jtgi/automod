@@ -128,11 +128,13 @@ export async function validateCast({
     console.log(`User @${cast.author.username} is in the bypass list. Curating.`);
 
     const [, log] = await Promise.all([
-      actionFunctions["like"]({
-        channel: channel.id,
-        cast,
-        action: { type: "like" },
-      }),
+      simulation
+        ? Promise.resolve()
+        : actionFunctions["like"]({
+            channel: channel.id,
+            cast,
+            action: { type: "like" },
+          }),
       logModerationAction(
         moderatedChannel.id,
         "like",
@@ -152,11 +154,13 @@ export async function validateCast({
       console.log(`[${channel.id}] @${cast.author.username} is a moderator. Curating.`);
 
       const [, log] = await Promise.all([
-        actionFunctions["like"]({
-          channel: channel.id,
-          cast,
-          action: { type: "like" },
-        }),
+        simulation
+          ? Promise.resolve()
+          : actionFunctions["like"]({
+              channel: channel.id,
+              cast,
+              action: { type: "like" },
+            }),
         logModerationAction(
           moderatedChannel.id,
           "like",
@@ -335,7 +339,7 @@ export async function validateCast({
         await logModerationAction(
           moderatedChannel.id,
           "like",
-          "Cast did not match any rules.",
+          "Cast didn't match any rules.",
           cast,
           simulation
         )
