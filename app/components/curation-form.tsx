@@ -196,7 +196,7 @@ export function CurationForm(props: {
 
           <fieldset disabled={isSubmitting} className="space-y-6">
             <div>
-              <p className="font-medium">Always Include in Main</p>
+              <p className="font-medium">Bypass</p>
               <p className="text-gray-500 text-sm">
                 Users in this list will always have their casts curated into Main.
               </p>
