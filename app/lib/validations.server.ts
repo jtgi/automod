@@ -39,6 +39,7 @@ export type RuleDefinition = {
   friendlyName: string;
   checkType: "user" | "cast";
   description: string;
+  category: "all" | "inclusion" | "exclusion";
   invertedDescription?: string;
   hidden: boolean;
   invertable: boolean;
@@ -59,6 +60,7 @@ export type RuleDefinition = {
 
 export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
+    category: "all",
     friendlyName: "And",
     checkType: "cast",
     description: "Combine multiple rules together",
@@ -68,6 +70,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   or: {
+    category: "all",
     friendlyName: "Or",
     checkType: "cast",
     hidden: true,
@@ -76,7 +79,18 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
+  alwaysInclude: {
+    category: "inclusion",
+    friendlyName: "Always Include",
+    checkType: "cast",
+    description: "Always includes the cast. Useful if you want to default all in except for a few rules.",
+    hidden: false,
+    invertable: false,
+    args: {},
+  },
+
   containsText: {
+    category: "all",
     friendlyName: "Contains Text",
     checkType: "cast",
     description: "Check if the text contains a specific string",
@@ -97,6 +111,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   castInThread: {
+    category: "all",
     friendlyName: "Cast is in Thread",
     checkType: "cast",
     description: "Check if a cast is a part of a thread",
@@ -114,6 +129,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   containsEmbeds: {
+    category: "all",
     friendlyName: "Contains Embedded Content",
     checkType: "cast",
     description: "Check if the cast contains images, gifs, videos, frames or links",
@@ -159,6 +175,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesPattern: {
+    category: "all",
     friendlyName: "Matches Pattern (Regex)",
     checkType: "cast",
     description: "Check if the text matches a specific pattern",
@@ -180,6 +197,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesLanguage: {
+    category: "all",
     friendlyName: "Matches Language",
     checkType: "cast",
     description: "Check if the text matches a specific language",
@@ -200,6 +218,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   castLength: {
+    category: "all",
     friendlyName: "Cast Length",
     checkType: "cast",
     description: "Check if the cast length is within a range",
@@ -209,19 +228,18 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       min: {
         type: "number",
         friendlyName: "Less than",
-        placeholder: "No Minimum",
-        description: "Setting a value of 5 would require the cast to be at least 5 characters.",
+        description: "Setting a value of 5 would trigger this rule if the length was 0 to 4 characters.",
       },
       max: {
         type: "number",
         friendlyName: "More than",
-        placeholder: "∞",
-        description: "Setting a value of 10 would require the cast to be less than 10 characters.",
+        description: "Setting a value of 10 would trigger this rule if the length was 11 or more characters.",
       },
     },
   },
 
   containsTooManyMentions: {
+    category: "all",
     friendlyName: "Contains Mentions",
     checkType: "cast",
     description: "Check if the text contains a certain amount of mentions",
@@ -232,11 +250,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         required: true,
         friendlyName: "Max Mentions",
+        placeholder: "0",
         description: "The maximum number of mentions allowed",
       },
     },
   },
   containsLinks: {
+    category: "all",
     friendlyName: "Contains Links",
     checkType: "cast",
     description: "Check if the text contains any links",
@@ -252,6 +272,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   downvote: {
+    category: "all",
     friendlyName: "Downvote",
     checkType: "cast",
     description: "Check if the cast has been downvoted by your community",
@@ -268,6 +289,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotFollow: {
+    category: "all",
     friendlyName: "Following",
     checkType: "user",
     description: "Check if the cast author follows a certain account",
@@ -287,6 +309,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsNotFollowedBy: {
+    category: "all",
     friendlyName: "Followed By",
     checkType: "user",
     description: "Check if the cast author is followed by a certain account",
@@ -306,6 +329,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requireActiveHypersub: {
+    category: "all",
     friendlyName: "Subscribes on Hypersub",
     checkType: "user",
     description: "Check if the user has an active subscription to a hypersub.",
@@ -336,6 +360,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc20: {
+    category: "all",
     friendlyName: "Holds ERC-20",
     checkType: "user",
     description: "Check that the user holds a certain amount of ERC-20 tokens in their connected wallets.",
@@ -374,6 +399,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc1155: {
+    category: "all",
     friendlyName: "Holds ERC-1155",
     checkType: "user",
     description: "Require users holds a certain ERC-1155 token",
@@ -413,6 +439,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc721: {
+    category: "all",
     friendlyName: "Holds ERC-721",
     checkType: "user",
     description: "Require users holds a certain ERC-721 token",
@@ -452,6 +479,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotHoldPowerBadge: {
+    category: "all",
     friendlyName: "Power Badge",
     checkType: "user",
     description: "Check if the user holds a power badge",
@@ -462,6 +490,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsCohost: {
+    category: "all",
     friendlyName: "Cohosts or Owner",
     checkType: "user",
     description: "Check if the user is a cohost or owner of the channel",
@@ -471,6 +500,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userProfileContainsText: {
+    category: "all",
     friendlyName: "Profile Contains Text",
     checkType: "user",
     description: "Check if the user's profile contains a specific string",
@@ -491,6 +521,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
   userDisplayNameContainsText: {
+    category: "all",
     friendlyName: "User Display Name Contains Text",
     checkType: "user",
     description: "Check if the user's display name contains a specific string",
@@ -513,6 +544,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFollowerCount: {
+    category: "all",
     friendlyName: "User Follower Count",
     checkType: "user",
     hidden: false,
@@ -535,6 +567,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFidInList: {
+    category: "all",
     friendlyName: "User FID is in List",
     checkType: "user",
     description: "Check if a FID is included on the list",
@@ -553,6 +586,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFidInRange: {
+    category: "all",
     friendlyName: "User FID",
     checkType: "user",
     description: "Check if the user's FID is within a range",
@@ -563,12 +597,12 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Less than",
         placeholder: "No Minimum",
-        description: "Setting a value of 5 would require the fid to be at least 5.",
+        description: "Setting a value of 5 would trigger this rule if the fid is 5 or above",
       },
       maxFid: {
         type: "number",
         friendlyName: "More than",
-        description: "Setting a value of 10 would require the fid to be less than 10.",
+        description: "Setting a value of 10 would trigger this rule if the fid is 1 thru 10.",
       },
     },
   },
@@ -725,6 +759,7 @@ export const actionDefinitions = {
 export const ruleNames = [
   "and",
   "or",
+  "alwaysInclude",
   "containsText",
   "containsEmbeds",
   "downvote",
@@ -970,30 +1005,47 @@ export const RuleSetSchema = z.object({
 
 export type RuleSetSchemaType = z.infer<typeof RuleSetSchema>;
 
-export const ModeratedChannelSchema = z.object({
-  id: z.string(),
-  banThreshold: z.coerce.number().nullable(),
-  excludeUsernames: z
-    .array(z.string())
-    .refine((usernames) =>
-      usernames
-        .map((u) => u.trim())
-        .every((u) => !/\s/.test(u) && u.length <= 30, {
-          message: "No spaces, and no more than 30 characters.",
-        })
-    )
-    .transform((usernames) => usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim()))
-    .default([]),
-  excludeCohosts: z.boolean().default(true),
-  ruleSets: z.array(RuleSetSchema),
+export const ModeratedChannelSchema = z
+  .object({
+    id: z.string(),
+    banThreshold: z.coerce.number().nullable(),
+    excludeUsernames: z
+      .array(z.string())
+      .refine((usernames) =>
+        usernames
+          .map((u) => u.trim())
+          .every((u) => !/\s/.test(u) && u.length <= 30, {
+            message: "No spaces, and no more than 30 characters.",
+          })
+      )
+      .transform((usernames) => usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim()))
+      .default([]),
+    excludeCohosts: z.boolean().default(true),
+    ruleSets: z.array(RuleSetSchema),
 
-  inclusionRuleSet: RuleSetSchema.optional(),
-  exclusionRuleSet: RuleSetSchema.optional(),
-});
+    inclusionRuleSet: RuleSetSchema,
+    exclusionRuleSet: RuleSetSchema,
+  })
+  .refine(
+    (data) => {
+      if (
+        data.inclusionRuleSet?.ruleParsed?.conditions?.length === 0 &&
+        data.exclusionRuleSet?.ruleParsed?.conditions?.length !== 0
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'You need least one rule that includes casts.\n\nIf you just want to specify what to exclude, add the "Always Include" rule.',
+    }
+  );
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
   and: () => ({ result: true, message: "And rule always passes" }),
   or: () => ({ result: true, message: "Or rule always passes" }),
+  alwaysInclude: () => ({ result: true, message: "Everything included by default" }),
   textMatchesPattern: textMatchesPattern,
   textMatchesLanguage: textMatchesLanguage,
   containsText: containsText,

@@ -1,5 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { CastLog, PrismaClient } from "@prisma/client";
 import { execSync } from "child_process";
+import { db } from "~/lib/db.server";
 import { getChannel, neynar } from "~/lib/neynar.server";
 import { WebhookCast } from "~/lib/types";
 import { FullModeratedChannel, validateCast } from "~/routes/api.webhooks.neynar";
@@ -17,36 +18,36 @@ async function main() {
   // Reconnect and clear data
   await prisma.$connect();
   const moderatedChannels = (await prisma.moderatedChannel.findMany({
-    // where: {
-    //   id: {
-    //     in: [
-    //       "philosophy",
-    //       "base",
-    //       "dev",
-    //       "zk",
-    //       "fitness",
-    //       "tabletop",
-    //       "lp",
-    //       "wearesoearly",
-    //       "travel",
-    //       "farcasther",
-    //       "gaming",
-    //       "higher",
-    //       "enjoy",
-    //       "coop-recs",
-    //       "music",
-    //       "art",
-    //       "lounge",
-    //       "photography",
-    //       "vip",
-    //       "geopolitics",
-    //       "philosophy",
-    //       "framdl-pro",
-    //       "manysuchcases",
-    //       "memes",
-    //     ],
-    //   },
-    // },
+    where: {
+      id: {
+        in: [
+          "philosophy",
+          "base",
+          "dev",
+          "zk",
+          "fitness",
+          "tabletop",
+          "lp",
+          "wearesoearly",
+          "travel",
+          "farcasther",
+          "gaming",
+          "higher",
+          "enjoy",
+          "coop-recs",
+          "music",
+          "art",
+          "lounge",
+          "photography",
+          "vip",
+          "geopolitics",
+          "philosophy",
+          "framdl-pro",
+          "manysuchcases",
+          "memes",
+        ],
+      },
+    },
     include: {
       ruleSets: true,
       user: true,
@@ -100,6 +101,7 @@ async function main() {
         take: 5,
       }),
     ]);
+
     const modLogs = [...curates, ...hides];
 
     if (!modLogs.length) {
@@ -135,7 +137,7 @@ async function main() {
         result.some((r) => r.castHash === l.castHash && l.action === r.action)
       );
       if (exists) {
-        console.log(`[/${moderatedChannel.id} ${result[0]?.castHash}] passed`);
+        console.log(`[/${moderatedChannel.id} ${result[0]?.castHash}] passed (moderated)`);
       } else {
         console.log(
           `[/${moderatedChannel.id} [${result[0]?.castHash}] expected: ${
@@ -143,12 +145,17 @@ async function main() {
           }, actual ${result[0]?.action}`
         );
 
-        console.log("inclusion", JSON.stringify(moderatedChannel.inclusionRuleSetParsed, null, 2));
-        console.log("exclusion", JSON.stringify(moderatedChannel.exclusionRuleSetParsed, null, 2));
+        console.log(
+          "inclusion",
+          JSON.stringify(moderatedChannel.inclusionRuleSetParsed?.ruleParsed, null, 2)
+        );
+        console.log(
+          "exclusion",
+          JSON.stringify(moderatedChannel.exclusionRuleSetParsed?.ruleParsed, null, 2)
+        );
         moderatedChannel.ruleSets.map((rs, index) => {
           console.log("ruleset" + index);
           console.log("rule", JSON.stringify(JSON.parse(rs.rule), null, 2));
-          console.log("actions", JSON.stringify(JSON.parse(rs.actions), null, 2));
         });
       }
     }

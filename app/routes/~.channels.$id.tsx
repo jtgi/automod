@@ -130,7 +130,7 @@ export default function ChannelRoot() {
       </div>
 
       {process.env.NODE_ENV !== "development" && (
-        <Dialog defaultOpen={!!isNotConfigured}>
+        <Dialog defaultOpen={isNotConfigured}>
           <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
             <DialogHeader>
               <DialogTitle>One last step...</DialogTitle>

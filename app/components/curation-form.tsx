@@ -150,7 +150,7 @@ export function CurationForm(props: {
             <div>
               <RuleSetEditor
                 actionDefinitions={props.actionDefinitions}
-                ruleDefinitions={props.ruleDefinitions}
+                ruleDefinitions={ruleCategory(props.ruleDefinitions, "inclusion")}
                 rulesNames={props.ruleNames}
                 watch={watch}
                 control={control}
@@ -168,19 +168,19 @@ export function CurationForm(props: {
             <div className="text-md flex items-start gap-2">
               <XCircleIcon className="text-red-500 w-5 h-5 mt-1 shrink-0" />
               <div>
-                When{" "}
+                Unless{" "}
                 <select className="p-1 bg-primary/10 rounded-md" {...register("exclusionRuleSet.logicType")}>
                   <option value="OR">any</option>
                   <option value="AND">all</option>
                 </select>{" "}
-                of the following rules are met, exclude the cast from Main.
+                of the following rules are met, then exclude the cast from Main.
               </div>
             </div>
 
             <div>
               <RuleSetEditor
                 actionDefinitions={props.actionDefinitions}
-                ruleDefinitions={props.ruleDefinitions}
+                ruleDefinitions={ruleCategory(props.ruleDefinitions, "exclusion")}
                 rulesNames={props.ruleNames}
                 watch={watch}
                 control={control}
@@ -806,4 +806,15 @@ function RuleArgs(props: {
       );
     }
   });
+}
+
+function ruleCategory(defs: typeof ruleDefinitions, category: "inclusion" | "exclusion") {
+  const out: Record<string, RuleDefinition> = {};
+  Object.entries(defs).forEach(([name, def]) => {
+    if (def.category === category || def.category === "all") {
+      out[name] = def;
+    }
+  });
+
+  return out;
 }

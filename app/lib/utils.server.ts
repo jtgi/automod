@@ -298,7 +298,7 @@ export function formatZodIssue(issue: ZodIssue): string {
   const { path, message } = issue;
   const pathString = path.join(".");
 
-  return `${pathString}: ${message}`;
+  return pathString ? `${pathString}: ${message}` : message;
 }
 
 // Format the Zod error message with only the current error

@@ -298,12 +298,19 @@ async function main() {
       args: {},
     };
 
+    if (inclusionRule.conditions!.length === 0 && exclusionRule.conditions!.length > 0) {
+      inclusionRule.conditions?.push({
+        name: "alwaysInclude",
+        type: "CONDITION",
+        args: {},
+      });
+    }
+
     await db.moderatedChannel.update({
       where: {
         id: channel.id,
       },
       data: {
-        includeWhenNoMatch: inclusionRule.conditions!.length === 0 && exclusionRule.conditions!.length > 0,
         inclusionRuleSet: JSON.stringify({
           rule: inclusionRule,
           actions: [{ type: "like" }],

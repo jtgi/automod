@@ -325,37 +325,15 @@ export async function validateCast({
       }
     }
 
-    if (moderatedChannel.includeWhenNoMatch) {
-      if (!simulation) {
-        const like = actionFunctions["like"];
-        await like({
-          channel: channel.id,
-          cast,
-          action: { type: "like" },
-        });
-      }
-
-      logs.push(
-        await logModerationAction(
-          moderatedChannel.id,
-          "like",
-          "Cast didn't match any rules.",
-          cast,
-          simulation
-        )
-      );
-      return logs;
-    } else {
-      logs.push(
-        await logModerationAction(
-          moderatedChannel.id,
-          "hideQuietly",
-          "Cast didn't match any rules",
-          cast,
-          simulation
-        )
-      );
-    }
+    logs.push(
+      await logModerationAction(
+        moderatedChannel.id,
+        "hideQuietly",
+        "Cast didn't match any rules",
+        cast,
+        simulation
+      )
+    );
 
     return logs;
   }
