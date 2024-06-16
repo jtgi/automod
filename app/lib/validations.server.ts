@@ -1188,19 +1188,11 @@ export async function userFidInList(args: CheckFunctionArgs) {
   const { fids } = rule.args;
 
   const fidsArr = fids.split(/\r?\n/);
-<<<<<<< HEAD
-  if (!rule.invert && fidsArr.includes(String(cast.author.fid))) {
-    return `FID #${cast.author.fid} is in the blocked FID list`;
-  } else if (rule.invert && !fidsArr.includes(String(cast.author.fid))) {
-    return `FID #${cast.author.fid} was not in the allowed FID list`;
-  }
-=======
   const result = fidsArr.includes(String(cast.author.fid));
   return {
     result,
     message: result ? `FID #${cast.author.fid} is in the list` : `FID #${cast.author.fid} is not in the list`,
   };
->>>>>>> invert
 }
 
 export function castLength(args: CheckFunctionArgs) {
