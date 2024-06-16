@@ -23,10 +23,6 @@ import { ArrowUpRight, RefreshCwIcon } from "lucide-react";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
 
-  if (user.role !== "superadmin") {
-    return redirect("/maintenance");
-  }
-
   const channels = await db.moderatedChannel.findMany({
     where: {
       OR: [
