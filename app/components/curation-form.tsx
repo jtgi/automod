@@ -628,6 +628,7 @@ function RuleSetEditor(props: {
                 .filter((args) => !args[1].hidden)
                 .map(([name, ruleDef]) => {
                   if (
+                    // @ts-ignore
                     ruleFields.find((rf) => rf.name === name) &&
                     !duplicatesAllowed.includes(name as RuleName)
                   ) {
