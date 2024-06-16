@@ -37,7 +37,9 @@ import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export type RuleDefinition = {
   friendlyName: string;
+  checkType: "user" | "cast";
   description: string;
+  category: "all" | "inclusion" | "exclusion";
   invertedDescription?: string;
   hidden: boolean;
   invertable: boolean;
@@ -58,7 +60,9 @@ export type RuleDefinition = {
 
 export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
+    category: "all",
     friendlyName: "And",
+    checkType: "cast",
     description: "Combine multiple rules together",
     hidden: true,
     invertable: false,
@@ -66,15 +70,29 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   or: {
+    category: "all",
     friendlyName: "Or",
+    checkType: "cast",
     hidden: true,
     invertable: false,
     description: "Combine multiple rules together",
     args: {},
   },
 
+  alwaysInclude: {
+    category: "inclusion",
+    friendlyName: "Always Include",
+    checkType: "cast",
+    description: "Always includes the cast. Useful if you want to default all in except for a few rules.",
+    hidden: false,
+    invertable: false,
+    args: {},
+  },
+
   containsText: {
+    category: "all",
     friendlyName: "Contains Text",
+    checkType: "cast",
     description: "Check if the text contains a specific string",
     hidden: false,
     invertable: true,
@@ -93,9 +111,11 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   castInThread: {
+    category: "all",
     friendlyName: "Cast is in Thread",
+    checkType: "cast",
     description: "Check if a cast is a part of a thread",
-    hidden: false,
+    hidden: true,
     invertable: true,
     args: {
       identifiers: {
@@ -109,7 +129,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   containsEmbeds: {
+    category: "all",
     friendlyName: "Contains Embedded Content",
+    checkType: "cast",
     description: "Check if the cast contains images, gifs, videos, frames or links",
     hidden: false,
     invertable: true,
@@ -153,7 +175,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesPattern: {
+    category: "all",
     friendlyName: "Matches Pattern (Regex)",
+    checkType: "cast",
     description: "Check if the text matches a specific pattern",
     hidden: false,
     invertable: true,
@@ -161,6 +185,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       pattern: {
         type: "string",
         friendlyName: "Pattern",
+        required: true,
         description: "The regular expression to match against. No leading or trailing slashes.",
       },
       caseInsensitive: {
@@ -172,7 +197,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesLanguage: {
+    category: "all",
     friendlyName: "Matches Language",
+    checkType: "cast",
     description: "Check if the text matches a specific language",
     invertedDescription: "Check if the text is any language *but* the one specified.",
     hidden: false,
@@ -191,7 +218,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   castLength: {
+    category: "all",
     friendlyName: "Cast Length",
+    checkType: "cast",
     description: "Check if the cast length is within a range",
     hidden: false,
     invertable: false,
@@ -199,20 +228,20 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       min: {
         type: "number",
         friendlyName: "Less than",
-        placeholder: "No Minimum",
-        description: "Setting a value of 5 would require the cast to be at least 5 characters.",
+        description: "Setting a value of 5 would trigger this rule if the length was 0 to 4 characters.",
       },
       max: {
         type: "number",
         friendlyName: "More than",
-        placeholder: "∞",
-        description: "Setting a value of 10 would require the cast to be less than 10 characters.",
+        description: "Setting a value of 10 would trigger this rule if the length was 11 or more characters.",
       },
     },
   },
 
   containsTooManyMentions: {
+    category: "all",
     friendlyName: "Contains Mentions",
+    checkType: "cast",
     description: "Check if the text contains a certain amount of mentions",
     invertable: true,
     hidden: false,
@@ -221,12 +250,15 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         required: true,
         friendlyName: "Max Mentions",
+        placeholder: "0",
         description: "The maximum number of mentions allowed",
       },
     },
   },
   containsLinks: {
+    category: "all",
     friendlyName: "Contains Links",
+    checkType: "cast",
     description: "Check if the text contains any links",
     hidden: false,
     invertable: true,
@@ -240,7 +272,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   downvote: {
+    category: "all",
     friendlyName: "Downvote",
+    checkType: "cast",
     description: "Check if the cast has been downvoted by your community",
     hidden: false,
     invertable: false,
@@ -255,8 +289,10 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotFollow: {
-    friendlyName: "User Does Not Follow",
-    description: "Check if the user does not follow a certain account",
+    category: "all",
+    friendlyName: "Following",
+    checkType: "user",
+    description: "Check if the cast author follows a certain account",
     invertedDescription: "Trigger this rule when users *do* follow the account",
     hidden: false,
     invertable: true,
@@ -273,8 +309,10 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsNotFollowedBy: {
-    friendlyName: "User Is Not Followed By",
-    description: "Check if the user is not followed by a certain account",
+    category: "all",
+    friendlyName: "Followed By",
+    checkType: "user",
+    description: "Check if the cast author is followed by a certain account",
     invertedDescription: "Trigger this rule when user is followed by the account",
     hidden: false,
     invertable: true,
@@ -291,7 +329,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requireActiveHypersub: {
-    friendlyName: "User does not Hypersub",
+    category: "all",
+    friendlyName: "Subscribes on Hypersub",
+    checkType: "user",
     description: "Check if the user has an active subscription to a hypersub.",
     hidden: false,
     invertable: true,
@@ -320,7 +360,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc20: {
-    friendlyName: "User does not hold ERC-20",
+    category: "all",
+    friendlyName: "Holds ERC-20",
+    checkType: "user",
     description: "Check that the user holds a certain amount of ERC-20 tokens in their connected wallets.",
     invertedDescription: "Check for users who do hold the ERC-20",
     hidden: false,
@@ -357,7 +399,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc1155: {
-    friendlyName: "User does not hold ERC-1155",
+    category: "all",
+    friendlyName: "Holds ERC-1155",
+    checkType: "user",
     description: "Require users holds a certain ERC-1155 token",
     invertedDescription: "Check for users who *do* hold the ERC-1155 token",
     hidden: false,
@@ -395,7 +439,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc721: {
-    friendlyName: "User does not hold ERC-721",
+    category: "all",
+    friendlyName: "Holds ERC-721",
+    checkType: "user",
     description: "Require users holds a certain ERC-721 token",
     invertedDescription: "Check for users who *do* hold the ERC-721 token",
     hidden: false,
@@ -433,8 +479,10 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotHoldPowerBadge: {
-    friendlyName: "User Does Not Hold Power Badge",
-    description: "Check if the user does not hold a power badge",
+    category: "all",
+    friendlyName: "Power Badge",
+    checkType: "user",
+    description: "Check if the user holds a power badge",
     invertedDescription: "Check for users who *do* hold the power badge",
     hidden: false,
     invertable: true,
@@ -442,7 +490,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsCohost: {
-    friendlyName: "User Is Cohost or Owner",
+    category: "all",
+    friendlyName: "Cohosts or Owner",
+    checkType: "user",
     description: "Check if the user is a cohost or owner of the channel",
     hidden: false,
     invertable: true,
@@ -450,7 +500,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userProfileContainsText: {
-    friendlyName: "User Profile Contains Text",
+    category: "all",
+    friendlyName: "Profile Contains Text",
+    checkType: "user",
     description: "Check if the user's profile contains a specific string",
     hidden: false,
 
@@ -469,7 +521,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
   userDisplayNameContainsText: {
+    category: "all",
     friendlyName: "User Display Name Contains Text",
+    checkType: "user",
     description: "Check if the user's display name contains a specific string",
     hidden: false,
 
@@ -490,26 +544,32 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFollowerCount: {
+    category: "all",
     friendlyName: "User Follower Count",
+    checkType: "user",
     hidden: false,
     invertable: false,
     description: "Check if the user's follower count is within a range",
     args: {
       min: {
         type: "number",
-        friendlyName: "At Least",
-        description: "If you enter 1, the user must have at least 1 follower.",
+        friendlyName: "Less than",
+        placeholder: "No Minimum",
+        description: "If you enter 10, the rule will trigger if the user has less than 10 followers.",
       },
       max: {
         type: "number",
-        friendlyName: "At Most",
-        description: "If you enter 50, the user must have 50 or fewer followers.",
+        friendlyName: "More than",
+        placeholder: "No Maximum",
+        description: "If you enter 50, the rule will trigger if the user has more than 50 followers.",
       },
     },
   },
 
   userFidInList: {
+    category: "all",
     friendlyName: "User FID is in List",
+    checkType: "user",
     description: "Check if a FID is included on the list",
     invertedDescription: "Check if a FID is not included in the list",
     hidden: false,
@@ -526,7 +586,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFidInRange: {
+    category: "all",
     friendlyName: "User FID",
+    checkType: "user",
     description: "Check if the user's FID is within a range",
     hidden: false,
     invertable: false,
@@ -535,12 +597,12 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Less than",
         placeholder: "No Minimum",
-        description: "Setting a value of 5 would require the fid to be at least 5.",
+        description: "Setting a value of 5 would trigger this rule if the fid is 5 or above",
       },
       maxFid: {
         type: "number",
         friendlyName: "More than",
-        description: "Setting a value of 10 would require the fid to be less than 10.",
+        description: "Setting a value of 10 would trigger this rule if the fid is 1 thru 10.",
       },
     },
   },
@@ -697,6 +759,7 @@ export const actionDefinitions = {
 export const ruleNames = [
   "and",
   "or",
+  "alwaysInclude",
   "containsText",
   "containsEmbeds",
   "downvote",
@@ -747,7 +810,11 @@ export type CheckFunctionArgs = {
   rule: Rule;
 };
 
-export type CheckFunction = (props: CheckFunctionArgs) => (string | undefined) | Promise<string | undefined>;
+export type CheckFunctionResult = {
+  result: boolean;
+  message: string;
+};
+export type CheckFunction = (props: CheckFunctionArgs) => CheckFunctionResult | Promise<CheckFunctionResult>;
 export type ActionFunction<T = any> = (args: {
   channel: string;
   cast: Cast;
@@ -932,30 +999,53 @@ export const RuleSetSchema = z.object({
   id: z.string().optional(),
   target: z.enum(["all", "root", "reply"]).default("all"),
   ruleParsed: RuleSchema,
+  active: z.boolean().default(true),
   actionsParsed: z.array(ActionSchema).min(1, { message: "At least one action is required." }),
 });
 
-export const ModeratedChannelSchema = z.object({
-  id: z.string().transform((id) => id.toLowerCase()),
-  banThreshold: z.coerce.number().nullable(),
-  excludeUsernames: z
-    .array(z.string())
-    .refine((usernames) =>
-      usernames
-        .map((u) => u.trim())
-        .every((u) => !/\s/.test(u) && u.length <= 30, {
-          message: "No spaces, and no more than 30 characters.",
-        })
-    )
-    .transform((usernames) => usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim()))
-    .default([]),
-  excludeCohosts: z.boolean().default(true),
-  ruleSets: z.array(RuleSetSchema),
-});
+export type RuleSetSchemaType = z.infer<typeof RuleSetSchema>;
+
+export const ModeratedChannelSchema = z
+  .object({
+    id: z.string().transform((id) => id.toLowerCase()),
+    banThreshold: z.coerce.number().nullable(),
+    excludeUsernames: z
+      .array(z.string())
+      .refine((usernames) =>
+        usernames
+          .map((u) => u.trim())
+          .every((u) => !/\s/.test(u) && u.length <= 30, {
+            message: "No spaces, and no more than 30 characters.",
+          })
+      )
+      .transform((usernames) => usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim()))
+      .default([]),
+    excludeCohosts: z.boolean().default(true),
+    ruleSets: z.array(RuleSetSchema),
+
+    inclusionRuleSet: RuleSetSchema,
+    exclusionRuleSet: RuleSetSchema,
+  })
+  .refine(
+    (data) => {
+      if (
+        data.inclusionRuleSet?.ruleParsed?.conditions?.length === 0 &&
+        data.exclusionRuleSet?.ruleParsed?.conditions?.length !== 0
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'You need least one rule that includes casts.\n\nIf you just want to specify what to exclude, add the "Always Include" rule.',
+    }
+  );
 
 export const ruleFunctions: Record<RuleName, CheckFunction> = {
-  and: () => undefined,
-  or: () => undefined, // TODO
+  and: () => ({ result: true, message: "And rule always passes" }),
+  or: () => ({ result: true, message: "Or rule always passes" }),
+  alwaysInclude: () => ({ result: true, message: "Everything included by default" }),
   textMatchesPattern: textMatchesPattern,
   textMatchesLanguage: textMatchesLanguage,
   containsText: containsText,
@@ -966,18 +1056,18 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   castLength: castLength,
   downvote: downvoteRule,
   userProfileContainsText: userProfileContainsText,
-  userDoesNotFollow: userDoesNotFollow,
-  userIsNotFollowedBy: userIsNotFollowedBy,
+  userDoesNotFollow: userFollows,
+  userIsNotFollowedBy: userFollowedBy,
   userIsCohost: userIsCohostOrOwner,
   userDisplayNameContainsText: userDisplayNameContainsText,
   userFollowerCount: userFollowerCount,
-  userDoesNotHoldPowerBadge: userDoesNotHoldPowerBadge,
+  userDoesNotHoldPowerBadge: userHoldsPowerBadge,
   userFidInList: userFidInList,
   userFidInRange: userFidInRange,
-  requireActiveHypersub: requireActiveHypersub,
-  requiresErc721: requiresErc721,
-  requiresErc20: requiresErc20,
-  requiresErc1155: requiresErc1155,
+  requireActiveHypersub: holdsActiveHypersub,
+  requiresErc721: holdsErc721,
+  requiresErc20: holdsErc20,
+  requiresErc1155: holdsErc1155,
 };
 
 export const actionFunctions: Record<ActionType, ActionFunction> = {
@@ -1055,30 +1145,11 @@ export function containsText(props: CheckFunctionArgs) {
   const text = caseSensitive ? cast.text : cast.text.toLowerCase();
   const search = caseSensitive ? searchText : searchText.toLowerCase();
 
-  if (!rule.invert && text.includes(search)) {
-    return `Text contains the text: ${searchText}`;
-  } else if (rule.invert && !text.includes(search)) {
-    return `Text does not contain the text: ${searchText}`;
-  }
-}
-
-export async function containsFrame(args: CheckFunctionArgs) {
-  const { cast, rule } = args;
-  const rsp = await neynar.fetchBulkCasts([cast.hash]);
-  const castWithInteractions = rsp.result.casts[0];
-
-  if (!castWithInteractions) {
-    throw new Error(`Cast not found. Should be impossible. hash: ${cast.hash}`);
-  }
-
-  const hasFrame = castWithInteractions.frames && castWithInteractions.frames.length > 0;
-
-  const frameUrls = castWithInteractions.frames?.map((f) => f.frames_url) || [];
-  if (hasFrame && !rule.invert) {
-    return `Contains frame: ${frameUrls.join(", ")}`;
-  } else if (!hasFrame && rule.invert) {
-    return `Does not contain any frames.`;
-  }
+  const result = text.includes(search);
+  return {
+    result,
+    message: result ? `Cast contains "${searchText}"` : `Cast does not contain "${searchText}"`,
+  };
 }
 
 export async function castInThread(args: CheckFunctionArgs) {
@@ -1103,11 +1174,13 @@ export async function castInThread(args: CheckFunctionArgs) {
     throw new Error(`Cast ${cast.hash} has not thread_hash`);
   }
 
-  if (!rule.invert && hashes.includes(cast.thread_hash.toLowerCase())) {
-    return `Cast found in thread: ${formatHash(cast.thread_hash)}`;
-  } else if (rule.invert && !hashes.includes(cast.hash)) {
-    return `Cast was not inside: ${formatHash(cast.hash)}`;
-  }
+  const result = hashes.includes(cast.thread_hash.toLowerCase());
+  return {
+    result,
+    message: result
+      ? `Cast is in thread ${formatHash(cast.thread_hash)}`
+      : `Cast is not in thread ${formatHash(cast.thread_hash)}`,
+  };
 }
 
 export async function userFidInList(args: CheckFunctionArgs) {
@@ -1115,11 +1188,19 @@ export async function userFidInList(args: CheckFunctionArgs) {
   const { fids } = rule.args;
 
   const fidsArr = fids.split(/\r?\n/);
+<<<<<<< HEAD
   if (!rule.invert && fidsArr.includes(String(cast.author.fid))) {
     return `FID #${cast.author.fid} is in the blocked FID list`;
   } else if (rule.invert && !fidsArr.includes(String(cast.author.fid))) {
     return `FID #${cast.author.fid} was not in the allowed FID list`;
   }
+=======
+  const result = fidsArr.includes(String(cast.author.fid));
+  return {
+    result,
+    message: result ? `FID #${cast.author.fid} is in the list` : `FID #${cast.author.fid} is not in the list`,
+  };
+>>>>>>> invert
 }
 
 export function castLength(args: CheckFunctionArgs) {
@@ -1127,16 +1208,27 @@ export function castLength(args: CheckFunctionArgs) {
   const { min, max } = rule.args as { min?: number; max?: number };
 
   if (min) {
-    if (cast.text.length < min) {
-      return `Cast length is less than ${min} characters`;
+    if (cast.text.length > min) {
+      return {
+        result: false,
+        message: `Cast is greater than ${min} characters`,
+      };
     }
   }
 
   if (max) {
-    if (cast.text.length > max) {
-      return `Cast length exceeds ${max} characters`;
+    if (cast.text.length < max) {
+      return {
+        result: false,
+        message: `Cast is less than ${max} characters`,
+      };
     }
   }
+
+  return {
+    result: true,
+    message: "Cast is within length limits",
+  };
 }
 
 export async function downvoteRule(args: CheckFunctionArgs) {
@@ -1149,35 +1241,16 @@ export async function downvoteRule(args: CheckFunctionArgs) {
     },
   });
 
-  if (downvotes >= parseInt(threshold)) {
-    return `Downvote threshold of ${threshold} reached`;
-  }
+  const result = downvotes >= parseInt(threshold);
+  return {
+    result,
+    message: result ? `Cast reached downvote threshold of ${downvotes}` : `Cast has ${downvotes} downvotes`,
+  };
 }
 
 export async function containsEmbeds(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { images, videos, frames, links, casts, domain } = rule.args;
-
-  if (domain) {
-    const foundDomain = cast.embeds.filter((embed): embed is { url: string } => {
-      if ("url" in embed) {
-        const url = tryParseUrl(embed.url);
-        if (!url) {
-          return false;
-        }
-
-        return url.hostname.toLowerCase() === domain.toLowerCase();
-      } else {
-        return false;
-      }
-    });
-
-    if (!rule.invert && foundDomain.length > 0) {
-      return `Contains embeds from ${domain}: ${foundDomain.map((d) => d.url).join(", ")}`;
-    } else if (rule.invert && foundDomain.length === 0) {
-      return `Does not contain embeds from ${domain}`;
-    }
-  }
+  const { images, videos, frames, links, casts } = rule.args;
 
   const checkForEmbeds: string[] = [];
   images && checkForEmbeds.push("image");
@@ -1267,23 +1340,14 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     }
   }
 
-  if (rule.invert) {
-    const missingEmbeds = checkForEmbeds.filter((embedType) => !embedTypesFound.includes(embedType));
-
-    if (missingEmbeds.length) {
-      return `Does not contain embedded content: ${missingEmbeds.join(", ")}`;
-    } else {
-      return undefined;
-    }
-  } else {
-    const violatingEmbeds = checkForEmbeds.filter((embedType) => embedTypesFound.includes(embedType));
-
-    if (violatingEmbeds.length) {
-      return `Contains embedded content: ${violatingEmbeds.join(", ")}`;
-    } else {
-      return undefined;
-    }
-  }
+  const violatingEmbeds = checkForEmbeds.filter((embedType) => embedTypesFound.includes(embedType));
+  const result = violatingEmbeds.length > 0;
+  return {
+    result,
+    message: result
+      ? `Cast contains ${violatingEmbeds.join(", ")}`
+      : `Cast does not contain any forbidden embeds`,
+  };
 }
 
 export function textMatchesPattern(args: CheckFunctionArgs) {
@@ -1293,11 +1357,10 @@ export function textMatchesPattern(args: CheckFunctionArgs) {
   const re2 = new RE2(pattern, caseInsensitive ? "i" : "");
   const isMatch = re2.test(cast.text);
 
-  if (isMatch && !rule.invert) {
-    return `Text matches pattern: ${pattern}`;
-  } else if (!isMatch && rule.invert) {
-    return `Text does not match pattern: ${pattern}`;
-  }
+  return {
+    result: isMatch,
+    message: isMatch ? `Cast matches pattern ${pattern}` : `Cast does not match pattern ${pattern}`,
+  };
 }
 
 export function textMatchesLanguage(args: CheckFunctionArgs) {
@@ -1305,12 +1368,18 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
   const { language } = rule.args;
 
   if (!cast.text.length) {
-    return;
+    return {
+      result: false,
+      message: "Language detection is not available for empty casts.",
+    };
   }
 
   try {
     new URL(cast.text);
-    return;
+    return {
+      result: false,
+      message: "URLs are not supported for language detection.",
+    };
   } catch (e) {
     // not a url
   }
@@ -1320,30 +1389,31 @@ export function textMatchesLanguage(args: CheckFunctionArgs) {
 
   if (cast.text.length < 20) {
     // model not reliable here
-    return;
+    return {
+      result: true,
+      message: "Language detection is not reliable for short casts.",
+    };
   }
 
   const isLanguage = detect(withoutEmojis, { only: [language] }) !== "";
-
-  if (isLanguage && !rule.invert) {
-    return `Text matches language: ${language}`;
-  } else if (!isLanguage && rule.invert) {
-    return `Text does not match language: ${language}`;
-  }
+  return {
+    result: isLanguage,
+    message: isLanguage ? `Cast is in ${language}` : `Cast is not in ${language}`,
+  };
 }
 
-// Rule: contains too many mentions (@...)
 export function containsTooManyMentions(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { maxMentions } = rule.args;
 
   const mentions = cast.text.match(/@\w+/g) || [];
 
-  if (!rule.invert && mentions.length > maxMentions) {
-    return `Too many mentions: ${mentions}. Max: ${maxMentions}`;
-  } else if (rule.invert && mentions.length <= maxMentions) {
-    return `Too few mentions: ${mentions}. Min: ${maxMentions}`;
-  }
+  const result = mentions.length > maxMentions;
+
+  return {
+    result,
+    message: result ? `Too many mentions. Max is ${maxMentions}` : `Mentions are within limits`,
+  };
 }
 
 export function containsLinks(args: CheckFunctionArgs) {
@@ -1352,11 +1422,11 @@ export function containsLinks(args: CheckFunctionArgs) {
   const regex = /https?:\/\/\S+/gi;
   const matches = cast.text.match(regex) || [];
 
-  if (!rule.invert && matches.length > maxLinks) {
-    return `Too many links. Max: ${maxLinks}`;
-  } else if (rule.invert && matches.length <= maxLinks) {
-    return `Too few links. Min: ${maxLinks}`;
-  }
+  const result = matches.length > maxLinks;
+  return {
+    result,
+    message: result ? `Too many links. Max is ${maxLinks}` : `Links are within limits`,
+  };
 }
 
 export function userProfileContainsText(args: CheckFunctionArgs) {
@@ -1366,11 +1436,10 @@ export function userProfileContainsText(args: CheckFunctionArgs) {
     ? cast.author.profile.bio.text?.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.profile.bio.text?.includes(searchText);
 
-  if (!rule.invert && containsText) {
-    return `User profile contains the specified text: ${searchText}`;
-  } else if (rule.invert && !containsText) {
-    return `User profile does not contain the specified text: ${searchText}`;
-  }
+  return {
+    result: containsText,
+    message: containsText ? `Profile contains "${searchText}"` : `Profile does not contain "${searchText}"`,
+  };
 }
 
 export function userDisplayNameContainsText(args: CheckFunctionArgs) {
@@ -1384,18 +1453,22 @@ export function userDisplayNameContainsText(args: CheckFunctionArgs) {
       },
     });
 
-    return;
+    return {
+      result: false,
+      message: "User has no display name",
+    };
   }
 
   const containsText = !caseSensitive
     ? cast.author.display_name.toLowerCase().includes(searchText.toLowerCase())
     : cast.author.display_name.includes(searchText);
 
-  if (!rule.invert && containsText) {
-    return `User display name contains text: ${searchText}`;
-  } else if (rule.invert && !containsText) {
-    return `User display name does not contain text: ${searchText}`;
-  }
+  return {
+    result: containsText,
+    message: containsText
+      ? `Display name contains "${searchText}"`
+      : `Display name does not contain "${searchText}"`,
+  };
 }
 
 export function userFollowerCount(props: CheckFunctionArgs) {
@@ -1404,18 +1477,29 @@ export function userFollowerCount(props: CheckFunctionArgs) {
 
   if (min) {
     if (cast.author.follower_count < min) {
-      return `Follower count less than ${min}`;
+      return {
+        result: true,
+        message: `User has less than ${min} followers`,
+      };
     }
   }
 
   if (max) {
     if (cast.author.follower_count > max) {
-      return `Follower count greater than ${max}`;
+      return {
+        result: true,
+        message: `User has more than ${max} followers`,
+      };
     }
   }
+
+  return {
+    result: false,
+    message: "User follower count is within limits",
+  };
 }
 
-export async function userIsNotFollowedBy(args: CheckFunctionArgs) {
+export async function userFollowedBy(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { username } = rule.args;
 
@@ -1436,23 +1520,21 @@ export async function userIsNotFollowedBy(args: CheckFunctionArgs) {
   // some bad action, if it is inverted, assume
   // its a positive action (like boost).
   if (cast.author.username === username) {
-    if (rule.invert) {
-      return `Cast author and username are the same. Assuming followed by.`;
-    } else {
-      return;
-    }
+    return {
+      result: true,
+      message: "Cast author is the same as the user being checked for follow status",
+    };
   }
 
   const isFollowedBy = user.result.user.viewerContext?.followedBy;
 
-  if (!isFollowedBy && !rule.invert) {
-    return `@${cast.author.username} is not followed by @${username}`;
-  } else if (isFollowedBy && rule.invert) {
-    return `@${cast.author.username} is followed by @${username}`;
-  }
+  return {
+    result: !!isFollowedBy,
+    message: isFollowedBy ? `User is followed by ${username}` : `User is not followed by ${username}`,
+  };
 }
 
-export async function userDoesNotFollow(args: CheckFunctionArgs) {
+export async function userFollows(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { username } = rule.args;
 
@@ -1473,24 +1555,21 @@ export async function userDoesNotFollow(args: CheckFunctionArgs) {
   // some bad action, if it is inverted, assume
   // its a positive action (like boost).
   if (cast.author.username === username) {
-    if (rule.invert) {
-      return `User and cast author are the same. Assuming following.`;
-    } else {
-      return;
-    }
+    return {
+      result: true,
+      message: "Cast author is the same as the user being checked for follow status",
+    };
   }
 
   const isFollowing = user.result.user.viewerContext?.following;
-
-  if (!isFollowing && !rule.invert) {
-    return `User does not follow @${username}`;
-  } else if (isFollowing && rule.invert) {
-    return `User follows @${username}`;
-  }
+  return {
+    result: !!isFollowing,
+    message: isFollowing ? `User follows ${username}` : `User does not follow ${username}`,
+  };
 }
 
 export async function userIsCohostOrOwner(args: CheckFunctionArgs) {
-  const { channel, rule } = args;
+  const { channel } = args;
 
   const [isUserCohost, ownerFid] = await Promise.all([
     isCohost({
@@ -1503,25 +1582,23 @@ export async function userIsCohostOrOwner(args: CheckFunctionArgs) {
   const isOwner = ownerFid === args.cast.author.fid;
   const isCohostOrOwner = isUserCohost || isOwner;
 
-  if (rule.invert && !isCohostOrOwner) {
-    return `User is not a cohost nor owner`;
-  } else if (!rule.invert && isCohostOrOwner) {
-    return `User is a cohost or owner`;
-  }
+  return {
+    result: isCohostOrOwner,
+    message: isCohostOrOwner ? "User is a cohost or owner" : "User is not a cohost or owner",
+  };
 }
 
-export function userDoesNotHoldPowerBadge(args: CheckFunctionArgs) {
-  const { cast, rule } = args;
+export function userHoldsPowerBadge(args: CheckFunctionArgs) {
+  const { cast } = args;
   const author = cast.author as Cast["author"] & { power_badge: boolean };
 
-  if (!rule.invert && !author.power_badge) {
-    return `User does not have a power badge`;
-  } else if (rule.invert && author.power_badge) {
-    return `User has a power badge`;
-  }
+  return {
+    result: author.power_badge,
+    message: author.power_badge ? "User holds a power badge" : "User does not hold a power badge",
+  };
 }
 
-export async function requiresErc721(args: CheckFunctionArgs) {
+export async function holdsErc721(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { chainId, contractAddress, tokenId } = rule.args;
   const client = clientsByChainId[chainId];
@@ -1563,14 +1640,15 @@ export async function requiresErc721(args: CheckFunctionArgs) {
     }
   }
 
-  if (!rule.invert && !isOwner) {
-    return `Wallet does not hold ERC-721 token: ${contractAddress}:${tokenId}`;
-  } else if (rule.invert && isOwner) {
-    return `Wallet holds ERC-721 token: ${contractAddress}:${tokenId}`;
-  }
+  return {
+    result: isOwner,
+    message: isOwner
+      ? `User holds ERC-721 (${formatHash(contractAddress)})`
+      : `User does not hold ERC-721 (${formatHash(contractAddress)})`,
+  };
 }
 
-export async function requireActiveHypersub(args: CheckFunctionArgs) {
+export async function holdsActiveHypersub(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { chainId, contractAddress } = rule.args;
   const client = clientsByChainId[chainId];
@@ -1599,14 +1677,15 @@ export async function requireActiveHypersub(args: CheckFunctionArgs) {
     }
   }
 
-  if (!rule.invert && !isSubscribed) {
-    return `User is not subscribed to hypersub: ${contractAddress}`;
-  } else if (rule.invert && isSubscribed) {
-    return `User is subscribed to hypersub: ${contractAddress}`;
-  }
+  return {
+    result: isSubscribed,
+    message: isSubscribed
+      ? `User holds an active hypersub (${formatHash(contractAddress)})`
+      : `User does not hold an active hypersub (${formatHash(contractAddress)})`,
+  };
 }
 
-export async function requiresErc1155(args: CheckFunctionArgs) {
+export async function holdsErc1155(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { chainId, contractAddress, tokenId } = rule.args;
   const client = clientsByChainId[chainId];
@@ -1629,15 +1708,12 @@ export async function requiresErc1155(args: CheckFunctionArgs) {
     });
 
     const isOwner = nfts.count && nfts.count > 0;
-
-    if (!rule.invert && !isOwner) {
-      return `Wallet doesn't hold any ERC-1155 token from ${contractAddress}`;
-    } else if (rule.invert && isOwner) {
-      return `Wallet holds ERC-1155 token: ${contractAddress}`;
-    }
-
-    // all good
-    return undefined;
+    return {
+      result: isOwner,
+      message: isOwner
+        ? `User holds ERC-1155 (${formatHash(contractAddress)})`
+        : `User does not hold ERC-1155 (${formatHash(contractAddress)})`,
+    };
   } else {
     const contract = getContract({
       address: getAddress(contractAddress),
@@ -1659,18 +1735,16 @@ export async function requiresErc1155(args: CheckFunctionArgs) {
       }
     }
 
-    if (!rule.invert && !isOwner) {
-      return `Wallet does not hold ERC-1155 token: ${contractAddress}:${tokenId}`;
-    } else if (rule.invert && isOwner) {
-      return `Wallet holds ERC-1155 token: ${contractAddress}:${tokenId}`;
-    }
-
-    // we good
-    return undefined;
+    return {
+      result: isOwner,
+      message: isOwner
+        ? `User holds ERC-1155 (${formatHash(contractAddress)}), Token #${tokenId}`
+        : `User does not hold ERC-1155 (${formatHash(contractAddress)}), Token #${tokenId}`,
+    };
   }
 }
 
-export async function requiresErc20(args: CheckFunctionArgs) {
+export async function holdsErc20(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { chainId, contractAddress, minBalance } = rule.args;
   const client = clientsByChainId[chainId];
@@ -1695,11 +1769,12 @@ export async function requiresErc20(args: CheckFunctionArgs) {
     ttlSeconds: 60 * 60 * 2,
   });
 
-  if (!rule.invert && !hasEnough) {
-    return `Wallet does not hold enough ERC-20.`;
-  } else if (rule.invert && hasEnough) {
-    return `Wallet holds forbidden ERC-20.`;
-  }
+  return {
+    result: hasEnough,
+    message: hasEnough
+      ? `User holds ERC-20 (${formatHash(contractAddress)})`
+      : `User does not hold enough ERC-20 (${formatHash(contractAddress)})`,
+  };
 }
 
 export async function verifyErc20Balance({
@@ -1739,17 +1814,37 @@ export function userFidInRange(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { minFid, maxFid } = rule.args as { minFid?: number; maxFid?: number };
 
+  // if (minFid && maxFid && maxFid < minFid) {
+  //   if (cast.author.fid > maxFid && cast.author.fid < minFid) {
+  //     return {
+  //       result: true,
+  //       message: `FID #${cast.author.fid} is within range`,
+  //     };
+  //   }
+  // }
+
   if (minFid) {
     if (cast.author.fid < minFid) {
-      return `FID ${cast.author.fid} is less than ${minFid}`;
+      return {
+        result: false,
+        message: `FID #${cast.author.fid} is less than ${minFid}`,
+      };
     }
   }
 
   if (maxFid) {
     if (cast.author.fid > maxFid) {
-      return `FID ${cast.author.fid} is greater than ${maxFid}`;
+      return {
+        result: false,
+        message: `FID #${cast.author.fid} is greater than ${maxFid}`,
+      };
     }
   }
+
+  return {
+    result: true,
+    message: `FID #${cast.author.fid} is within range`,
+  };
 }
 
 function tryParseUrl(url: string) {

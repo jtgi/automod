@@ -1,6 +1,6 @@
 import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import * as Sentry from "@sentry/remix";
-import { ModeratedChannel, ModerationLog, Prisma } from "@prisma/client";
+import { ModeratedChannel, ModerationLog, Prisma, RuleSet } from "@prisma/client";
 import { v4 as uuid } from "uuid";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { db } from "~/lib/db.server";
@@ -13,6 +13,7 @@ import {
   actionDefinitions,
   actionFunctions,
   isCohost,
+  ruleDefinitions,
   ruleFunctions,
 } from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
@@ -31,7 +32,10 @@ const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs
   },
 });
 
-export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel>;
+export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel> & {
+  inclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
+  exclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
+};
 
 export async function action({ request }: ActionFunctionArgs) {
   const rawPayload = await request.text();
@@ -124,11 +128,13 @@ export async function validateCast({
     console.log(`User @${cast.author.username} is in the bypass list. Curating.`);
 
     const [, log] = await Promise.all([
-      actionFunctions["like"]({
-        channel: channel.id,
-        cast,
-        action: { type: "like" },
-      }),
+      simulation
+        ? Promise.resolve()
+        : actionFunctions["like"]({
+            channel: channel.id,
+            cast,
+            action: { type: "like" },
+          }),
       logModerationAction(
         moderatedChannel.id,
         "like",
@@ -148,11 +154,13 @@ export async function validateCast({
       console.log(`[${channel.id}] @${cast.author.username} is a moderator. Curating.`);
 
       const [, log] = await Promise.all([
-        actionFunctions["like"]({
-          channel: channel.id,
-          cast,
-          action: { type: "like" },
-        }),
+        simulation
+          ? Promise.resolve()
+          : actionFunctions["like"]({
+              channel: channel.id,
+              cast,
+              action: { type: "like" },
+            }),
         logModerationAction(
           moderatedChannel.id,
           "like",
@@ -198,37 +206,29 @@ export async function validateCast({
         )
       );
     } else {
+      console.log(`[${channel.id}] User @${cast.author.username} is banned. Skipping.`);
       // they're banned, logging is noise so skip
     }
 
     return logs;
   }
 
-  if (!moderatedChannel.ruleSets.length) {
+  if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed.conditions?.length) {
     console.log(`[${channel.id}] No rules for channel.`);
     return logs;
   }
 
-  let passedAllRules = true;
-  for (const ruleSet of moderatedChannel.ruleSets) {
-    if (!isRuleTargetApplicable(ruleSet.target, cast)) {
-      continue;
-    }
+  if (moderatedChannel.exclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
+    const exclusionCheck = await evaluateRules(
+      moderatedChannel,
+      cast,
+      moderatedChannel.exclusionRuleSetParsed?.ruleParsed
+    );
 
-    const rule: Rule = JSON.parse(ruleSet.rule);
-    const actions: Action[] = JSON.parse(ruleSet.actions);
-
-    const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
-
-    if (ruleEvaluation.didViolateRule) {
-      passedAllRules = false;
-
-      for (const action of actions) {
-        const actionDef = actionDefinitions[action.type];
-        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
-          continue;
-        }
-
+    // exclusion overrides inclusion so we check it first
+    // some checks are expensive so we do this serially
+    if (exclusionCheck.passedRule) {
+      for (const action of moderatedChannel.exclusionRuleSetParsed.actionsParsed) {
         if (!simulation) {
           const actionFn = actionFunctions[action.type];
 
@@ -251,56 +251,71 @@ export async function validateCast({
           });
         }
 
-        console.log(
-          `${simulation ? "[simulation]: " : ""}[${channel.id}]: ${action.type} @${cast.author.username}: ${
-            ruleEvaluation.explanation
-          }`
-        );
-
-        if (
-          action.type === "ban" &&
-          (await isCohostOrOwner({
-            fid: String(cast.author.fid),
-            channel: channel.id,
-          }))
-        ) {
-          logs.push(
-            await logModerationAction(
-              moderatedChannel.id,
-              "bypass",
-              `User would be banned but is a cohost, doing nothing.`,
-              cast,
-              simulation
-            )
-          );
-          continue;
-        }
-
         logs.push(
           await logModerationAction(
             moderatedChannel.id,
             action.type,
-            ruleEvaluation.explanation,
+            exclusionCheck.explanation,
             cast,
             simulation
           )
         );
       }
+
+      return logs;
     }
   }
 
-  if (passedAllRules) {
-    if (!simulation) {
-      const like = actionFunctions["like"];
-      await like({
-        channel: channel.id,
-        cast,
-        action: { type: "like" },
-      });
-    }
+  const inclusionCheck = await evaluateRules(
+    moderatedChannel,
+    cast,
+    moderatedChannel.inclusionRuleSetParsed.ruleParsed
+  );
 
+  if (inclusionCheck.passedRule) {
+    for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
+      if (!simulation) {
+        const actionFn = actionFunctions[action.type];
+
+        await actionFn({
+          channel: channel.id,
+          cast,
+          action,
+          options: {
+            executeOnProtocol,
+          },
+        }).catch((e) => {
+          Sentry.captureMessage(`Error in ${action.type} action`, {
+            extra: {
+              cast,
+              action,
+            },
+          });
+          console.error(e?.response?.data || e?.message || e);
+          throw e;
+        });
+      }
+
+      logs.push(
+        await logModerationAction(
+          moderatedChannel.id,
+          action.type,
+          inclusionCheck.explanation,
+          cast,
+          simulation
+        )
+      );
+    }
+    return logs;
+  } else {
     logs.push(
-      await logModerationAction(moderatedChannel.id, "like", "Cast passed all rules", cast, simulation)
+      await logModerationAction(
+        moderatedChannel.id,
+        "hideQuietly",
+        inclusionCheck.explanation,
+        cast,
+        simulation
+      )
     );
   }
 
@@ -353,16 +368,10 @@ async function evaluateRules(
   moderatedChannel: ModeratedChannel,
   cast: WebhookCast,
   rule: Rule
-): Promise<
-  | {
-      didViolateRule: true;
-      failedRule: Rule;
-      explanation: string;
-    }
-  | {
-      didViolateRule: false;
-    }
-> {
+): Promise<{
+  passedRule: boolean;
+  explanation: string;
+}> {
   if (rule.type === "CONDITION") {
     return evaluateRule(moderatedChannel, cast, rule);
   } else if (rule.type === "LOGICAL" && rule.conditions) {
@@ -370,66 +379,56 @@ async function evaluateRules(
       const evaluations = await Promise.all(
         rule.conditions.map((subRule) => evaluateRules(moderatedChannel, cast, subRule))
       );
-      if (evaluations.every((e) => e.didViolateRule)) {
+      if (evaluations.every((e) => e.passedRule)) {
         return {
-          didViolateRule: true,
-          failedRule: rule,
-          explanation: `${evaluations
-            // @ts-expect-error ts doesnt acknowledge `every`
-            // in discriminated union
-            .map((e) => e.explanation)
-            .join(", ")}`,
+          passedRule: true,
+          explanation: `${evaluations.map((e) => e.explanation).join(", ")}`,
         };
       } else {
-        return { didViolateRule: false };
+        const failure = evaluations.find((e) => !e.passedRule)!;
+        return { passedRule: false, explanation: `${failure.explanation}` };
       }
     } else if (rule.operation === "OR") {
       const results = await Promise.all(
         rule.conditions.map((subRule) => evaluateRules(moderatedChannel, cast, subRule))
       );
 
-      const violation = results.find((r) => r.didViolateRule);
-      if (violation) {
-        return violation;
+      const onePassed = results.find((r) => r.passedRule);
+      if (onePassed) {
+        return onePassed;
       } else {
-        return { didViolateRule: false };
+        const explanation =
+          results.length > 1
+            ? `Failed all checks: ${results.map((e) => e.explanation).join(", ")}`
+            : results[0].explanation;
+
+        return {
+          passedRule: false,
+          explanation,
+        };
       }
     }
   }
 
-  return { didViolateRule: false };
+  return { passedRule: false, explanation: "No rules" };
 }
 
 async function evaluateRule(
   channel: ModeratedChannel,
   cast: WebhookCast,
   rule: Rule
-): Promise<
-  | {
-      didViolateRule: true;
-      failedRule: Rule;
-      explanation: string;
-    }
-  | {
-      didViolateRule: false;
-    }
-> {
+): Promise<{ passedRule: boolean; explanation: string }> {
   const check = ruleFunctions[rule.name];
   if (!check) {
     throw new Error(`No function for rule ${rule.name}`);
   }
 
-  const error = await check({ channel, cast, rule });
+  const result = await check({ channel, cast, rule });
 
-  if (error) {
-    return {
-      didViolateRule: Boolean(error),
-      failedRule: rule,
-      explanation: error,
-    };
-  } else {
-    return { didViolateRule: false };
-  }
+  return {
+    passedRule: result.result,
+    explanation: result.message,
+  };
 }
 
 export function isRuleTargetApplicable(target: string, cast: Cast) {

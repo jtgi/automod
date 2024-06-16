@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
@@ -10,6 +11,7 @@ import {
 } from "~/lib/utils.server";
 import {
   ModeratedChannelSchema,
+  Rule,
   actionDefinitions,
   ruleDefinitions,
   ruleNames,
@@ -19,6 +21,8 @@ import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
 import { ChannelForm } from "~/components/channel-form";
 import { v4 as uuid } from "uuid";
+import { CurationForm } from "~/components/curation-form";
+import { RuleSet } from "@prisma/client";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -57,8 +61,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       banThreshold: ch.data.banThreshold,
       excludeCohosts: ch.data.excludeCohosts,
       excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
+      inclusionRuleSet: JSON.stringify({
+        rule: ch.data.inclusionRuleSet?.ruleParsed,
+        actions: ch.data.inclusionRuleSet?.actionsParsed,
+      }),
+      exclusionRuleSet: JSON.stringify({
+        rule: ch.data.exclusionRuleSet?.ruleParsed,
+        actions: ch.data.exclusionRuleSet?.actionsParsed,
+      }),
       ruleSets: {
-        deleteMany: {},
+        // deleteMany: {}, : remove incase we need to rollback
         create: ch.data.ruleSets.map((ruleSet) => {
           return {
             target: ruleSet.target,
@@ -113,43 +125,76 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function Screen() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole } =
-    useTypedLoaderData<typeof loader>();
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
 
-  const patchedRuleSets = channel.ruleSets.map((ruleSet) => {
+  const patchedRuleSets = channel.ruleSets.map((ruleSet) => patchRule(ruleSet));
+
+  function patchRule(ruleSet: RuleSet) {
     const ruleParsed = JSON.parse(ruleSet.rule);
 
     return {
       ...ruleSet,
-      logicType: (ruleParsed.operation === "AND" ? "and" : "or") as "and" | "or",
+      logicType: ruleParsed.operation === "OR" ? ("or" as const) : ("and" as const),
       ruleParsed: ruleParsed.conditions,
       actionsParsed: JSON.parse(ruleSet.actions),
     };
-  });
+  }
+
+  function patchNewRuleSet(
+    inclusion: boolean,
+    ruleSet: RuleSet & {
+      ruleParsed: Rule;
+      actionsParsed: any;
+    }
+  ) {
+    return {
+      id: ruleSet?.id,
+      target: ruleSet?.target || "all",
+      active: ruleSet?.active || true,
+      ruleParsed: ruleSet?.ruleParsed?.conditions || [],
+      actionsParsed: ruleSet?.actionsParsed?.length
+        ? ruleSet.actionsParsed
+        : inclusion
+        ? [{ type: "like" }]
+        : [{ type: "hideQuietly" }],
+      logicType: ruleSet?.ruleParsed?.operation || ("OR" as const),
+    };
+  }
 
   return (
     <div className="space-y-4 w-full">
       <div className="">
         <p className="font-semibold">Rules</p>
-        <p className="text-gray-500">
-          The following settings control what casts appear in Main. Recent cannot be moderated.
-        </p>
+        <p className="text-gray-500">The following settings control what casts appear in Main.</p>
       </div>
 
       <div className="py-4">
         <hr />
       </div>
-      <ChannelForm
-        actionDefinitions={actionDefinitions}
-        ruleDefinitions={ruleDefinitions}
-        ruleNames={ruleNames}
-        showCohostBypass={!!cohostRole}
-        defaultValues={{
-          ...channel,
-          excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-          ruleSets: patchedRuleSets,
-        }}
-      />
+      {process.env.NODE_ENV === "production" ? (
+        <ChannelForm
+          actionDefinitions={actionDefinitions}
+          ruleDefinitions={ruleDefinitions}
+          ruleNames={ruleNames}
+          defaultValues={{
+            ...channel,
+            excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
+            ruleSets: patchedRuleSets,
+          }}
+        />
+      ) : (
+        <CurationForm
+          actionDefinitions={actionDefinitions}
+          ruleDefinitions={ruleDefinitions}
+          ruleNames={ruleNames}
+          defaultValues={{
+            ...channel,
+            excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
+            exclusionRuleSet: patchNewRuleSet(false, channel.exclusionRuleSetParsed!),
+            inclusionRuleSet: patchNewRuleSet(true, channel.inclusionRuleSetParsed!),
+          }}
+        />
+      )}
     </div>
   );
 }
