@@ -492,7 +492,6 @@ function isFailure(data?: any): data is JobState {
 }
 
 function prepareFormValues(data: FormValues) {
-  console.log("raw", data);
   function transformRuleSet(ruleSet: FormValues["inclusionRuleSet"] | FormValues["exclusionRuleSet"]) {
     if (ruleSet.logicType === "AND") {
       const rule: Rule = {
@@ -536,7 +535,6 @@ function prepareFormValues(data: FormValues) {
     ruleSets: [],
   };
 
-  console.log(tx);
   return tx;
 }
 

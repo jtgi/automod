@@ -32,17 +32,21 @@ async function main() {
           "travel",
           "farcasther",
           "gaming",
+          "nouns-animators",
           "higher",
+          "light",
           "enjoy",
           "coop-recs",
           "music",
           "art",
           "lounge",
           "photography",
-          "vip",
           "geopolitics",
+          "purple",
+          "base-builds",
+          "basepaint",
           "philosophy",
-          "framdl-pro",
+          "framedl-pro",
           "manysuchcases",
           "memes",
         ],
@@ -84,7 +88,7 @@ async function main() {
         orderBy: {
           createdAt: "desc",
         },
-        take: 5,
+        take: 15,
       }),
       prisma.moderationLog.findMany({
         where: {
@@ -98,7 +102,7 @@ async function main() {
         orderBy: {
           createdAt: "desc",
         },
-        take: 5,
+        take: 15,
       }),
     ]);
 
@@ -121,6 +125,8 @@ async function main() {
       continue;
     }
 
+    console.log(casts.result.casts.map((c) => c.hash));
+
     const results = await Promise.all(
       casts.result.casts.map((cast) =>
         validateCast({
@@ -133,6 +139,11 @@ async function main() {
     );
 
     for (const result of results) {
+      if (!result.length) {
+        console.log(`[${moderatedChannel.id} ${result[0]?.castHash}] no results`);
+        continue;
+      }
+
       const exists = modLogs.some((l) =>
         result.some((r) => r.castHash === l.castHash && l.action === r.action)
       );
@@ -159,6 +170,8 @@ async function main() {
         });
       }
     }
+
+    console.log(results.flatMap((r) => r.flatMap((ra) => ra.action + ", " + ra.reason)).join("\t\n\t"));
   }
 
   console.log("done");

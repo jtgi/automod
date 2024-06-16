@@ -1806,6 +1806,15 @@ export function userFidInRange(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { minFid, maxFid } = rule.args as { minFid?: number; maxFid?: number };
 
+  // if (minFid && maxFid && maxFid < minFid) {
+  //   if (cast.author.fid > maxFid && cast.author.fid < minFid) {
+  //     return {
+  //       result: true,
+  //       message: `FID #${cast.author.fid} is within range`,
+  //     };
+  //   }
+  // }
+
   if (minFid) {
     if (cast.author.fid < minFid) {
       return {

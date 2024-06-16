@@ -206,159 +206,29 @@ export async function validateCast({
         )
       );
     } else {
+      console.log(`[${channel.id}] User @${cast.author.username} is banned. Skipping.`);
       // they're banned, logging is noise so skip
     }
 
     return logs;
   }
 
-  if (
-    !moderatedChannel.ruleSets.length &&
-    !moderatedChannel.inclusionRuleSet &&
-    !moderatedChannel.exclusionRuleSet
-  ) {
+  if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed.conditions?.length) {
     console.log(`[${channel.id}] No rules for channel.`);
     return logs;
   }
 
-  if (moderatedChannel.inclusionRuleSetParsed && moderatedChannel.exclusionRuleSetParsed) {
-    if (moderatedChannel.exclusionRuleSetParsed.ruleParsed?.conditions?.length) {
-      const exclusionCheck = await evaluateRules(
-        moderatedChannel,
-        cast,
-        moderatedChannel.exclusionRuleSetParsed?.ruleParsed
-      );
-
-      // exclusion overrides inclusion so we check it first
-      // some checks are expensive so we do this serially
-      if (exclusionCheck.passedRule) {
-        for (const action of moderatedChannel.exclusionRuleSetParsed.actionsParsed) {
-          const actionDef = actionDefinitions[action.type];
-          if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
-            continue;
-          }
-
-          if (!simulation) {
-            const actionFn = actionFunctions[action.type];
-
-            await actionFn({
-              channel: channel.id,
-              cast,
-              action,
-              options: {
-                executeOnProtocol,
-              },
-            }).catch((e) => {
-              Sentry.captureMessage(`Error in ${action.type} action`, {
-                extra: {
-                  cast,
-                  action,
-                },
-              });
-              console.error(e?.response?.data || e?.message || e);
-              throw e;
-            });
-          }
-
-          logs.push(
-            await logModerationAction(
-              moderatedChannel.id,
-              action.type,
-              exclusionCheck.explanation,
-              cast,
-              simulation
-            )
-          );
-        }
-
-        return logs;
-      }
-    }
-
-    if (moderatedChannel.inclusionRuleSetParsed.ruleParsed?.conditions?.length) {
-      const inclusionCheck = await evaluateRules(
-        moderatedChannel,
-        cast,
-        moderatedChannel.inclusionRuleSetParsed.ruleParsed
-      );
-
-      if (inclusionCheck.passedRule) {
-        for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
-          const actionDef = actionDefinitions[action.type];
-          if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
-            continue;
-          }
-
-          if (!simulation) {
-            const actionFn = actionFunctions[action.type];
-
-            await actionFn({
-              channel: channel.id,
-              cast,
-              action,
-              options: {
-                executeOnProtocol,
-              },
-            }).catch((e) => {
-              Sentry.captureMessage(`Error in ${action.type} action`, {
-                extra: {
-                  cast,
-                  action,
-                },
-              });
-              console.error(e?.response?.data || e?.message || e);
-              throw e;
-            });
-          }
-
-          logs.push(
-            await logModerationAction(
-              moderatedChannel.id,
-              action.type,
-              inclusionCheck.explanation,
-              cast,
-              simulation
-            )
-          );
-        }
-        return logs;
-      }
-    }
-
-    logs.push(
-      await logModerationAction(
-        moderatedChannel.id,
-        "hideQuietly",
-        "Cast didn't match any rules",
-        cast,
-        simulation
-      )
+  if (moderatedChannel.exclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
+    const exclusionCheck = await evaluateRules(
+      moderatedChannel,
+      cast,
+      moderatedChannel.exclusionRuleSetParsed?.ruleParsed
     );
 
-    return logs;
-  }
-
-  // legacy
-  let passedAllRules = true;
-  for (const ruleSet of moderatedChannel.ruleSets) {
-    if (!isRuleTargetApplicable(ruleSet.target, cast)) {
-      continue;
-    }
-
-    const rule: Rule = JSON.parse(ruleSet.rule);
-    const actions: Action[] = JSON.parse(ruleSet.actions);
-
-    const ruleEvaluation = await evaluateRules(moderatedChannel, cast, rule);
-
-    if (ruleEvaluation.passedRule) {
-      passedAllRules = false;
-
-      for (const action of actions) {
-        const actionDef = actionDefinitions[action.type];
-        if (!isRuleTargetApplicable(actionDef.castScope, cast)) {
-          continue;
-        }
-
+    // exclusion overrides inclusion so we check it first
+    // some checks are expensive so we do this serially
+    if (exclusionCheck.passedRule) {
+      for (const action of moderatedChannel.exclusionRuleSetParsed.actionsParsed) {
         if (!simulation) {
           const actionFn = actionFunctions[action.type];
 
@@ -381,56 +251,71 @@ export async function validateCast({
           });
         }
 
-        console.log(
-          `${simulation ? "[simulation]: " : ""}[${channel.id}]: ${action.type} @${cast.author.username}: ${
-            ruleEvaluation.explanation
-          }`
-        );
-
-        if (
-          action.type === "ban" &&
-          (await isCohostOrOwner({
-            fid: String(cast.author.fid),
-            channel: channel.id,
-          }))
-        ) {
-          logs.push(
-            await logModerationAction(
-              moderatedChannel.id,
-              "bypass",
-              `User would be banned but is a cohost, doing nothing.`,
-              cast,
-              simulation
-            )
-          );
-          continue;
-        }
-
         logs.push(
           await logModerationAction(
             moderatedChannel.id,
             action.type,
-            ruleEvaluation.explanation,
+            exclusionCheck.explanation,
             cast,
             simulation
           )
         );
       }
+
+      return logs;
     }
   }
 
-  if (passedAllRules) {
-    if (!simulation) {
-      const like = actionFunctions["like"];
-      await like({
-        channel: channel.id,
-        cast,
-        action: { type: "like" },
-      });
-    }
+  const inclusionCheck = await evaluateRules(
+    moderatedChannel,
+    cast,
+    moderatedChannel.inclusionRuleSetParsed.ruleParsed
+  );
 
+  if (inclusionCheck.passedRule) {
+    for (const action of moderatedChannel.inclusionRuleSetParsed.actionsParsed) {
+      if (!simulation) {
+        const actionFn = actionFunctions[action.type];
+
+        await actionFn({
+          channel: channel.id,
+          cast,
+          action,
+          options: {
+            executeOnProtocol,
+          },
+        }).catch((e) => {
+          Sentry.captureMessage(`Error in ${action.type} action`, {
+            extra: {
+              cast,
+              action,
+            },
+          });
+          console.error(e?.response?.data || e?.message || e);
+          throw e;
+        });
+      }
+
+      logs.push(
+        await logModerationAction(
+          moderatedChannel.id,
+          action.type,
+          inclusionCheck.explanation,
+          cast,
+          simulation
+        )
+      );
+    }
+    return logs;
+  } else {
     logs.push(
-      await logModerationAction(moderatedChannel.id, "like", "Cast passed all rules", cast, simulation)
+      await logModerationAction(
+        moderatedChannel.id,
+        "hideQuietly",
+        inclusionCheck.explanation,
+        cast,
+        simulation
+      )
     );
   }
 
@@ -500,7 +385,8 @@ async function evaluateRules(
           explanation: `${evaluations.map((e) => e.explanation).join(", ")}`,
         };
       } else {
-        return { passedRule: false, explanation: evaluations.map((e) => e.explanation).join(", ") };
+        const failure = evaluations.find((e) => !e.passedRule)!;
+        return { passedRule: false, explanation: `${failure.explanation}` };
       }
     } else if (rule.operation === "OR") {
       const results = await Promise.all(
@@ -511,9 +397,14 @@ async function evaluateRules(
       if (onePassed) {
         return onePassed;
       } else {
+        const explanation =
+          results.length > 1
+            ? `Failed all checks: ${results.map((e) => e.explanation).join(", ")}`
+            : results[0].explanation;
+
         return {
           passedRule: false,
-          explanation: `Did not pass one of: ${results.map((e) => e.explanation).join(", ")}`,
+          explanation,
         };
       }
     }

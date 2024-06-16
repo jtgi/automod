@@ -16,7 +16,6 @@ const db = singleton("prisma", () =>
           compute(data): (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined {
             if (data.inclusionRuleSet) {
               const ruleSet = JSON.parse(data.inclusionRuleSet);
-              console.log("ruleset", ruleSet);
               ruleSet.ruleParsed = ruleSet.rule;
               ruleSet.actionsParsed = ruleSet.actions;
               return ruleSet;
@@ -30,9 +29,6 @@ const db = singleton("prisma", () =>
           compute(data): (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined {
             if (data.exclusionRuleSet) {
               const ruleSet = JSON.parse(data.exclusionRuleSet);
-              if (!ruleSet) {
-                console.log(`no rule set`);
-              }
               ruleSet.ruleParsed = ruleSet.rule;
               ruleSet.actionsParsed = ruleSet.actions;
               return ruleSet;

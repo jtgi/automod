@@ -22,6 +22,18 @@ async function main() {
     } else if (channel.id === "tabletop") {
       await migrateTabletop();
       continue;
+    } else if (channel.id === "art") {
+      await migrateArt();
+      continue;
+    } else if (channel.id === "defi") {
+      await migrateDefi();
+      continue;
+    } else if (channel.id === "ogs") {
+      await migrateOgs();
+      continue;
+    } else if (channel.id === "design") {
+      await migrateDesign();
+      continue;
     }
 
     if (channel.ruleSets.length > 1) {
@@ -112,13 +124,14 @@ async function main() {
             break;
           }
           case "textMatchesLanguage": {
-            if (rule.invert) {
-              inclusionSets.add(ruleSet.id);
-              inclusionConditions.push(rule);
-            } else {
-              exclusionConditions.push(rule);
-              exclusionSets.add(ruleSet.id);
-            }
+            // if (rule.invert) {
+            //   inclusionSets.add(ruleSet.id);
+            //   inclusionConditions.push(rule);
+            // } else {
+            //   exclusionConditions.push(rule);
+            //   exclusionSets.add(ruleSet.id);
+            // }
+            //todo not reliable
             break;
           }
           case "textMatchesPattern": {
@@ -237,8 +250,8 @@ async function main() {
         throw new Error("no sample");
       }
 
-      operation = "OR";
-      name = "or";
+      operation = "AND";
+      name = "and";
     } else {
       operation = ruleSet.ruleParsed.operation === "AND" ? "OR" : "AND";
       name = ruleSet.ruleParsed.operation === "AND" ? "or" : "and";
@@ -252,7 +265,10 @@ async function main() {
       "userIsNotFollowedBy",
       "userDoesNotFollow",
       "containsText",
+      "textMatchesLanguage",
       "textMatchesPattern",
+      "userDisplayNameContainsText",
+      "userProfileContainsText",
     ];
 
     const inclusionRule: Rule = {
@@ -756,5 +772,285 @@ function uniqueBy<T>(arr: T[], fn: (item: T) => string) {
 
     seen.add(key);
     return true;
+  });
+}
+
+async function migrateArt() {
+  await db.moderatedChannel.update({
+    where: {
+      id: "art",
+    },
+    data: {
+      exclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "castLength",
+              type: "CONDITION",
+              args: {
+                min: "1",
+                max: "",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: " FIRE",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "$fire",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "tip",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "$DEGEN",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "ham",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "allowance",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "DRIP",
+              },
+            },
+            {
+              name: "containsText",
+              type: "CONDITION",
+              args: {
+                searchText: "airdrop",
+              },
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "hideQuietly",
+          },
+        ],
+      }),
+      inclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "userDoesNotHoldPowerBadge",
+              type: "CONDITION",
+              args: {},
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "like",
+          },
+        ],
+      }),
+    },
+  });
+}
+
+async function migrateDefi() {
+  await db.moderatedChannel.update({
+    where: {
+      id: "defi",
+    },
+    data: {
+      exclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "userFidInList",
+              type: "CONDITION",
+              args: {
+                fids: "382802",
+              },
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "hideQuietly",
+          },
+        ],
+      }),
+      inclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "userDoesNotHoldPowerBadge",
+              type: "CONDITION",
+              args: {},
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "like",
+          },
+        ],
+      }),
+    },
+  });
+}
+
+async function migrateOgs() {
+  await db.moderatedChannel.update({
+    where: {
+      id: "ogs",
+    },
+    data: {
+      exclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "downvote",
+              type: "CONDITION",
+              args: {
+                threshold: "10",
+              },
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "hideQuietly",
+          },
+        ],
+      }),
+      inclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "textMatchesPattern",
+              type: "CONDITION",
+              args: {
+                pattern: "^🔵$",
+              },
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "like",
+          },
+        ],
+      }),
+    },
+  });
+}
+
+async function migrateDesign() {
+  await db.moderatedChannel.update({
+    where: {
+      id: "design",
+    },
+    data: {
+      exclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "and",
+          type: "LOGICAL",
+          args: {},
+          operation: "AND",
+          conditions: [
+            {
+              name: "containsEmbeds",
+              type: "CONDITION",
+              args: {
+                domain: "",
+                images: true,
+                videos: true,
+                frames: true,
+                links: true,
+                casts: true,
+              },
+            },
+            {
+              name: "castLength",
+              type: "CONDITION",
+              args: {
+                min: "5",
+                max: "",
+              },
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "hideQuietly",
+          },
+        ],
+      }),
+      inclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "userDoesNotHoldPowerBadge",
+              type: "CONDITION",
+              args: {},
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "like",
+          },
+        ],
+      }),
+    },
   });
 }

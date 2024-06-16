@@ -438,7 +438,7 @@ export const simulationWorker = new Worker(
   },
   {
     connection,
-    // autorun: process.env.NODE_ENV === "production"
+    autorun: process.env.NODE_ENV === "production",
   }
 );
 

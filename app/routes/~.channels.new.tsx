@@ -131,7 +131,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function FrameConfig() {
-  const { ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const { ruleNames, ruleDefinitions, actionDefinitions, user } = useTypedLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4">
