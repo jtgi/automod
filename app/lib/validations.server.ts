@@ -36,6 +36,7 @@ import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 export type RuleDefinition = {
+  name: RuleName;
   friendlyName: string;
   checkType: "user" | "cast";
   description: string;
@@ -60,6 +61,7 @@ export type RuleDefinition = {
 
 export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
+    name: "and",
     category: "all",
     friendlyName: "And",
     checkType: "cast",
@@ -70,6 +72,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   or: {
+    name: "or",
     category: "all",
     friendlyName: "Or",
     checkType: "cast",
@@ -80,6 +83,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   alwaysInclude: {
+    name: "alwaysInclude",
     category: "inclusion",
     friendlyName: "Always Include",
     checkType: "cast",
@@ -90,6 +94,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   containsText: {
+    name: "containsText",
     category: "all",
     friendlyName: "Contains Text",
     checkType: "cast",
@@ -111,6 +116,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   castInThread: {
+    name: "castInThread",
     category: "all",
     friendlyName: "Cast is in Thread",
     checkType: "cast",
@@ -129,6 +135,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   containsEmbeds: {
+    name: "containsEmbeds",
     category: "all",
     friendlyName: "Contains Embedded Content",
     checkType: "cast",
@@ -175,6 +182,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesPattern: {
+    name: "textMatchesPattern",
     category: "all",
     friendlyName: "Matches Pattern (Regex)",
     checkType: "cast",
@@ -197,12 +205,13 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   textMatchesLanguage: {
+    name: "textMatchesLanguage",
     category: "all",
     friendlyName: "Matches Language",
     checkType: "cast",
     description: "Check if the text matches a specific language",
     invertedDescription: "Check if the text is any language *but* the one specified.",
-    hidden: false,
+    hidden: true,
     invertable: true,
     args: {
       language: {
@@ -218,6 +227,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   castLength: {
+    name: "castLength",
     category: "all",
     friendlyName: "Cast Length",
     checkType: "cast",
@@ -239,6 +249,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   containsTooManyMentions: {
+    name: "containsTooManyMentions",
     category: "all",
     friendlyName: "Contains Mentions",
     checkType: "cast",
@@ -256,6 +267,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
   containsLinks: {
+    name: "containsLinks",
     category: "all",
     friendlyName: "Contains Links",
     checkType: "cast",
@@ -272,6 +284,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   downvote: {
+    name: "downvote",
     category: "all",
     friendlyName: "Downvote",
     checkType: "cast",
@@ -289,6 +302,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotFollow: {
+    name: "userDoesNotFollow",
     category: "all",
     friendlyName: "Following",
     checkType: "user",
@@ -309,6 +323,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsNotFollowedBy: {
+    name: "userIsNotFollowedBy",
     category: "all",
     friendlyName: "Followed By",
     checkType: "user",
@@ -329,6 +344,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requireActiveHypersub: {
+    name: "requireActiveHypersub",
     category: "all",
     friendlyName: "Subscribes on Hypersub",
     checkType: "user",
@@ -360,6 +376,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc20: {
+    name: "requiresErc20",
     category: "all",
     friendlyName: "Holds ERC-20",
     checkType: "user",
@@ -399,6 +416,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc1155: {
+    name: "requiresErc1155",
     category: "all",
     friendlyName: "Holds ERC-1155",
     checkType: "user",
@@ -439,6 +457,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   requiresErc721: {
+    name: "requiresErc721",
     category: "all",
     friendlyName: "Holds ERC-721",
     checkType: "user",
@@ -479,6 +498,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userDoesNotHoldPowerBadge: {
+    name: "userDoesNotHoldPowerBadge",
     category: "all",
     friendlyName: "Power Badge",
     checkType: "user",
@@ -490,6 +510,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userIsCohost: {
+    name: "userIsCohost",
     category: "all",
     friendlyName: "Cohosts or Owner",
     checkType: "user",
@@ -500,6 +521,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userProfileContainsText: {
+    name: "userProfileContainsText",
     category: "all",
     friendlyName: "Profile Contains Text",
     checkType: "user",
@@ -521,6 +543,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
   userDisplayNameContainsText: {
+    name: "userDisplayNameContainsText",
     category: "all",
     friendlyName: "User Display Name Contains Text",
     checkType: "user",
@@ -544,6 +567,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFollowerCount: {
+    name: "userFollowerCount",
     category: "all",
     friendlyName: "User Follower Count",
     checkType: "user",
@@ -567,6 +591,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFidInList: {
+    name: "userFidInList",
     category: "all",
     friendlyName: "User FID is in List",
     checkType: "user",
@@ -586,6 +611,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userFidInRange: {
+    name: "userFidInRange",
     category: "all",
     friendlyName: "User FID",
     checkType: "user",
