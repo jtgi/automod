@@ -79,8 +79,6 @@ model ModeratedChannel {
   inclusionRuleSet String?
   exclusionRuleSet String?
 
-  includeWhenNoMatch Boolean @default(false)
-
   ruleSets          RuleSet[] //deprecated
   moderationLogs    ModerationLog[]
   cooldowns         Cooldown[]
