@@ -141,74 +141,42 @@ export default function FrameConfig() {
 
   return (
     <div className="space-y-4">
-      {process.env.NODE_ENV === "development" ? (
-        <CurationForm
-          actionDefinitions={actionDefinitions}
-          ruleDefinitions={ruleDefinitions}
-          ruleNames={ruleNames}
-          defaultValues={{
-            excludeCohosts: true,
-            inclusionRuleSet: {
-              target: "all",
-              active: true,
-              ruleParsed: [
-                {
-                  name: "userDoesNotHoldPowerBadge",
-                  type: "CONDITION",
-                  args: {},
-                },
-              ],
-              actionsParsed: [
-                {
-                  type: "like",
-                },
-              ],
-              logicType: "OR",
-            },
-            exclusionRuleSet: {
-              target: "all",
-              active: true,
-              ruleParsed: [],
-              actionsParsed: [
-                {
-                  type: "hideQuietly",
-                },
-              ],
-              logicType: "OR",
-            },
-          }}
-        />
-      ) : (
-        <ChannelForm
-          actionDefinitions={actionDefinitions}
-          ruleDefinitions={ruleDefinitions}
-          ruleNames={ruleNames}
-          showCohostBypass={false}
-          defaultValues={{
-            excludeCohosts: true,
-
-            ruleSets: [
+      <CurationForm
+        actionDefinitions={actionDefinitions}
+        ruleDefinitions={ruleDefinitions}
+        ruleNames={ruleNames}
+        defaultValues={{
+          excludeCohosts: true,
+          inclusionRuleSet: {
+            target: "all",
+            active: true,
+            ruleParsed: [
               {
-                target: "all",
-                active: true,
-                ruleParsed: [
-                  {
-                    name: "userDoesNotHoldPowerBadge",
-                    type: "CONDITION",
-                    args: {},
-                  },
-                ],
-                actionsParsed: [
-                  {
-                    type: "hideQuietly",
-                  },
-                ],
-                logicType: "and",
+                name: "userDoesNotHoldPowerBadge",
+                type: "CONDITION",
+                args: {},
               },
             ],
-          }}
-        />
-      )}
+            actionsParsed: [
+              {
+                type: "like",
+              },
+            ],
+            logicType: "OR",
+          },
+          exclusionRuleSet: {
+            target: "all",
+            active: true,
+            ruleParsed: [],
+            actionsParsed: [
+              {
+                type: "hideQuietly",
+              },
+            ],
+            logicType: "OR",
+          },
+        }}
+      />
     </div>
   );
 }

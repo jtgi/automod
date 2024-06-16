@@ -171,30 +171,18 @@ export default function Screen() {
       <div className="py-4">
         <hr />
       </div>
-      {process.env.NODE_ENV === "production" ? (
-        <ChannelForm
-          actionDefinitions={actionDefinitions}
-          ruleDefinitions={ruleDefinitions}
-          ruleNames={ruleNames}
-          defaultValues={{
-            ...channel,
-            excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-            ruleSets: patchedRuleSets,
-          }}
-        />
-      ) : (
-        <CurationForm
-          actionDefinitions={actionDefinitions}
-          ruleDefinitions={ruleDefinitions}
-          ruleNames={ruleNames}
-          defaultValues={{
-            ...channel,
-            excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
-            exclusionRuleSet: patchNewRuleSet(false, channel.exclusionRuleSetParsed!),
-            inclusionRuleSet: patchNewRuleSet(true, channel.inclusionRuleSetParsed!),
-          }}
-        />
-      )}
+
+      <CurationForm
+        actionDefinitions={actionDefinitions}
+        ruleDefinitions={ruleDefinitions}
+        ruleNames={ruleNames}
+        defaultValues={{
+          ...channel,
+          excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
+          exclusionRuleSet: patchNewRuleSet(false, channel.exclusionRuleSetParsed!),
+          inclusionRuleSet: patchNewRuleSet(true, channel.inclusionRuleSetParsed!),
+        }}
+      />
     </div>
   );
 }
