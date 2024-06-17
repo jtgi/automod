@@ -213,7 +213,7 @@ export async function validateCast({
     return logs;
   }
 
-  if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed.conditions?.length) {
+  if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
     console.log(`[${channel.id}] No rules for channel.`);
     return logs;
   }
