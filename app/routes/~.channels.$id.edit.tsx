@@ -19,7 +19,6 @@ import {
 import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
-import { ChannelForm } from "~/components/channel-form";
 import { v4 as uuid } from "uuid";
 import { CurationForm } from "~/components/curation-form";
 import { RuleSet } from "@prisma/client";

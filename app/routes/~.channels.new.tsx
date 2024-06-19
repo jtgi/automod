@@ -12,7 +12,6 @@ import {
 import { db } from "~/lib/db.server";
 import { getChannel, registerWebhook } from "~/lib/neynar.server";
 import { commitSession, getSession } from "~/lib/auth.server";
-import { ChannelForm } from "~/components/channel-form";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
 import { recoverQueue } from "~/lib/bullish.server";
 import { CurationForm } from "~/components/curation-form";
