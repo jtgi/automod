@@ -1035,6 +1035,7 @@ export const ModeratedChannelSchema = z
   .object({
     id: z.string().transform((id) => id.toLowerCase()),
     banThreshold: z.coerce.number().nullable(),
+    slowModeHours: z.coerce.number().optional().default(0),
     excludeUsernames: z
       .array(z.string())
       .refine((usernames) =>

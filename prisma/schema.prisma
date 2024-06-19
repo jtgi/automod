@@ -73,6 +73,7 @@ model ModeratedChannel {
   url              String?
   userId           String
   banThreshold     Int?
+  slowModeHours    Int      @default(0)
   excludeCohosts   Boolean  @default(true)
   excludeUsernames String   @default("[]")
 
@@ -174,6 +175,8 @@ model ModerationLog {
   affectedUserAvatarUrl String?
   channel               ModeratedChannel @relation(fields: [channelId], references: [id])
   channelId             String
+
+  @@index([channelId, createdAt])
 }
 
 model Status {

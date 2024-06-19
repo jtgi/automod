@@ -58,6 +58,7 @@ export type FormValues = {
   banThreshold?: number | null;
   excludeUsernames?: string;
   excludeCohosts: boolean;
+  slowModeHours?: number | null;
 
   inclusionRuleSet: {
     id?: string;
@@ -209,12 +210,45 @@ export function CurationForm(props: {
                 render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
               />
             </SliderField>
-            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
+            <FieldLabel
+              label="Farcaster Usernames"
+              description="One per line."
+              className="flex-col items-start"
+            >
               <Textarea
                 rows={5}
                 placeholder="jtgi&#10;nonlinear.eth&#10;v"
                 {...register("excludeUsernames")}
               />
+            </FieldLabel>
+          </fieldset>
+
+          <div className="py-6">
+            <hr />
+          </div>
+
+          <fieldset disabled={isSubmitting} className="space-y-6">
+            <div>
+              <p className="font-medium">Slow Mode</p>
+              <p className="text-gray-500 text-sm">Limit how often a user's cast is shown in Main.</p>
+            </div>
+
+            <FieldLabel
+              label="Cooldown Period"
+              description="Example: Let's say you enter 2 hours, if a user's cast is included in Main at 9:00 PM, only casts created after 11:00 PM will be eligible for Main. Affects root casts only, replies cannot be moderated."
+              className="flex-col items-start"
+            >
+              <div className="flex items-center">
+                <Input
+                  className="w-full sm:max-w-[100px] rounded-r-none border-r-0"
+                  type="number"
+                  placeholder="0"
+                  {...register("slowModeHours")}
+                />
+                <p className="flex text-sm h-9 px-3 py-[7px] bg-gray-100 text-gray-600 border border-gray-200 rounded-md rounded-l-none">
+                  Hours
+                </p>
+              </div>
             </FieldLabel>
           </fieldset>
 

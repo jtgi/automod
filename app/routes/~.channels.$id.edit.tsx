@@ -59,6 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     },
     data: {
       banThreshold: ch.data.banThreshold,
+      slowModeHours: ch.data.slowModeHours,
       excludeCohosts: ch.data.excludeCohosts,
       excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
       inclusionRuleSet: JSON.stringify({

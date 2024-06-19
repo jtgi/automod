@@ -1,13 +1,13 @@
 /* eslint-disable react/no-unescaped-entities */
-import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { db } from "~/lib/db.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
 import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
-import { Form, Link, useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { PlanType, getSubscriptionPlan, refreshAccountStatus, userPlans } from "~/lib/auth.server";
+import { PlanType, refreshAccountStatus, userPlans } from "~/lib/auth.server";
 import { Alert } from "~/components/ui/alert";
 import {
   Dialog,
@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
-import { ArrowUpRight, RefreshCwIcon } from "lucide-react";
+import { RefreshCwIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });

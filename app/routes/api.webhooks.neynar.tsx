@@ -7,15 +7,7 @@ import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
 import { getModerators, requireValidSignature } from "~/lib/utils.server";
 
-import {
-  Action,
-  Rule,
-  actionDefinitions,
-  actionFunctions,
-  isCohost,
-  ruleDefinitions,
-  ruleFunctions,
-} from "~/lib/validations.server";
+import { Action, Rule, actionFunctions, isCohost, ruleFunctions } from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
@@ -294,6 +286,27 @@ export async function validateCast({
           console.error(e?.response?.data || e?.message || e);
           throw e;
         });
+
+        if (moderatedChannel.slowModeHours > 0) {
+          await db.cooldown.upsert({
+            where: {
+              affectedUserId_channelId: {
+                channelId: moderatedChannel.id,
+                affectedUserId: String(cast.author.fid),
+              },
+            },
+            create: {
+              channelId: moderatedChannel.id,
+              affectedUserId: String(cast.author.fid),
+              active: true,
+              expiresAt: new Date(Date.now() + moderatedChannel.slowModeHours * 60 * 60 * 1000),
+            },
+            update: {
+              active: true,
+              expiresAt: new Date(Date.now() + moderatedChannel.slowModeHours * 60 * 60 * 1000),
+            },
+          });
+        }
       }
 
       logs.push(

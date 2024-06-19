@@ -43,22 +43,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { page, pageSize, skip } = getPageInfo({ request });
 
-  const moderationLogs = await db.moderationLog.findMany({
-    where: {
-      channelId: channel.id,
-    },
-    take: pageSize,
-    skip,
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  const totalModerationLogs = await db.moderationLog.count({
-    where: {
-      channelId: channel.id,
-    },
-  });
+  const [moderationLogs, totalModerationLogs] = await Promise.all([
+    db.moderationLog.findMany({
+      where: {
+        channelId: channel.id,
+      },
+      take: pageSize,
+      skip,
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    db.moderationLog.count({
+      where: {
+        channelId: channel.id,
+      },
+    }),
+  ]);
 
   return typedjson({
     user,
@@ -303,7 +304,7 @@ export default function Screen() {
                         <MoreVerticalIcon className="w-5 h-5" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        {log.action === "cooldown" && (
+                        {log.action === "hideQuietly" && log.reason.includes("in cooldown until") && (
                           <Form method="post">
                             <input type="hidden" name="logId" value={log.id} />
                             <DropdownMenuItem>
@@ -340,7 +341,7 @@ export default function Screen() {
                                 value="like"
                                 className="w-full h-full cursor-default text-left"
                               >
-                                Unhide
+                                Curate
                               </button>
                             </DropdownMenuItem>
                           </Form>
@@ -415,12 +416,12 @@ export default function Screen() {
 function formatText(text: string): string {
   const datePattern = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g;
 
-  if (datePattern.test(text) === true) {
-    let match;
-    while ((match = datePattern.exec(text)) !== null) {
-      const date = new Date(match[0]);
+  const matches = text.match(datePattern) ?? [];
+  if (matches.length) {
+    for (const match of matches) {
+      const date = new Date(match);
       const localTimeString = date.toLocaleString();
-      text = text.replace(match[0], localTimeString);
+      text = text.replace(match, localTimeString);
     }
 
     return text;
