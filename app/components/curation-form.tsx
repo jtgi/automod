@@ -52,6 +52,7 @@ import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
 import { Bot, CheckCircle2, PlusIcon, ServerCrash, X, XCircleIcon } from "lucide-react";
+import { UserPicker } from "./user-picker";
 
 export type FormValues = {
   id?: string;
@@ -738,6 +739,32 @@ function RuleArgs(props: {
             defaultValue={argDef.defaultValue as number | undefined}
             {...register(`${props.name}.${props.ruleIndex}.args.${argName}`)}
           />
+        </FieldLabel>
+      );
+    }
+
+    if (argDef.type === "farcasterUserPicker") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <UserPicker name={`${props.name}.${props.ruleIndex}.args.${argName}`} isMulti={false} />
+        </FieldLabel>
+      );
+    }
+
+    if (argDef.type === "farcasterUserPickerMulti") {
+      return (
+        <FieldLabel
+          key={argName}
+          label={argDef.friendlyName}
+          description={argDef.description}
+          className="flex-col items-start"
+        >
+          <UserPicker name={`${props.name}.${props.ruleIndex}.args.${argName}`} isMulti={true} />
         </FieldLabel>
       );
     }

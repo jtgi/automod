@@ -542,3 +542,17 @@ export async function getModerators(props: { channel: string }) {
 
   return channelDelegates.filter((d) => d.role.isCohostRole);
 }
+
+export function debounceAsync<T extends (...args: any[]) => Promise<any>>(func: T, wait: number) {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    return new Promise((resolve, reject) => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        func(...args)
+          .then(resolve)
+          .catch(reject);
+      }, wait);
+    });
+  };
+}

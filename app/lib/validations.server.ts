@@ -89,6 +89,23 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
+  subscribesOnParagraph: {
+    name: "subscribesOnParagraph",
+    category: "all",
+    friendlyName: "Subscribes on Paragraph",
+    checkType: "user",
+    description: "Check if the cast author has an active subscription on paragraph.xyz",
+    hidden: false,
+    invertable: false,
+    args: {
+      farcasterUser: {
+        type: "farcasterUserPicker",
+        friendlyName: "Farcaster Username",
+        description: "The farcaster user who owns the paragraph subscription.",
+      },
+    },
+  },
+
   alwaysInclude: {
     name: "alwaysInclude",
     category: "inclusion",
@@ -815,6 +832,7 @@ export const ruleNames = [
   "containsTooManyMentions",
   "containsLinks",
   "castLength",
+  "subscribesOnParagraph",
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
@@ -1093,6 +1111,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   and: () => ({ result: true, message: "And rule always passes" }),
   or: () => ({ result: true, message: "Or rule always passes" }),
   alwaysInclude: () => ({ result: true, message: "Everything included by default" }),
+  subscribesOnParagraph: subscribesOnParagraph,
   textMatchesPattern: textMatchesPattern,
   textMatchesLanguage: textMatchesLanguage,
   containsText: containsText,
@@ -1408,6 +1427,28 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     message: result
       ? `Cast contains ${violatingEmbeds.join(", ")}`
       : `Cast does not contain any forbidden embeds`,
+  };
+}
+
+export async function subscribesOnParagraph(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { farcasterUser } = rule.args as { farcasterUser: { value: number; label: string; icon: string } };
+
+  const isSubbed = await getSetCache({
+    key: `paragraph-subscribers:${farcasterUser.value}:${cast.author.fid}`,
+    ttlSeconds: 60 * 5,
+    get: async () => {
+      const rsp = await neynar.fetchSubscribersForFid(farcasterUser.value, "paragraph");
+      const isSubbed = rsp.subscribers?.some((s) => s.user.fid === cast.author.fid) || false;
+      return isSubbed;
+    },
+  });
+
+  return {
+    result: isSubbed,
+    message: isSubbed
+      ? `User is subscribed to @${farcasterUser.label} on Paragraph `
+      : `User is not subscribed to @${farcasterUser.label} on Paragraph`,
   };
 }
 
