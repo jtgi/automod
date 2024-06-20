@@ -631,7 +631,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userFidInList: {
     name: "userFidInList",
     category: "all",
-    friendlyName: "Username List",
+    friendlyName: "User in List",
     checkType: "user",
     description: "Check if the cast author is on a list",
     hidden: false,

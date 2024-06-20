@@ -29,8 +29,13 @@ export function UserPicker(props: { name: string; isMulti: boolean; required?: b
               ...base,
               fontSize: "0.875rem",
             }),
+            valueContainer: (base, state) => ({
+              ...base,
+              padding: state.hasValue ? "5px" : "2px 8px",
+            }),
             control: (base) => ({
               ...base,
+
               boxShadow: "0 !important",
               borderColor: "#f0f0f0",
               "&:hover": {
