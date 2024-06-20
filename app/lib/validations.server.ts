@@ -103,7 +103,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "farcasterUserPicker",
         friendlyName: "Farcaster Username",
         required: true,
-        description: "The farcaster user who owns the paragraph subscription.",
+        description: "The farcaster user who owns the paragraph publication.",
       },
     },
   },
@@ -631,19 +631,18 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userFidInList: {
     name: "userFidInList",
     category: "all",
-    friendlyName: "User FID is in List",
+    friendlyName: "Username List",
     checkType: "user",
-    description: "Check if a FID is included on the list",
-    invertedDescription: "Check if a FID is not included in the list",
+    description: "Check if the cast author is on a list",
     hidden: false,
     invertable: true,
     args: {
       fids: {
-        type: "textarea",
-        friendlyName: "Farcaster User IDs",
+        type: "farcasterUserPickerMulti",
+        friendlyName: "Farcaster Usernames",
         required: true,
-        placeholder: "3179\n9887\n1220",
-        description: "A list of FIDs. One per line. You can find a user's FID on their profile page.",
+        placeholder: "Enter a username...",
+        description: "",
       },
     },
   },
@@ -923,30 +922,6 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
     },
     {
       message: "Couldn't find that cast. Double check your identifiers.",
-    }
-  )
-  .refine(
-    async (data) => {
-      if (data.name === "userFidInList") {
-        const ids = data.args.fids.split(/\r?\n/);
-        if (!ids.length) {
-          return false;
-        }
-
-        for (const id of ids) {
-          const asNumber = parseInt(id);
-          if (isNaN(asNumber)) {
-            return false;
-          }
-        }
-
-        return true;
-      } else {
-        return true;
-      }
-    },
-    {
-      message: "Those FIDs look off. At least one required and they must be valid numbers.",
     }
   )
   .refine(
@@ -1279,13 +1254,15 @@ export async function castInThread(args: CheckFunctionArgs) {
 
 export async function userFidInList(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { fids } = rule.args;
+  const { fids } = rule.args as { fids: Array<{ key: number; icon: string; label: string }> };
 
-  const fidsArr = fids.split(/\r?\n/);
-  const result = fidsArr.includes(String(cast.author.fid));
+  const result = fids.some((f) => f.key === cast.author.fid);
+
   return {
     result,
-    message: result ? `FID #${cast.author.fid} is in the list` : `FID #${cast.author.fid} is not in the list`,
+    message: result
+      ? `@${cast.author.username} is in the list`
+      : `@${cast.author.username} is not in the list`,
   };
 }
 
