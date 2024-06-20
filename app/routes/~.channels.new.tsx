@@ -5,6 +5,7 @@ import { errorResponse, formatZodError, getSharedEnv, requireUser } from "~/lib/
 import {
   ModeratedChannelSchema,
   actionDefinitions,
+  getRuleDefinitions,
   ruleDefinitions,
   ruleNames,
 } from "~/lib/validations.server";
@@ -129,7 +130,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return typedjson({
     user,
     actionDefinitions,
-    ruleDefinitions,
+    ruleDefinitions: getRuleDefinitions(user.id),
     ruleNames,
     env: getSharedEnv(),
   });

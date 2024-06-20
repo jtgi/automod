@@ -34,15 +34,22 @@ import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import axios from "axios";
 
 export type RuleDefinition = {
   name: RuleName;
   friendlyName: string;
+
+  // Gate rule access to fids
+  fidGated?: Array<number>;
   checkType: "user" | "cast";
   description: string;
+
+  // Where this rule can be used
   category: "all" | "inclusion" | "exclusion";
+
   invertedDescription?: string;
-  hidden: boolean;
+  hidden: boolean | (() => boolean);
   invertable: boolean;
   args: Record<
     string,
@@ -132,6 +139,18 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         description: "The first cast in the thread. One per line.",
       },
     },
+  },
+
+  isHuman: {
+    name: "isHuman",
+    checkType: "user",
+    category: "all",
+    friendlyName: "Proof of Human, by Bot or Not",
+    description: "Check if the cast author is a human using Bot Or Not",
+    hidden: false,
+    fidGated: [5179],
+    invertable: false,
+    args: {},
   },
 
   containsEmbeds: {
@@ -785,6 +804,7 @@ export const actionDefinitions = {
 export const ruleNames = [
   "and",
   "or",
+  "isHuman",
   "alwaysInclude",
   "containsText",
   "containsEmbeds",
@@ -1079,6 +1099,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   containsTooManyMentions: containsTooManyMentions,
   containsLinks: containsLinks,
   containsEmbeds: containsEmbeds,
+  isHuman: isHuman,
   castInThread: castInThread,
   castLength: castLength,
   downvote: downvoteRule,
@@ -1176,6 +1197,27 @@ export function containsText(props: CheckFunctionArgs) {
   return {
     result,
     message: result ? `Cast contains "${searchText}"` : `Cast does not contain "${searchText}"`,
+  };
+}
+type BotOrNotResponse = {
+  fids: { fid: number; result: { bot: boolean } }[];
+};
+export async function isHuman(args: CheckFunctionArgs) {
+  const { cast } = args;
+  const rsp = await axios.get<BotOrNotResponse>(
+    `https://cast-action-bot-or-not.vercel.app/api/botornot/mod/v1?fids=${cast.author.fid}`,
+    {
+      timeout: 5_000,
+      timeoutErrorMessage: "Bot or Not API timed out",
+    }
+  );
+
+  const { fids } = rsp.data;
+  const isBot = fids?.some((f) => f.result.bot) || false;
+
+  return {
+    result: !isBot,
+    message: isBot ? "Bot detected by Bot Or Not" : "Human detected by Bot Or Not",
   };
 }
 
@@ -1890,4 +1932,19 @@ export async function isCohost(props: { fid: number; channel: string }) {
   }
 
   return role.delegates.some((d) => d.fid === String(props.fid));
+}
+
+export function getRuleDefinitions(fid: string): Record<RuleName, RuleDefinition> {
+  // filter by object value's if fid in value.fidAccess
+  const filteredRules = {};
+  for (const [key, value] of Object.entries(ruleDefinitions)) {
+    if (value.fidGated && !value.fidGated.includes(parseInt(fid))) {
+      continue;
+    } else {
+      // @ts-ignore
+      filteredRules[key] = value;
+    }
+  }
+
+  return filteredRules as Record<RuleName, RuleDefinition>;
 }

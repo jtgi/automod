@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -13,7 +14,7 @@ import {
   ModeratedChannelSchema,
   Rule,
   actionDefinitions,
-  ruleDefinitions,
+  getRuleDefinitions,
   ruleNames,
 } from "~/lib/validations.server";
 import { commitSession, getSession } from "~/lib/auth.server";
@@ -117,7 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     user,
     channel,
     actionDefinitions,
-    ruleDefinitions,
+    ruleDefinitions: getRuleDefinitions(user.id),
     ruleNames,
     cohostRole,
     env: getSharedEnv(),
@@ -126,19 +127,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function Screen() {
   const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
-
-  const patchedRuleSets = channel.ruleSets.map((ruleSet) => patchRule(ruleSet));
-
-  function patchRule(ruleSet: RuleSet) {
-    const ruleParsed = JSON.parse(ruleSet.rule);
-
-    return {
-      ...ruleSet,
-      logicType: ruleParsed.operation === "OR" ? ("or" as const) : ("and" as const),
-      ruleParsed: ruleParsed.conditions,
-      actionsParsed: JSON.parse(ruleSet.actions),
-    };
-  }
 
   function patchNewRuleSet(
     inclusion: boolean,
