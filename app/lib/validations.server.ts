@@ -1254,9 +1254,9 @@ export async function castInThread(args: CheckFunctionArgs) {
 
 export async function userFidInList(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { fids } = rule.args as { fids: Array<{ key: number; icon: string; label: string }> };
+  const { fids } = rule.args as { fids: Array<{ value: number; icon: string; label: string }> };
 
-  const result = fids.some((f) => f.key === cast.author.fid);
+  const result = fids.some((f) => f.value === cast.author.fid);
 
   return {
     result,
