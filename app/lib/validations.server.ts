@@ -93,7 +93,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     name: "subscribesOnParagraph",
     category: "all",
     friendlyName: "Subscribes on Paragraph",
-    fidGated: [5179],
+    fidGated: [5179, 378],
     checkType: "user",
     description: "Check if the cast author has an active subscription on paragraph.xyz",
     hidden: false,
