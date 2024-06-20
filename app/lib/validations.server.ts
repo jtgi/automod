@@ -93,6 +93,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     name: "subscribesOnParagraph",
     category: "all",
     friendlyName: "Subscribes on Paragraph",
+    fidGated: [5179],
     checkType: "user",
     description: "Check if the cast author has an active subscription on paragraph.xyz",
     hidden: false,
@@ -101,6 +102,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       farcasterUser: {
         type: "farcasterUserPicker",
         friendlyName: "Farcaster Username",
+        required: true,
         description: "The farcaster user who owns the paragraph subscription.",
       },
     },
@@ -1219,7 +1221,7 @@ export function containsText(props: CheckFunctionArgs) {
   };
 }
 type BotOrNotResponse = {
-  fids: { fid: number; result: { bot: boolean } }[];
+  fids: { fid: number; result: { bot?: boolean } }[];
 };
 export async function isHuman(args: CheckFunctionArgs) {
   const { cast } = args;
@@ -1232,7 +1234,11 @@ export async function isHuman(args: CheckFunctionArgs) {
   );
 
   const { fids } = rsp.data;
-  const isBot = fids?.some((f) => f.result.bot) || false;
+  const isBot = fids[0].result.bot;
+
+  if (isBot === undefined) {
+    throw new Error("Bot or Not API did not return a result");
+  }
 
   return {
     result: !isBot,

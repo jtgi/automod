@@ -8,7 +8,7 @@ import { AvatarFallback } from "@radix-ui/react-avatar";
 import { FarcasterIcon } from "~/components/FarcasterIcon";
 import { Controller, useFormContext } from "react-hook-form";
 
-export function UserPicker(props: { name: string; isMulti: boolean }) {
+export function UserPicker(props: { name: string; isMulti: boolean; required?: boolean }) {
   const { control } = useFormContext();
 
   return (
@@ -20,6 +20,7 @@ export function UserPicker(props: { name: string; isMulti: boolean }) {
           {...field}
           noOptionsMessage={(e) => (e.inputValue ? "No users found. Weird." : null)}
           isMulti={props.isMulti}
+          required={props.required}
           cacheOptions
           defaultOptions
           isClearable={!props.isMulti}

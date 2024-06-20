@@ -51,7 +51,7 @@ import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
-import { Bot, CheckCircle2, PlusIcon, ServerCrash, X, XCircleIcon } from "lucide-react";
+import { Bot, CheckCircle2, Loader, PlusIcon, ServerCrash, X, XCircleIcon } from "lucide-react";
 import { UserPicker } from "./user-picker";
 
 export type FormValues = {
@@ -291,14 +291,14 @@ export function CurationForm(props: {
               </Button>
             )}
 
-            <Button type="submit" size={"lg"} className="w-full" disabled={fetcher.state === "submitting"}>
-              {fetcher.state === "submitting"
-                ? props.defaultValues.id
-                  ? "Updating..."
-                  : "Creating..."
-                : props.defaultValues.id
-                ? "Update"
-                : "Create"}
+            <Button type="submit" size={"lg"} className="w-full" disabled={fetcher.state !== "idle"}>
+              {fetcher.state !== "idle" ? (
+                <Loader className="w-4 h-4 animate-spin" />
+              ) : props.defaultValues.id ? (
+                "Update"
+              ) : (
+                "Create"
+              )}
             </Button>
           </div>
         </form>
@@ -660,6 +660,7 @@ function RuleSetEditor(props: {
             </DialogHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
               {Object.entries(props.ruleDefinitions)
+                .sort(([a], [b]) => a.localeCompare(b))
                 .filter((args) => !args[1].hidden)
                 .map(([name, ruleDef]) => {
                   if (
@@ -751,7 +752,11 @@ function RuleArgs(props: {
           description={argDef.description}
           className="flex-col items-start"
         >
-          <UserPicker name={`${props.name}.${props.ruleIndex}.args.${argName}`} isMulti={false} />
+          <UserPicker
+            name={`${props.name}.${props.ruleIndex}.args.${argName}`}
+            isMulti={false}
+            required={argDef.required}
+          />
         </FieldLabel>
       );
     }
@@ -764,7 +769,11 @@ function RuleArgs(props: {
           description={argDef.description}
           className="flex-col items-start"
         >
-          <UserPicker name={`${props.name}.${props.ruleIndex}.args.${argName}`} isMulti={true} />
+          <UserPicker
+            name={`${props.name}.${props.ruleIndex}.args.${argName}`}
+            isMulti={true}
+            required={argDef.required}
+          />
         </FieldLabel>
       );
     }
