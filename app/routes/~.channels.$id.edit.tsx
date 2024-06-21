@@ -23,6 +23,8 @@ import invariant from "tiny-invariant";
 import { v4 as uuid } from "uuid";
 import { CurationForm } from "~/components/curation-form";
 import { RuleSet } from "@prisma/client";
+import { addToBypassAction } from "~/lib/cast-actions.server";
+import { actionToInstallLink } from "~/lib/utils";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -121,12 +123,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ruleDefinitions: getRuleDefinitions(user.id),
     ruleNames,
     cohostRole,
+    bypassInstallLink: actionToInstallLink(addToBypassAction),
     env: getSharedEnv(),
   });
 }
 
 export default function Screen() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole, bypassInstallLink } =
+    useTypedLoaderData<typeof loader>();
 
   function patchNewRuleSet(
     inclusion: boolean,
@@ -161,12 +165,14 @@ export default function Screen() {
       </div>
 
       <CurationForm
+        bypassInstallLink={bypassInstallLink}
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}
         ruleNames={ruleNames}
+        cohostRole={cohostRole}
         defaultValues={{
           ...channel,
-          excludeUsernames: channel.excludeUsernamesParsed.join("\n"),
+          excludeUsernames: channel.excludeUsernamesParsed,
           exclusionRuleSet: patchNewRuleSet(false, channel.exclusionRuleSetParsed!),
           inclusionRuleSet: patchNewRuleSet(true, channel.inclusionRuleSetParsed!),
         }}

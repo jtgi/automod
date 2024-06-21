@@ -17,6 +17,7 @@ import {
   Rule,
   RuleDefinition,
   RuleName,
+  SelectOption,
   actionDefinitions,
   ruleDefinitions,
 } from "~/lib/validations.server";
@@ -26,7 +27,7 @@ import { Input } from "~/components/ui/input";
 import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { Switch } from "~/components/ui/switch";
 import {
   Control,
@@ -51,13 +52,24 @@ import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
 import { cn } from "~/lib/utils";
-import { Bot, CheckCircle2, Loader, PlusIcon, ServerCrash, X, XCircleIcon } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpRight,
+  Bot,
+  CheckCircle2,
+  Loader,
+  PlusIcon,
+  ServerCrash,
+  X,
+  XCircleIcon,
+} from "lucide-react";
 import { UserPicker } from "./user-picker";
+import { Role } from "@prisma/client";
 
 export type FormValues = {
   id?: string;
   banThreshold?: number | null;
-  excludeUsernames?: string;
+  excludeUsernames?: Array<SelectOption> | null;
   excludeCohosts: boolean;
   slowModeHours?: number | null;
 
@@ -84,6 +96,8 @@ export function CurationForm(props: {
   ruleDefinitions: typeof ruleDefinitions;
   ruleNames: readonly RuleName[];
   defaultValues: FormValues;
+  bypassInstallLink: string;
+  cohostRole?: Role | null;
 }) {
   const fetcher = useFetcher();
   const methods = useForm<FormValues>({
@@ -204,24 +218,43 @@ export function CurationForm(props: {
               </p>
             </div>
 
-            <SliderField label="Cohosts" description="Always include casts from cohosts in Main">
-              <Controller
-                name={`excludeCohosts`}
-                control={control}
-                render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
-              />
-            </SliderField>
-            <FieldLabel
-              label="Farcaster Usernames"
-              description="One per line."
-              className="flex-col items-start"
-            >
-              <Textarea
-                rows={5}
-                placeholder="jtgi&#10;nonlinear.eth&#10;v"
-                {...register("excludeUsernames")}
-              />
-            </FieldLabel>
+            {props.cohostRole && (
+              <SliderField label="Cohosts" description="Always include casts from cohosts in Main">
+                <Controller
+                  name={`excludeCohosts`}
+                  control={control}
+                  render={({ field }) => <Switch onCheckedChange={field.onChange} checked={field.value} />}
+                />
+              </SliderField>
+            )}
+
+            <ClientOnly>
+              {() => (
+                <FieldLabel
+                  labelProps={{
+                    className: "w-full",
+                  }}
+                  label={
+                    <div className="flex justify-between gap-4 w-full">
+                      <p className="font-medium flex-auto">Farcaster Usernames</p>
+                      <Link
+                        className="text-[8px] no-underline hover:underline uppercase tracking-wide"
+                        target="_blank"
+                        rel="noreferrer"
+                        to={props.bypassInstallLink}
+                      >
+                        Install Cast Action
+                        <ArrowUpRight className="inline w-2 h-2 ml-[2px] -mt-[2px] text-primary" />
+                      </Link>
+                    </div>
+                  }
+                  description="Example: if you add jtgi, jtgi's casts will skip all moderation and always be included in Main"
+                  className="flex-col items-start w-full"
+                >
+                  <UserPicker name="excludeUsernames" isMulti={true} />
+                </FieldLabel>
+              )}
+            </ClientOnly>
           </fieldset>
 
           <div className="py-6">
@@ -252,27 +285,6 @@ export function CurationForm(props: {
               </div>
             </FieldLabel>
           </fieldset>
-
-          {/* <div className="py-6">
-            <hr />
-          </div> */}
-
-          {/* <fieldset disabled={isSubmitting} className="space-y-6">
-            <div>
-              <p className="font-medium">Ban List</p>
-              <p className="text-gray-500 text-sm">
-                Users in this list will never have their casts curated into Main
-              </p>
-            </div>
-
-            <FieldLabel label="Usernames" description="One per line." className="flex-col items-start">
-              <Textarea
-                rows={5}
-                placeholder="jtgi&#10;nonlinear.eth&#10;v"
-                {...register("excludeUsernames")}
-              />
-            </FieldLabel>
-          </fieldset> */}
 
           <div className="py-6">
             <hr />
@@ -559,11 +571,9 @@ function prepareFormValues(data: FormValues) {
     }
   }
 
-  const excludeUsernamesParsed = data.excludeUsernames?.split(/\r\n|\r|\n/);
-
   const tx = {
     ...data,
-    excludeUsernames: excludeUsernamesParsed ?? null,
+    excludeUsernames: data.excludeUsernames || null,
     banThreshold: data.banThreshold || null,
     inclusionRuleSet: transformRuleSet(data.inclusionRuleSet),
     exclusionRuleSet: transformRuleSet(data.exclusionRuleSet),
@@ -746,35 +756,42 @@ function RuleArgs(props: {
 
     if (argDef.type === "farcasterUserPicker") {
       return (
-        <FieldLabel
-          key={argName}
-          label={argDef.friendlyName}
-          description={argDef.description}
-          className="flex-col items-start"
-        >
-          <UserPicker
-            name={`${props.name}.${props.ruleIndex}.args.${argName}`}
-            isMulti={false}
-            required={argDef.required}
-          />
-        </FieldLabel>
+        <ClientOnly key={argName}>
+          {() => (
+            <FieldLabel
+              label={argDef.friendlyName}
+              description={argDef.description}
+              className="flex-col items-start"
+            >
+              <UserPicker
+                name={`${props.name}.${props.ruleIndex}.args.${argName}`}
+                isMulti={false}
+                required={argDef.required}
+              />
+            </FieldLabel>
+          )}
+        </ClientOnly>
       );
     }
 
     if (argDef.type === "farcasterUserPickerMulti") {
       return (
-        <FieldLabel
-          key={argName}
-          label={argDef.friendlyName}
-          description={argDef.description}
-          className="flex-col items-start"
-        >
-          <UserPicker
-            name={`${props.name}.${props.ruleIndex}.args.${argName}`}
-            isMulti={true}
-            required={argDef.required}
-          />
-        </FieldLabel>
+        <ClientOnly key={argName}>
+          {() => (
+            <FieldLabel
+              key={argName}
+              label={argDef.friendlyName}
+              description={argDef.description}
+              className="flex-col items-start"
+            >
+              <UserPicker
+                name={`${props.name}.${props.ruleIndex}.args.${argName}`}
+                isMulti={true}
+                required={argDef.required}
+              />
+            </FieldLabel>
+          )}
+        </ClientOnly>
       );
     }
 

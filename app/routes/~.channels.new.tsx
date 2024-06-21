@@ -16,6 +16,8 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
 import { recoverQueue } from "~/lib/bullish.server";
 import { CurationForm } from "~/components/curation-form";
+import { addToBypassAction } from "~/lib/cast-actions.server";
+import { actionToInstallLink } from "~/lib/utils";
 
 export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
@@ -133,15 +135,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ruleDefinitions: getRuleDefinitions(user.id),
     ruleNames,
     env: getSharedEnv(),
+    bypassInstallLink: actionToInstallLink(addToBypassAction),
   });
 }
 
 export default function FrameConfig() {
-  const { ruleNames, ruleDefinitions, actionDefinitions, user } = useTypedLoaderData<typeof loader>();
+  const { ruleNames, ruleDefinitions, actionDefinitions, bypassInstallLink } =
+    useTypedLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4">
       <CurationForm
+        bypassInstallLink={bypassInstallLink}
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}
         ruleNames={ruleNames}

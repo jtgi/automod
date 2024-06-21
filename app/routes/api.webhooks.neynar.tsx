@@ -7,7 +7,14 @@ import { db } from "~/lib/db.server";
 import { neynar } from "~/lib/neynar.server";
 import { getModerators, requireValidSignature } from "~/lib/utils.server";
 
-import { Action, Rule, actionFunctions, isCohost, ruleFunctions } from "~/lib/validations.server";
+import {
+  Action,
+  Rule,
+  SelectOption,
+  actionFunctions,
+  isCohost,
+  ruleFunctions,
+} from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
@@ -27,6 +34,7 @@ const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs
 export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel> & {
   inclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
   exclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
+  excludeUsernamesParsed: Array<SelectOption> | undefined;
 };
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -114,10 +122,10 @@ export async function validateCast({
     }
   }
 
-  const isExcluded = JSON.parse(moderatedChannel.excludeUsernames).includes(cast.author.username);
+  const isExcluded = moderatedChannel.excludeUsernamesParsed?.some((u) => u.value === cast.author.fid);
 
   if (isExcluded) {
-    console.log(`User @${cast.author.username} is in the bypass list. Curating.`);
+    console.log(`User @${cast.author.username} is in the bypass list.`);
 
     const [, log] = await Promise.all([
       simulation

@@ -146,15 +146,24 @@ export async function addToBypass({
     },
   });
 
-  const username = cast.author.username;
-  const uniqueNames = Array.from(new Set([...moderatedChannel.excludeUsernamesParsed, username]));
+  const existing = moderatedChannel.excludeUsernamesParsed || [];
+
+  if (existing.some((u) => u.value === cast.author.fid)) {
+    return;
+  }
+
+  existing.push({
+    value: cast.author.fid,
+    label: cast.author.username,
+    icon: cast.author.pfp_url,
+  });
 
   return db.moderatedChannel.update({
     where: {
       id: channel,
     },
     data: {
-      excludeUsernames: JSON.stringify(uniqueNames),
+      excludeUsernames: JSON.stringify(existing),
     },
   });
 }

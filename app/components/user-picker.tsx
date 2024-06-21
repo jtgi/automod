@@ -18,6 +18,7 @@ export function UserPicker(props: { name: string; isMulti: boolean; required?: b
       render={({ field }) => (
         <AsyncSelect
           {...field}
+          instanceId={props.name}
           noOptionsMessage={(e) => (e.inputValue ? "No users found. Weird." : null)}
           isMulti={props.isMulti}
           required={props.required}
@@ -92,7 +93,7 @@ function ProfileOption(props: any) {
       <div className="flex items-center gap-2">
         <Avatar className="w-11 h-11 border-white border-4 shadow-sm">
           <AvatarImage src={data.icon} />
-          <AvatarFallback>{data.label.slice(0, 2)}</AvatarFallback>
+          <AvatarFallback>{data.label?.slice(0, 2)}</AvatarFallback>
         </Avatar>
         <div>
           <p style={{ fontFamily: "Kode Mono" }}>{data.label}</p>
@@ -114,7 +115,7 @@ function ProfileSingleValue(props: any) {
       <div className="flex items-center gap-2">
         <Avatar className="w-6 h-6 border-white border-2 shadow-md">
           <AvatarImage src={data.icon} />
-          <AvatarFallback>{data.label.slice(0, 2)}</AvatarFallback>
+          <AvatarFallback>{data.label?.slice(0, 2)}</AvatarFallback>
         </Avatar>
         <div>
           <p className="input-select-label" style={{ fontFamily: "Kode Mono" }}>
@@ -133,7 +134,7 @@ function ProfileMultiValue(props: any) {
       <div className="flex items-center gap-2">
         <Avatar className="w-4 h-4 border-white border-2 shadow-md">
           <AvatarImage src={data.icon} />
-          <AvatarFallback>{data.label.slice(0, 2)}</AvatarFallback>
+          <AvatarFallback>{data.label?.slice(0, 2)}</AvatarFallback>
         </Avatar>
         <div>
           <p className="input-select-label" style={{ fontFamily: "Kode Mono" }}>

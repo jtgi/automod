@@ -721,7 +721,7 @@ export const actionDefinitions = {
     friendlyName: "Add to Bypass",
     hidden: true,
     castScope: "all",
-    description: "Add the user to the bypass list. This will exclude them from all moderation rules.",
+    description: "Add the user to the bypass list so their casts always appear in Main.",
     args: {},
   },
   bypass: {
@@ -1050,15 +1050,7 @@ export const ModeratedChannelSchema = z
     banThreshold: z.coerce.number().nullable(),
     slowModeHours: z.coerce.number().optional().default(0),
     excludeUsernames: z
-      .array(z.string())
-      .refine((usernames) =>
-        usernames
-          .map((u) => u.trim())
-          .every((u) => !/\s/.test(u) && u.length <= 30, {
-            message: "No spaces, and no more than 30 characters.",
-          })
-      )
-      .transform((usernames) => usernames.map((u) => u.toLowerCase().replaceAll("@", "").trim()))
+      .array(z.object({ value: z.number(), label: z.string(), icon: z.string().optional() }))
       .default([]),
     excludeCohosts: z.boolean().default(true),
     ruleSets: z.array(RuleSetSchema),
@@ -1626,7 +1618,7 @@ export async function userFollowedBy(args: CheckFunctionArgs) {
 export type SelectOption = {
   label: string;
   value: number;
-  icon: string;
+  icon?: string;
 };
 
 export async function userFollows(args: CheckFunctionArgs) {

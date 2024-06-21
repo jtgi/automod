@@ -6,7 +6,21 @@ const env = getSharedEnv();
 
 export const deprecatedActions = ["mute", "warnAndHide"];
 
+export const addToBypassAction = {
+  action: {
+    type: "post",
+  },
+  description: "Always curate casts from this user",
+  name: "Bypass",
+  automodAction: "addToBypass",
+  icon: "shield-check",
+  postUrl: `${env.hostUrl}/api/actions/addToBypass`,
+  aboutUrl: "https://automod.sh",
+  image: `${env.hostUrl}/actions/bypass.png`,
+} as const;
+
 export const actions = [
+  addToBypassAction,
   {
     action: {
       type: "post",
@@ -18,18 +32,6 @@ export const actions = [
     postUrl: `${env.hostUrl}/api/actions/cooldown`,
     aboutUrl: "https://automod.sh",
     image: `${env.hostUrl}/actions/cooldown24.png`,
-  },
-  {
-    action: {
-      type: "post",
-    },
-    description: "Always curate casts from this user",
-    name: "Bypass",
-    automodAction: "addToBypass",
-    icon: "shield-check",
-    postUrl: `${env.hostUrl}/api/actions/addToBypass`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/bypass.png`,
   },
   {
     automodAction: "ban",
