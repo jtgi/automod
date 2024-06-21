@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "~/lib/db.server";
 import { Rule, RuleName } from "~/lib/validations.server";
 import fs from "node:fs";
@@ -13,12 +14,22 @@ async function main() {
       OR: [
         {
           inclusionRuleSet: {
-            contains: "userFidInList",
+            contains: "userDoesNotFollow",
           },
         },
         {
           exclusionRuleSet: {
-            contains: "userFidInList",
+            contains: "userDoesNotFollow",
+          },
+        },
+        {
+          inclusionRuleSet: {
+            contains: "userIsNotFollowedBy",
+          },
+        },
+        {
+          exclusionRuleSet: {
+            contains: "userIsNotFollowedBy",
           },
         },
       ],
@@ -26,78 +37,77 @@ async function main() {
   });
 
   for (const channel of channels) {
-    if (channel.inclusionRuleSet?.includes("userFidInList")) {
-      const fidIndex = channel.inclusionRuleSetParsed?.ruleParsed?.conditions?.findIndex(
-        (condition) => condition.name === "userFidInList"
-      );
+    for (const condition of channel.inclusionRuleSetParsed?.ruleParsed?.conditions ?? []) {
+      if (condition.name === "userDoesNotFollow" || condition.name === "userIsNotFollowedBy") {
+        if (typeof condition.args.username !== "string") {
+          continue;
+        }
 
-      if (fidIndex === undefined) {
-        continue;
+        if (!condition.args.username && !condition.args.users) {
+          console.log(`[${channel.id}] username is blank`);
+          continue;
+        }
+
+        const resp = await neynar.lookupUserByUsername(condition.args.username).catch(() => null);
+        if (resp === null) {
+          console.log(`[${channel.id}] Failed to find user ${condition.args.username}`);
+          continue;
+        }
+
+        condition.args.users = [
+          {
+            value: resp.result.user.fid,
+            icon: resp.result.user.pfp.url,
+            label: resp.result.user.username,
+          },
+        ];
       }
-
-      const fidRule = channel.inclusionRuleSetParsed!.ruleParsed!.conditions![fidIndex]!;
-
-      if (typeof fidRule.args.fids !== "string") {
-        continue;
-      }
-      const fidsArr = fidRule.args.fids.split(/\r?\n/);
-      const rsp = await neynar.fetchBulkUsers(fidsArr.map(Number));
-      const fids = rsp.users.map((user) => ({
-        key: user.fid,
-        icon: user.pfp_url ?? undefined,
-        label: user.username,
-      }));
-
-      channel.inclusionRuleSetParsed!.ruleParsed!.conditions![fidIndex]!.args.fids = fids;
-      await db.moderatedChannel.update({
-        where: {
-          id: channel.id,
-        },
-        data: {
-          inclusionRuleSet: JSON.stringify({
-            rule: channel.inclusionRuleSetParsed!.ruleParsed,
-            actions: channel.inclusionRuleSetParsed!.actionsParsed,
-          }),
-        },
-      });
-
-      console.log(`${channel.id} updated`);
     }
 
-    if (channel.exclusionRuleSet?.includes("userFidInList")) {
-      const fidIndex = channel.exclusionRuleSetParsed?.ruleParsed?.conditions?.findIndex(
-        (condition) => condition.name === "userFidInList"
-      );
+    for (const condition of channel.exclusionRuleSetParsed?.ruleParsed?.conditions ?? []) {
+      if (condition.name === "userDoesNotFollow" || condition.name === "userIsNotFollowedBy") {
+        if (typeof condition.args.username !== "string") {
+          continue;
+        }
 
-      if (fidIndex === undefined) {
-        continue;
+        if (!condition.args.username && !condition.args.users) {
+          console.log(`[${channel.id}] No username or users`);
+          continue;
+        }
+
+        const resp = await neynar.lookupUserByUsername(condition.args.username).catch(() => null);
+        if (resp === null) {
+          console.log(`[${channel.id}] Failed to find user ${condition.args.username}`);
+          continue;
+        }
+
+        condition.args.users = [
+          {
+            value: resp.result.user.fid,
+            icon: resp.result.user.pfp.url,
+            label: resp.result.user.username,
+          },
+        ];
       }
-
-      const fidRule = channel.exclusionRuleSetParsed!.ruleParsed!.conditions![fidIndex]!;
-
-      const fidsArr = fidRule.args.fids.split(/\r?\n/);
-      const rsp = await neynar.fetchBulkUsers(fidsArr.map(Number));
-      const fids = rsp.users.map((user) => ({
-        key: user.fid,
-        icon: user.pfp_url ?? undefined,
-        label: user.username,
-      }));
-
-      channel.exclusionRuleSetParsed!.ruleParsed!.conditions![fidIndex]!.args.fids = fids;
-
-      await db.moderatedChannel.update({
-        where: {
-          id: channel.id,
-        },
-        data: {
-          exclusionRuleSet: JSON.stringify({
-            rule: channel.exclusionRuleSetParsed!.ruleParsed,
-            actions: channel.exclusionRuleSetParsed!.actionsParsed,
-          }),
-        },
-      });
-      console.log(`${channel.id} updated`);
     }
+
+    await db.moderatedChannel.update({
+      where: {
+        id: channel.id,
+      },
+      data: {
+        inclusionRuleSet: JSON.stringify({
+          rule: channel.inclusionRuleSetParsed!.ruleParsed,
+          actions: channel.inclusionRuleSetParsed!.actionsParsed,
+        }),
+        exclusionRuleSet: JSON.stringify({
+          rule: channel.exclusionRuleSetParsed!.ruleParsed,
+          actions: channel.exclusionRuleSetParsed!.actionsParsed,
+        }),
+      },
+    });
+
+    console.log(`${channel.id} updated`);
   }
 }
 

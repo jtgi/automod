@@ -344,18 +344,17 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     category: "all",
     friendlyName: "Following",
     checkType: "user",
-    description: "Check if the cast author follows a certain account",
-    invertedDescription: "Trigger this rule when users *do* follow the account",
+    description: "Check if the cast author follows certain accounts",
     hidden: false,
-    invertable: true,
+    invertable: false,
     args: {
-      username: {
-        type: "string",
+      users: {
+        type: "farcasterUserPickerMulti",
         required: true,
-        friendlyName: "Username",
-        placeholder: "e.g. jtgi",
-        pattern: "^[a-zA-Z0-9_\\.]+$",
-        description: "Example: If you enter jtgi, it will check that the cast author follows jtgi.",
+        friendlyName: "Farcaster Usernames",
+        placeholder: "Enter a username...",
+        description:
+          "Example: If you enter jtgi and riotgoools, it will check that the cast author follows either jtgi or riotgools.",
       },
     },
   },
@@ -365,18 +364,17 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     category: "all",
     friendlyName: "Followed By",
     checkType: "user",
-    description: "Check if the cast author is followed by a certain account",
-    invertedDescription: "Trigger this rule when user is followed by the account",
+    description: "Check if the cast author is followed by certain accounts",
     hidden: false,
     invertable: true,
     args: {
-      username: {
-        type: "string",
+      users: {
+        type: "farcasterUserPickerMulti",
         required: true,
-        friendlyName: "Username",
-        pattern: "^[a-zA-Z0-9_\\.]+$",
-        placeholder: "e.g. jtgi",
-        description: "Example: If you enter jtgi, it will check that jtgi follows the cast author.",
+        friendlyName: "Usernames",
+        placeholder: "Enter a username...",
+        description:
+          "Example: If you enter jtgi and riotgoools, it will check that either jtgi or riotgools follow the cast author.",
       },
     },
   },
@@ -1256,6 +1254,7 @@ export async function userFidInList(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { fids } = rule.args as { fids: Array<{ value: number; icon: string; label: string }> };
 
+  console.log({ args: rule.args, fids, author: cast.author.fid });
   const result = fids.some((f) => f.value === cast.author.fid);
 
   return {
@@ -1586,70 +1585,90 @@ export function userFollowerCount(props: CheckFunctionArgs) {
 
 export async function userFollowedBy(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { username } = rule.args;
+  const { users } = rule.args as { users: SelectOption[] };
 
-  const user = await getSetCache({
-    key: `followedby:${username}:${cast.author.fid}`,
-    ttlSeconds: 15,
-    get: () => neynar.lookupUserByUsername(username, cast.author.fid),
-  });
-
-  if (!user) {
-    throw new Error(`User not found: ${username}`);
-  }
-
-  // TODO: this should be exposed an option or
-  // fixed in a refactor, but for now, because
-  // the check is phrased in the negative, if
-  // its not inverted, assume we're going to do
-  // some bad action, if it is inverted, assume
-  // its a positive action (like boost).
-  if (cast.author.username === username) {
+  if (users.some((u) => u.value === cast.author.fid)) {
     return {
       result: true,
-      message: "Cast author is the same as the user being checked for follow status",
+      message: "User implicitly followed by themselves",
     };
   }
 
-  const isFollowedBy = user.result.user.viewerContext?.followedBy;
+  const followingStatus = await getSetCache({
+    key: `followedby:${users
+      .map((u) => u.value)
+      .sort()
+      .join(":")}:${cast.author.fid}`,
+    ttlSeconds: 60,
+    get: () =>
+      neynar
+        .fetchBulkUsers(
+          users.map((u) => u.value),
+          {
+            viewerFid: cast.author.fid,
+          }
+        )
+        .then((rsp) => rsp.users),
+  });
+
+  const isFollowing = followingStatus.find((f) => f.viewer_context?.followed_by);
 
   return {
-    result: !!isFollowedBy,
-    message: isFollowedBy ? `User is followed by ${username}` : `User is not followed by ${username}`,
+    result: !!isFollowing,
+    message: isFollowing
+      ? `@${cast.author.username} is followed by @${isFollowing.username}`
+      : `@${cast.author.username} is not followed by ${
+          users.length > 1 ? `any of ${users.map((u) => `@${u.label}`).join(", ")}` : `@${users[0].label}`
+        }`,
   };
 }
 
+export type SelectOption = {
+  label: string;
+  value: number;
+  icon: string;
+};
+
 export async function userFollows(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { username } = rule.args;
+  const { users } = rule.args as { users: SelectOption[] };
 
-  const user = await getSetCache({
-    key: `follows:${username}:${cast.author.fid}`,
-    ttlSeconds: 15,
-    get: () => neynar.lookupUserByUsername(username, cast.author.fid),
-  });
-
-  if (!user) {
-    throw new Error(`User not found: ${username}`);
-  }
-
-  // TODO: this should be exposed an option or
-  // fixed in a refactor, but for now, because
-  // the check is phrased in the negative, if
-  // its not inverted, assume we're going to do
-  // some bad action, if it is inverted, assume
-  // its a positive action (like boost).
-  if (cast.author.username === username) {
+  if (users.some((u) => u.value === cast.author.fid)) {
     return {
       result: true,
-      message: "Cast author is the same as the user being checked for follow status",
+      message: "User implicitly follow themselves",
     };
   }
 
-  const isFollowing = user.result.user.viewerContext?.following;
+  const followingStatus = await getSetCache({
+    key: `follows:${users
+      .map((u) => u.value)
+      .sort()
+      .join(":")}:${cast.author.fid}`,
+    ttlSeconds: 60,
+    get: () =>
+      neynar
+        .fetchBulkUsers(
+          users.map((u) => u.value),
+          {
+            viewerFid: cast.author.fid,
+          }
+        )
+        .catch((err) => {
+          console.error(err);
+          return Promise.reject(err);
+        })
+        .then((rsp) => rsp.users),
+  });
+
+  const isFollowing = followingStatus.find((f) => f.viewer_context?.following);
   return {
     result: !!isFollowing,
-    message: isFollowing ? `User follows ${username}` : `User does not follow ${username}`,
+    message: isFollowing
+      ? `@${cast.author.username} follows @${isFollowing.username}`
+      : `@${cast.author.username} does not follow ${
+          users.length > 1 ? `any of ${users.map((u) => `@${u.label}`).join(", ")}` : `@${users[0].label}`
+        }`,
   };
 }
 
