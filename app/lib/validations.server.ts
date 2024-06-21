@@ -1246,7 +1246,6 @@ export async function userFidInList(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { fids } = rule.args as { fids: Array<{ value: number; icon: string; label: string }> };
 
-  console.log({ args: rule.args, fids, author: cast.author.fid });
   const result = fids.some((f) => f.value === cast.author.fid);
 
   return {
