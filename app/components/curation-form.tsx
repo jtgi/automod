@@ -573,7 +573,7 @@ function prepareFormValues(data: FormValues) {
 
   const tx = {
     ...data,
-    excludeUsernames: data.excludeUsernames || null,
+    excludeUsernames: data.excludeUsernames || [],
     banThreshold: data.banThreshold || null,
     inclusionRuleSet: transformRuleSet(data.inclusionRuleSet),
     exclusionRuleSet: transformRuleSet(data.exclusionRuleSet),
