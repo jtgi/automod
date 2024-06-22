@@ -9,11 +9,12 @@ import { Input } from "~/components/ui/input";
 import { commitSession, getSession, refreshAccountStatus } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
-import { isRecoverActive } from "./~.channels.$id.tools";
+import { isRecoverActive, recover } from "./~.channels.$id.tools";
 import { recoverQueue } from "~/lib/bullish.server";
 import { FormEvent, Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
+import { FullModeratedChannel } from "./api.webhooks.neynar";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -143,6 +144,13 @@ export async function action({ request }: ActionFunctionArgs) {
         return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
       }
 
+      if (!hasNoRules(moderatedChannel)) {
+        return successResponse({
+          request,
+          message: "Channel has no automated rules. Nothing to recover.",
+        });
+      }
+
       await recoverQueue.add(
         "recover",
         {
@@ -177,6 +185,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
       for (const moderatedChannel of moderatedChannels) {
         console.log(`[global recovery]: enqueuing ${moderatedChannel.id}`);
+
+        if (!hasNoRules(moderatedChannel)) {
+          console.log(`[global recovery]: skipping ${moderatedChannel.id} - no rules`);
+          continue;
+        }
+
         await recoverQueue.add(
           "recover",
           {
@@ -329,4 +343,8 @@ function ChannelStat({ c }: { c: any }) {
       <div>{c.followerCount.toLocaleString()}</div>
     </div>
   );
+}
+
+function hasNoRules(moderatedChannel: FullModeratedChannel) {
+  return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length === 0;
 }
