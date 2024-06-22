@@ -21,5 +21,13 @@ primary_region = 'lax'
       hard_limit = 1000
   processes = ['app']
 
+[[http_service.checks]]
+  grace_period = "10s"
+  interval = "30s"
+  method = "GET"
+  timeout = "8s"
+  path = "/api/healthcheck"
+
+
 [[vm]]
   size = "performance-2x"
