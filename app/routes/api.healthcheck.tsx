@@ -14,7 +14,7 @@ async function checkEvents() {
   const castsProcessedLastMinute = await db.castLog.findMany({
     where: {
       createdAt: {
-        gte: new Date(Date.now() - 10 * 6_000),
+        gte: new Date(Date.now() - 10 * 1_000 * 60),
       },
     },
   });
