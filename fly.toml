@@ -22,10 +22,10 @@ primary_region = 'lax'
   processes = ['app']
 
 [[http_service.checks]]
-  grace_period = "10s"
+  grace_period = "20s"
   interval = "30s"
   method = "GET"
-  timeout = "8s"
+  timeout = "10s"
   path = "/api/healthcheck"
 
 
