@@ -5,6 +5,7 @@ import { db } from "~/lib/db.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
 import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
+import { RefreshCwIcon } from "lucide-react";
 import { Link, useFetcher } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { PlanType, refreshAccountStatus, userPlans } from "~/lib/auth.server";
@@ -18,7 +19,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
-import { RefreshCwIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -175,30 +175,8 @@ export default function FrameConfig() {
               </>
             </Alert>
           )}
-          {/* 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-normal">Casts Processed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalCastsProcessed.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">/ {plan.maxCasts.toLocaleString()}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-normal">Channels Created</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {createdChannels} / {plan.maxChannels === Infinity ? "Infinity" : plan.maxChannels}
-                </div>
-              </CardContent>
-            </Card>
-          </section> */}
 
-          <section className="space-y-4">
+          <section className="space-y-4 w-full">
             <div className="flex items-center justify-between">
               <h2>Bots</h2>
               {isMaxChannels ? (
@@ -256,7 +234,7 @@ export default function FrameConfig() {
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 w-full">
               {channels.map((channel) => (
                 <Link
                   to={`/~/channels/${channel.id}`}

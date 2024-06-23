@@ -137,23 +137,28 @@ export type PlanType = (typeof planTypes)[number];
 
 export const userPlans = {
   basic: {
+    displayName: "Basic",
     maxChannels: 3,
     maxCasts: 3_000,
   },
   prime: {
+    displayName: "Prime",
     maxChannels: 5,
     maxCasts: 50_000,
   },
   ultra: {
+    displayName: "Ultra",
     maxChannels: Infinity,
     maxCasts: 500_000,
   },
   vip: {
+    displayName: "VIP",
     maxChannels: Infinity,
     maxCasts: Infinity,
   },
 } as const satisfies {
   [key in PlanType]: {
+    displayName: string;
     maxChannels: number;
     maxCasts: number;
   };

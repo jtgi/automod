@@ -128,11 +128,19 @@ export default function Index() {
                   @{user.name}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/~/account" className="no-underline text-foreground">
+                    Account
+                  </Link>
+                </DropdownMenuItem>
                 {user.role === "superadmin" && (
-                  <DropdownMenuItem>
-                    <Link to="/~/admin">Admin</Link>
+                  <DropdownMenuItem asChild>
+                    <Link to="/~/admin" className="no-underline text-foreground">
+                      Admin
+                    </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
                 <Form method="post" action="/~/logout">
                   <DropdownMenuItem onClick={(e) => e.currentTarget.closest("form")?.submit()}>
                     Logout

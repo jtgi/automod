@@ -7,9 +7,31 @@ import { Avatar, AvatarImage } from "~/components/ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
 import { FarcasterIcon } from "~/components/FarcasterIcon";
 import { Controller, useFormContext } from "react-hook-form";
+import { useCallback } from "react";
 
 export function UserPicker(props: { name: string; isMulti: boolean; required?: boolean }) {
   const { control } = useFormContext();
+
+  const loadOptions = useCallback(
+    debounce(
+      (value: string, callback: (options: { value: string; label: string; icon: string }[]) => void) => {
+        if (!value) return callback([]);
+        axios
+          .get(`/api/searchFarcasterUser?username=${value}`)
+          .then((res) => {
+            const options = res.data.map((user: User) => ({
+              value: user.fid,
+              label: user.username,
+              icon: user.pfp_url,
+            }));
+            callback(options);
+          })
+          .catch(() => callback([]));
+      },
+      400
+    ),
+    []
+  );
 
   return (
     <Controller
@@ -73,13 +95,7 @@ export function UserPicker(props: { name: string; isMulti: boolean; required?: b
             DropdownIndicator: () => null,
             IndicatorSeparator: () => null,
           }}
-          loadOptions={(value) =>
-            axios
-              .get(`/api/searchFarcasterUser?username=${value}`)
-              .then((res) =>
-                res.data.map((user: User) => ({ value: user.fid, label: user.username, icon: user.pfp_url }))
-              )
-          }
+          loadOptions={loadOptions}
         />
       )}
     />
@@ -144,4 +160,21 @@ function ProfileMultiValue(props: any) {
       </div>
     </components.MultiValue>
   );
+}
+
+function debounce(
+  func: (
+    value: string,
+    callback: (options: { value: string; label: string; icon: string }[]) => void
+  ) => void,
+  wait: number
+) {
+  let timeout: NodeJS.Timeout;
+  return function (
+    value: string,
+    callback: (options: { value: string; label: string; icon: string }[]) => void
+  ) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(value, callback), wait);
+  };
 }

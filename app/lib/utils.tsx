@@ -1,6 +1,6 @@
 import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
 import satori from "satori";
 import { twMerge } from "tailwind-merge";
 import { CastAction } from "./types";
