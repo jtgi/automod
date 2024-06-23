@@ -56,10 +56,10 @@ export default function Screen() {
   const { user, usages, plans, channels } = useTypedLoaderData<typeof loader>();
 
   const plan = plans[user.plan as PlanType];
-  const totalCastsProcessed = usages.reduce((acc, usage) => acc + usage.castsProcessed, 0);
   const currentMonthPretty = new Date().toLocaleString("default", { month: "long" });
   const currentMonthYear = new Date().toISOString().substring(0, 7);
   const currentMonthUsage = usages.filter((usage) => usage.monthYear.includes(currentMonthYear));
+  const currentMonthTotal = currentMonthUsage.reduce((acc, usage) => acc + usage.castsProcessed, 0);
 
   return (
     <div>
@@ -74,7 +74,7 @@ export default function Screen() {
                 <TableRow>
                   <TableCell>Monthly Casts</TableCell>
                   <TableCell>
-                    {totalCastsProcessed.toLocaleString()} / {plan.maxCasts.toLocaleString()}
+                    {currentMonthTotal.toLocaleString()} / {plan.maxCasts.toLocaleString()}
                   </TableCell>
                 </TableRow>
                 <TableRow>
@@ -114,7 +114,7 @@ export default function Screen() {
               <TableFooter>
                 <TableRow>
                   <TableCell className="font-medium">Total</TableCell>
-                  <TableCell>{totalCastsProcessed.toLocaleString()}</TableCell>
+                  <TableCell>{currentMonthTotal.toLocaleString()}</TableCell>
                 </TableRow>
               </TableFooter>
             </Table>
