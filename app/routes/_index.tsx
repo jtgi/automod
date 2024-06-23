@@ -66,15 +66,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id: {
           in: [
             "samantha",
+            "base",
             "coop-recs",
             "rainbow",
             "seaport",
+            "farcasther",
             "degen",
             "fitness",
             "higher",
-            "cnz",
+            "zk",
             "replyguys",
-            "nook",
             "ogs",
             "wake",
           ],

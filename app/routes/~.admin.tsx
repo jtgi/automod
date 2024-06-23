@@ -141,7 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
       }
 
-      if (!hasNoRules(moderatedChannel)) {
+      if (hasNoRules(moderatedChannel)) {
         return successResponse({
           request,
           message: "Channel has no automated rules. Nothing to recover.",
@@ -358,6 +358,7 @@ function ChannelStat({ c }: { c: any }) {
 }
 
 export function hasNoRules(moderatedChannel: FullModeratedChannel) {
+  console.log(moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length);
   return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length === 0;
 }
 
