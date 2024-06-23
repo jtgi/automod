@@ -30,4 +30,4 @@ primary_region = 'lax'
 
 
 [[vm]]
-  size = "performance-2x"
+  size = "performance-1x"
