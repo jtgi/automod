@@ -183,7 +183,7 @@ export async function action({ request }: ActionFunctionArgs) {
       for (const moderatedChannel of moderatedChannels) {
         console.log(`[global recovery]: enqueuing ${moderatedChannel.id}`);
 
-        if (!hasNoRules(moderatedChannel)) {
+        if (hasNoRules(moderatedChannel)) {
           console.log(`[global recovery]: skipping ${moderatedChannel.id} - no rules`);
           continue;
         }
