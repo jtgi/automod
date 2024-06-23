@@ -65,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (channelExists) {
     return errorResponse({
       request,
-      message: "Moderation for that channel already exists",
+      message: `Moderation for this channel was setup previously by FID #${channelExists.userId}. Contact @jtgi.`,
     });
   }
 

@@ -25,6 +25,8 @@ import { CurationForm } from "~/components/curation-form";
 import { RuleSet } from "@prisma/client";
 import { addToBypassAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
+import { toggleWebhook } from "./api.channels.$id.toggleEnable";
+import { hasRules } from "./~.admin";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -55,37 +57,46 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.log(JSON.stringify(ch.data, null, 2));
   }
 
-  const updatedChannel = await db.moderatedChannel.update({
-    where: {
-      id: modChannel.id,
-    },
-    data: {
-      banThreshold: ch.data.banThreshold,
-      slowModeHours: ch.data.slowModeHours,
-      excludeCohosts: ch.data.excludeCohosts,
-      excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
-      inclusionRuleSet: JSON.stringify({
-        rule: ch.data.inclusionRuleSet?.ruleParsed,
-        actions: ch.data.inclusionRuleSet?.actionsParsed,
-      }),
-      exclusionRuleSet: JSON.stringify({
-        rule: ch.data.exclusionRuleSet?.ruleParsed,
-        actions: ch.data.exclusionRuleSet?.actionsParsed,
-      }),
-      ruleSets: {
-        // deleteMany: {}, : remove incase we need to rollback
-        create: ch.data.ruleSets.map((ruleSet) => {
-          return {
-            target: ruleSet.target,
-            rule: JSON.stringify(ruleSet.ruleParsed),
-            actions: JSON.stringify(ruleSet.actionsParsed),
-          };
-        }),
-      },
-    },
-  });
+  const shouldFlipEnabled = ch.data.inclusionRuleSet.ruleParsed.conditions?.length !== 0;
 
-  const session = await getSession(request.headers.get("Cookie"));
+  const [updatedChannel, session] = await Promise.all([
+    db.moderatedChannel.update({
+      where: {
+        id: modChannel.id,
+      },
+      data: {
+        banThreshold: ch.data.banThreshold,
+        slowModeHours: ch.data.slowModeHours,
+        excludeCohosts: ch.data.excludeCohosts,
+        excludeUsernames: JSON.stringify(ch.data.excludeUsernames),
+        inclusionRuleSet: JSON.stringify({
+          rule: ch.data.inclusionRuleSet?.ruleParsed,
+          actions: ch.data.inclusionRuleSet?.actionsParsed,
+        }),
+        exclusionRuleSet: JSON.stringify({
+          rule: ch.data.exclusionRuleSet?.ruleParsed,
+          actions: ch.data.exclusionRuleSet?.actionsParsed,
+        }),
+        ruleSets: {
+          // deleteMany: {}, : remove incase we need to rollback
+          create: ch.data.ruleSets.map((ruleSet) => {
+            return {
+              target: ruleSet.target,
+              rule: JSON.stringify(ruleSet.ruleParsed),
+              actions: JSON.stringify(ruleSet.actionsParsed),
+            };
+          }),
+        },
+      },
+    }),
+    getSession(request.headers.get("Cookie")),
+  ]);
+
+  if (shouldFlipEnabled) {
+    // fire and forget
+    toggleWebhook({ channelId: modChannel.id, active: true }).catch(console.error);
+  }
+
   session.flash("message", {
     id: uuid(),
     type: "success",

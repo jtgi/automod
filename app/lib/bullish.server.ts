@@ -470,6 +470,7 @@ export const syncWorker = new Worker(
       db.moderatedChannel.findFirst({
         where: {
           id: job.data.channelId,
+          active: true,
         },
         include: {
           ruleSets: true,

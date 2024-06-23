@@ -25,6 +25,7 @@ export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string
 
   webhooks.push(rootParentUrl);
 
+  console.log("wtf");
   return axios
     .put(
       `https://api.neynar.com/v2/farcaster/webhook/`,

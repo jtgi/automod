@@ -78,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       console.error("Cast is not hydrated", message.action.cast);
       return json(
         {
-          message: "Cast is unavailable. Contact @jtgi.",
+          message: "Cast not on protocol yet. Try again shortly.",
         },
         {
           status: 400,

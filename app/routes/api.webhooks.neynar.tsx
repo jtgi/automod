@@ -19,6 +19,7 @@ import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/auth.server";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
+import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -216,6 +217,7 @@ export async function validateCast({
 
   if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
     console.log(`[${channel.id}] No rules for channel.`);
+    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
     return logs;
   }
 

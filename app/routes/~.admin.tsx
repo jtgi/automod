@@ -123,11 +123,8 @@ export async function action({ request }: ActionFunctionArgs) {
       const moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
         where: {
           id: channel,
-          ruleSets: {
-            some: {
-              active: true,
-            },
-          },
+          active: true,
+          ruleSets: {},
         },
         include: {
           ruleSets: true,
@@ -213,6 +210,15 @@ export async function action({ request }: ActionFunctionArgs) {
       request,
       message: "Recovering! This will take a while. Monitor progress in the logs.",
     });
+  } else if (action === "clearStatus") {
+    await db.status.updateMany({
+      where: {
+        active: true,
+      },
+      data: {
+        active: false,
+      },
+    });
   } else if (action === "status") {
     const message = (formData.get("message") as string) ?? "";
     const link = (formData.get("link") as string) ?? null;
@@ -245,33 +251,6 @@ export default function Admin() {
   const { dau } = useLoaderData<typeof loader>();
   return (
     <div className="flex flex-col sm:flex-row gap-8 w-full">
-      <div className="space-y-20 min-w-[300px] text-sm">
-        <Suspense fallback="Loading">
-          <Await resolve={dau}>
-            {(_dau) => {
-              return (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <h3>Active Channels - {_dau.active.length.toLocaleString()}</h3>
-                    {_dau.active
-                      .sort((a, b) => b.followerCount - a.followerCount)
-                      .map((c) => (
-                        <ChannelStat key={c.id} c={c} />
-                      ))}
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <h2>Setup Incomplete - {_dau.setupIncomplete.length.toLocaleString()}</h2>
-                    {_dau.setupIncomplete.map((c) => (
-                      <ChannelStat key={c.id} c={c} />
-                    ))}
-                  </div>
-                </>
-              );
-            }}
-          </Await>
-        </Suspense>
-      </div>
       <div className="w-full">
         <h3>Admin</h3>
         <div className="space-y-20">
@@ -322,11 +301,44 @@ export default function Admin() {
             <FieldLabel label="Link" className="flex-col items-start">
               <Input name="link" />
             </FieldLabel>
-            <Button name="action" value="status">
-              Submit
-            </Button>
+            <div className="flex gap-2">
+              <Button name="action" value="status">
+                Submit
+              </Button>
+              <Button name="action" value="clearStatus" variant={"secondary"}>
+                Clear
+              </Button>
+            </div>
           </Form>
         </div>
+      </div>
+
+      <div className="space-y-20 min-w-[300px] text-sm">
+        <Suspense fallback="Loading">
+          <Await resolve={dau}>
+            {(_dau) => {
+              return (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <h3>Active Channels - {_dau.active.length.toLocaleString()}</h3>
+                    {_dau.active
+                      .sort((a, b) => b.followerCount - a.followerCount)
+                      .map((c) => (
+                        <ChannelStat key={c.id} c={c} />
+                      ))}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <h2>Setup Incomplete - {_dau.setupIncomplete.length.toLocaleString()}</h2>
+                    {_dau.setupIncomplete.map((c) => (
+                      <ChannelStat key={c.id} c={c} />
+                    ))}
+                  </div>
+                </>
+              );
+            }}
+          </Await>
+        </Suspense>
       </div>
     </div>
   );
@@ -345,6 +357,10 @@ function ChannelStat({ c }: { c: any }) {
   );
 }
 
-function hasNoRules(moderatedChannel: FullModeratedChannel) {
+export function hasNoRules(moderatedChannel: FullModeratedChannel) {
   return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length === 0;
+}
+
+export function hasRules(moderatedChannel: FullModeratedChannel) {
+  return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length !== 0;
 }
