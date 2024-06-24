@@ -242,6 +242,20 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
 }
 
 export async function refreshAccountStatus(args: { fid: string }) {
+  const user = await db.user.findFirst({
+    where: {
+      id: args.fid,
+    },
+  });
+
+  if (user!.plan === "vip") {
+    return {
+      plan: "vip",
+      tokenId: null,
+      expiresAt: null,
+    };
+  }
+
   const plan = await getSubscriptionPlan(args);
   await db.user.update({
     where: {
