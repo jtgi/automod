@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -605,17 +606,6 @@ function RuleSetEditor(props: {
 
   const [isRuleDialogOpen, setIsRuleDialogOpen] = useState(false);
 
-  const duplicatesAllowed: RuleName[] = [
-    "requireActiveHypersub",
-    "requiresErc1155",
-    "requiresErc20",
-    "requiresErc721",
-    "userIsNotFollowedBy",
-    "userDoesNotFollow",
-    "containsText",
-    "textMatchesPattern",
-  ];
-
   return (
     <div>
       <div className="space-y-4">
@@ -670,14 +660,10 @@ function RuleSetEditor(props: {
             </DialogHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
               {Object.entries(props.ruleDefinitions)
-                .sort(([a], [b]) => a.localeCompare(b))
+                .sort(([_a, adef], [_b, bdef]) => adef.friendlyName.localeCompare(bdef.friendlyName))
                 .filter((args) => !args[1].hidden)
                 .map(([name, ruleDef]) => {
-                  if (
-                    // @ts-ignore
-                    ruleFields.find((rf) => rf.name === name) &&
-                    !duplicatesAllowed.includes(name as RuleName)
-                  ) {
+                  if (ruleFields.find((rf) => rf.name === name) && !ruleDef.allowMultiple) {
                     return (
                       <div
                         key={name}

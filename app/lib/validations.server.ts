@@ -48,6 +48,9 @@ export type RuleDefinition = {
   // Where this rule can be used
   category: "all" | "inclusion" | "exclusion";
 
+  // Whether this rule can be used multiple times in a rule set
+  // example: containsText can be used many times, power badge can't
+  allowMultiple: boolean;
   invertedDescription?: string;
   hidden: boolean | (() => boolean);
   invertable: boolean;
@@ -68,6 +71,7 @@ export type RuleDefinition = {
 
 export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
+    allowMultiple: true,
     name: "and",
     category: "all",
     friendlyName: "And",
@@ -79,6 +83,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   or: {
+    allowMultiple: true,
     name: "or",
     category: "all",
     friendlyName: "Or",
@@ -91,9 +96,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   subscribesOnParagraph: {
     name: "subscribesOnParagraph",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Subscribes on Paragraph",
-    fidGated: [5179, 378],
     checkType: "user",
     description: "Check if the cast author has an active subscription on paragraph.xyz",
     hidden: false,
@@ -110,6 +115,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   alwaysInclude: {
     name: "alwaysInclude",
+    allowMultiple: true,
     category: "inclusion",
     friendlyName: "Always Include",
     checkType: "cast",
@@ -121,6 +127,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsText: {
     name: "containsText",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Contains Text",
     checkType: "cast",
@@ -143,6 +150,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   castInThread: {
     name: "castInThread",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Cast is in Thread",
     checkType: "cast",
@@ -162,6 +170,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   isHuman: {
     name: "isHuman",
+    allowMultiple: false,
     checkType: "user",
     category: "all",
     friendlyName: "Proof of Human, by Bot or Not",
@@ -174,6 +183,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsEmbeds: {
     name: "containsEmbeds",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Contains Embedded Content",
     checkType: "cast",
@@ -221,6 +231,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   textMatchesPattern: {
     name: "textMatchesPattern",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Matches Pattern (Regex)",
     checkType: "cast",
@@ -244,6 +255,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   textMatchesLanguage: {
     name: "textMatchesLanguage",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Matches Language",
     checkType: "cast",
@@ -266,6 +278,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   castLength: {
     name: "castLength",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Cast Length",
     checkType: "cast",
@@ -288,6 +301,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsTooManyMentions: {
     name: "containsTooManyMentions",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Contains Mentions",
     checkType: "cast",
@@ -306,6 +320,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
   containsLinks: {
     name: "containsLinks",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Contains Links",
     checkType: "cast",
@@ -323,6 +338,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   downvote: {
     name: "downvote",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Downvote",
     checkType: "cast",
@@ -341,6 +357,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userDoesNotFollow: {
     name: "userDoesNotFollow",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Following",
     checkType: "user",
@@ -361,6 +378,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userIsNotFollowedBy: {
     name: "userIsNotFollowedBy",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Followed By",
     checkType: "user",
@@ -381,6 +399,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requireActiveHypersub: {
     name: "requireActiveHypersub",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Subscribes on Hypersub",
     checkType: "user",
@@ -413,6 +432,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requiresErc20: {
     name: "requiresErc20",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Holds ERC-20",
     checkType: "user",
@@ -453,6 +473,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requiresErc1155: {
     name: "requiresErc1155",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Holds ERC-1155",
     checkType: "user",
@@ -494,6 +515,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requiresErc721: {
     name: "requiresErc721",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Holds ERC-721",
     checkType: "user",
@@ -535,6 +557,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userDoesNotHoldPowerBadge: {
     name: "userDoesNotHoldPowerBadge",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Power Badge",
     checkType: "user",
@@ -547,6 +570,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userIsCohost: {
     name: "userIsCohost",
+    allowMultiple: false,
     category: "all",
     friendlyName: "Cohosts or Owner",
     checkType: "user",
@@ -558,6 +582,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userProfileContainsText: {
     name: "userProfileContainsText",
+    allowMultiple: true,
     category: "all",
     friendlyName: "Profile Contains Text",
     checkType: "user",
@@ -580,6 +605,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
   userDisplayNameContainsText: {
     name: "userDisplayNameContainsText",
+    allowMultiple: true,
     category: "all",
     friendlyName: "User Display Name Contains Text",
     checkType: "user",
@@ -604,6 +630,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFollowerCount: {
     name: "userFollowerCount",
+    allowMultiple: false,
     category: "all",
     friendlyName: "User Follower Count",
     checkType: "user",
@@ -628,6 +655,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFidInList: {
     name: "userFidInList",
+    allowMultiple: false,
     category: "all",
     friendlyName: "User in List",
     checkType: "user",
@@ -647,8 +675,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFidInRange: {
     name: "userFidInRange",
+    allowMultiple: false,
     category: "all",
-    friendlyName: "User FID",
+    friendlyName: "User FID in Range",
     checkType: "user",
     description: "Check if the user's FID is within a range",
     hidden: false,
@@ -683,6 +712,7 @@ export type ActionDefinition = {
    * Example: "Boost" only makes sense for root.
    */
   castScope?: "root" | "reply" | "all";
+
   args: Record<
     string,
     | {
