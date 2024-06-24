@@ -1,20 +1,12 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionFunctionArgs, LoaderFunctionArgs, defer, json } from "@remix-run/node";
-import { Await, Form, useLoaderData } from "@remix-run/react";
-import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { Button } from "~/components/ui/button";
-import { FieldLabel } from "~/components/ui/fields";
-import { Input } from "~/components/ui/input";
-import { PlanType, commitSession, getSession, refreshAccountStatus, userPlans } from "~/lib/auth.server";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Form, Link, useFetcher } from "@remix-run/react";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { Button, ButtonProps } from "~/components/ui/button";
+import { PlanDef, PlanType, planTypes, refreshAccountStatus, userPlans } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
-import { errorResponse, requireSuperAdmin, requireUser, successResponse } from "~/lib/utils.server";
-import { isRecoverActive, recover } from "./~.channels.$id.tools";
-import { recoverQueue } from "~/lib/bullish.server";
-import { FormEvent, Suspense } from "react";
-import axios from "axios";
-import { automodFid } from "./~.channels.$id";
-import { FullModeratedChannel } from "./api.webhooks.neynar";
+import { requireUser, successResponse } from "~/lib/utils.server";
 import {
   Table,
   TableBody,
@@ -25,6 +17,9 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { ArrowUpRight, RefreshCwIcon, RocketIcon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -52,6 +47,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
+export async function action({ request }: ActionFunctionArgs) {
+  const user = await requireUser({ request });
+  const formData = await request.formData();
+  const intent = formData.get("intent") as string;
+
+  if (intent === "checkAccountStatus") {
+    const plan = await refreshAccountStatus({ fid: user.id });
+    return successResponse({
+      request,
+      message: `Refreshed! You are on the ${plan.plan} plan.`,
+    });
+  }
+
+  return typedjson({ success: true });
+}
+
 export default function Screen() {
   const { user, usages, plans, channels } = useTypedLoaderData<typeof loader>();
 
@@ -64,34 +75,52 @@ export default function Screen() {
   return (
     <div>
       <section className="flex flex-col sm:flex-row gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>{plan.displayName} Plan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell>Monthly Casts</TableCell>
-                  <TableCell>
-                    {currentMonthTotal.toLocaleString()} / {plan.maxCasts.toLocaleString()}
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Max Channels</TableCell>
-                  <TableCell>
-                    {channels.length} / {plan.maxChannels.toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-2 items-center">
+                <Avatar className="w-11 h-11 border-white border-5 shadow-md">
+                  <AvatarImage src={user.avatarUrl ?? undefined} />
+                  <AvatarFallback>{user.name[0]}</AvatarFallback>
+                </Avatar>
+                <div className="text-center">
+                  <CardTitle>@{user.name}</CardTitle>
+                  <p className="text-[9px] text-gray-500">#{user.id}</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell>Plan</TableCell>
+                    <TableCell>{plan.displayName}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Casts Processed</TableCell>
+                    <TableCell>
+                      {currentMonthTotal.toLocaleString()} / {plan.maxCasts.toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Channels</TableCell>
+                    <TableCell>
+                      {channels.length} / {plan.maxChannels.toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              <RefreshAccountButton className="w-full sm:w-full" />
+            </CardContent>
+          </Card>
+
+          <UpgradePlanButton currentPlan={plan} plans={plans} />
+        </div>
 
         <Card className="flex-auto">
           <CardHeader>
             <CardTitle>{currentMonthPretty} Usage</CardTitle>
-            <CardDescription>Casts processed by automod</CardDescription>
+            <CardDescription>Casts processed by automod.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -123,4 +152,66 @@ export default function Screen() {
       </section>
     </div>
   );
+}
+
+function RefreshAccountButton(props: ButtonProps) {
+  const fetcher = useFetcher();
+  const loading = fetcher.state !== "idle";
+
+  return (
+    <fetcher.Form method="post">
+      <Button
+        {...props}
+        disabled={loading}
+        size="xs"
+        variant={"outline"}
+        name="intent"
+        value="checkAccountStatus"
+        className={"w-full"}
+      >
+        {loading ? (
+          <>
+            <RefreshCwIcon className="animate-spin w-3 h-3 mr-1" /> Refreshing...
+          </>
+        ) : (
+          <>
+            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh Account
+          </>
+        )}
+      </Button>
+    </fetcher.Form>
+  );
+}
+
+function UpgradePlanButton(props: { currentPlan: PlanDef; plans: typeof userPlans }) {
+  const { currentPlan, plans } = props;
+
+  if (currentPlan.id === "vip" || currentPlan.id === "ultra") {
+    return null;
+  }
+
+  function button(plan: PlanType) {
+    if (!("link" in plans[plan])) {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-col gap-2 text-xs p-4 rounded-lg border items-center">
+        <RocketIcon className="w-6 h-6" />
+        <p>For more casts and more channels</p>
+        <Button asChild size={"xs"} variant={"outline"} className="w-full">
+          {/* @ts-ignore */}
+          <Link to={plans[plan].link} className="no-underline text-inherit" target="_blank" rel="noreferrer">
+            Upgrade to {plans[plan].displayName} <ArrowUpRight className="ml-1 w-3 h-3" />
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (currentPlan.id === "prime") {
+    return button("ultra");
+  } else if (currentPlan.id === "basic") {
+    return button("prime");
+  }
 }

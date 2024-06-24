@@ -3,13 +3,13 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { db } from "~/lib/db.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Button } from "~/components/ui/button";
+import { Button, ButtonProps } from "~/components/ui/button";
 import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
-import { RefreshCwIcon } from "lucide-react";
+import { BatteryWarningIcon, RefreshCwIcon } from "lucide-react";
 import { Link, useFetcher } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { PlanType, refreshAccountStatus, userPlans } from "~/lib/auth.server";
-import { Alert } from "~/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import {
   Dialog,
   DialogHeader,
@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
+import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -85,6 +86,7 @@ export default function FrameConfig() {
 
   const plan = plans[user.plan as PlanType];
   const isNearUsage = totalCastsProcessed >= plan.maxCasts - plan.maxCasts * 0.15;
+  const pctUsed = `${Math.round((totalCastsProcessed / plan.maxCasts) * 100)}%`;
   const isOverUsage = totalCastsProcessed >= plan.maxCasts;
   const isMaxChannels = createdChannels >= plan.maxChannels;
 
@@ -110,8 +112,8 @@ export default function FrameConfig() {
         <div className="space-y-12">
           {isNearUsage && !isOverUsage && (
             <Alert>
-              <>
-                <p className="font-semibold">You're nearing your monthly usage limit.</p>
+              <AlertTitle>You've used {pctUsed} of your monthly cast limit.</AlertTitle>
+              <AlertDescription>
                 <p>
                   Upgrade to{" "}
                   <a
@@ -129,23 +131,27 @@ export default function FrameConfig() {
                   >
                     Ultra
                   </a>{" "}
-                  to avoid any disruptions.
-                </p>
-                <p>
-                  If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
+                  for way more.
                 </p>
                 <div className="py-2">
                   <hr />
                 </div>
-                <RefreshAccountButton />
-              </>
+                <div className="flex gap-2">
+                  <Button variant={"secondary"} size={"sm"} asChild>
+                    <Link className="no-underline" to="/~/account">
+                      View Usage
+                    </Link>
+                  </Button>
+                  <RefreshAccountButton />
+                </div>
+              </AlertDescription>
             </Alert>
           )}
 
           {isOverUsage && (
             <Alert>
-              <>
-                <p className="font-semibold">You're over your monthly usage limit.</p>
+              <AlertTitle>You're over your monthly usage limit.</AlertTitle>
+              <AlertDescription>
                 <p>
                   Automated moderation is currently paused. Upgrade to{" "}
                   <a
@@ -165,14 +171,18 @@ export default function FrameConfig() {
                   </a>
                   .
                 </p>
-                <p>
-                  If you have any questions, reach out to <a href="https://warpcast.com/jtgi">@jtgi</a>.
-                </p>
                 <div className="py-2">
                   <hr />
                 </div>
-                <RefreshAccountButton />
-              </>
+                <div className="flex gap-2">
+                  <Button variant={"secondary"} size={"sm"} asChild>
+                    <Link className="no-underline" to="/~/account">
+                      View Usage
+                    </Link>
+                  </Button>
+                  <RefreshAccountButton />
+                </div>
+              </AlertDescription>
             </Alert>
           )}
 
@@ -268,19 +278,20 @@ export default function FrameConfig() {
   );
 }
 
-function RefreshAccountButton() {
+function RefreshAccountButton(props: ButtonProps) {
   const fetcher = useFetcher();
-  const loading = fetcher.state === "submitting";
+  const loading = fetcher.state !== "idle";
 
   return (
     <fetcher.Form method="post">
       <Button
+        {...props}
         disabled={loading}
         size="sm"
         variant={"secondary"}
         name="intent"
         value="checkAccountStatus"
-        className="w-full sm:w-auto"
+        className={cn("w-full sm:w-auto", props.className)}
       >
         {loading ? (
           <>
@@ -288,7 +299,7 @@ function RefreshAccountButton() {
           </>
         ) : (
           <>
-            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh Account Status
+            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh Account
           </>
         )}
       </Button>

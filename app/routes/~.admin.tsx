@@ -358,7 +358,6 @@ function ChannelStat({ c }: { c: any }) {
 }
 
 export function hasNoRules(moderatedChannel: FullModeratedChannel) {
-  console.log(moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length);
   return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length === 0;
 }
 

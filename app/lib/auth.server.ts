@@ -137,31 +137,46 @@ export type PlanType = (typeof planTypes)[number];
 
 export const userPlans = {
   basic: {
+    id: "basic",
     displayName: "Basic",
+    price: "free",
     maxChannels: 3,
     maxCasts: 3_000,
   },
   prime: {
+    id: "prime",
     displayName: "Prime",
+    price: "$7.77/mo",
+    link: "https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg",
     maxChannels: 5,
     maxCasts: 50_000,
   },
   ultra: {
+    id: "ultra",
     displayName: "Ultra",
+    price: "$23.33/mo",
+    link: "https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw",
     maxChannels: Infinity,
     maxCasts: 500_000,
   },
   vip: {
+    id: "vip",
+    price: Infinity.toLocaleString(),
     displayName: "VIP",
     maxChannels: Infinity,
     maxCasts: Infinity,
   },
 } as const satisfies {
-  [key in PlanType]: {
-    displayName: string;
-    maxChannels: number;
-    maxCasts: number;
-  };
+  [key in PlanType]: PlanDef;
+};
+
+export type PlanDef = {
+  id: PlanType;
+  link?: string;
+  price: string;
+  displayName: string;
+  maxChannels: number;
+  maxCasts: number;
 };
 
 export async function getSubscriptionPlan(args: { fid: string }): Promise<{

@@ -26,7 +26,6 @@ import { RuleSet } from "@prisma/client";
 import { addToBypassAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
-import { hasRules } from "./~.admin";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");

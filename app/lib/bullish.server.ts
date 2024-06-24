@@ -165,7 +165,7 @@ export const webhookWorker = new Worker(
         nonce: `cast-usage-warning-${moderatedChannel.id}-${moderatedChannel.user.plan}-${new Date()
           .toISOString()
           .substring(0, 7)}`,
-        message: `Hey, you've used 85% of your usage limit for the month. Upgrade your plan to avoid any disruption.\n\nhttps://automod.sh/~`,
+        message: `Hey, you've used 85% of your usage limit for the month. Upgrade your plan to avoid any disruption.\n\nhttps://automod.sh/~/account`,
       });
     } else if (totalUsage >= plan.maxCasts && totalUsage < plan.maxCasts * 1.05) {
       sendNotification({
@@ -175,7 +175,7 @@ export const webhookWorker = new Worker(
         nonce: `cast-usage-full-${moderatedChannel.id}-${moderatedChannel.user.plan}-${new Date()
           .toISOString()
           .substring(0, 7)}`,
-        message: `You're over your usage limit for the month. Rule based moderation will be disabled shortly. Upgrade your plan to get back online.\n\nhttps://automod.sh/~`,
+        message: `You're over your usage limit for the month. Rule based moderation will be disabled shortly. Upgrade your plan to get back online.\n\nhttps://automod.sh/~/account`,
       });
     } else if (totalUsage >= plan.maxCasts * 1.05) {
       console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);
