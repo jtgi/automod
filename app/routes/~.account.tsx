@@ -90,7 +90,7 @@ export default function Screen() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Table>
+              <Table className="text-xs">
                 <TableBody>
                   <TableRow>
                     <TableCell>Plan</TableCell>
