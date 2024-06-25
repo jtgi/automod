@@ -2,7 +2,7 @@ import { AuthKitProvider, SignInButton, StatusAPIResponse } from "@farcaster/aut
 import { ClientOnly } from "remix-utils/client-only";
 import { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useNavigate } from "@remix-run/react";
-import { ArrowRight, ArrowUpRight, Loader2, Zap } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
@@ -51,16 +51,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  const [activeChannels, totalChannels, totalModerationActions] = await Promise.all([
+  const [activeChannels] = await Promise.all([
     db.moderatedChannel.findMany({
       select: {
         id: true,
         imageUrl: true,
-        _count: {
-          select: {
-            moderationLogs: true,
-          },
-        },
       },
       where: {
         id: {
@@ -81,22 +76,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
           ],
         },
       },
-      orderBy: {
-        moderationLogs: {
-          _count: "desc",
-        },
-      },
       take: 10,
     }),
-    db.moderatedChannel.count({
-      where: {
-        active: true,
-        moderationLogs: {
-          some: {},
-        },
-      },
-    }),
-    db.moderationLog.count({}),
   ]);
 
   const user = await authenticator.isAuthenticated(request);
@@ -108,8 +89,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       invite,
       error,
       activeChannels,
-      totalChannels,
-      totalModerationActions,
     },
     {
       headers: {
@@ -120,8 +99,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Home() {
-  const { user, env, error, invite, totalChannels, activeChannels, totalModerationActions } =
-    useTypedLoaderData<typeof loader>();
+  const { user, env, error, invite, activeChannels } = useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [loggingIn, setLoggingIn] = useState(false);
   const coin = useRef<HTMLAudioElement>();
@@ -265,9 +243,7 @@ export default function Home() {
                       );
                     })}
                 </div>
-                <p className="text-xs text-white opacity-60 mt-2">
-                  {totalModerationActions.toLocaleString()} automated actions taken
-                </p>
+                <p className="text-xs text-white opacity-60 mt-2">Over 1 million automated actions taken</p>
               </section>
 
               <footer className="absolute bottom-5 text-center text-xs py-12 flex items-center gap-8 justify-between">
