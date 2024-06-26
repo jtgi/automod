@@ -663,6 +663,7 @@ function RuleSetEditor(props: {
                 .sort(([_a, adef], [_b, bdef]) => adef.friendlyName.localeCompare(bdef.friendlyName))
                 .filter((args) => !args[1].hidden)
                 .map(([name, ruleDef]) => {
+                  //@ts-ignore
                   if (ruleFields.find((rf) => rf.name === name) && !ruleDef.allowMultiple) {
                     return (
                       <div
