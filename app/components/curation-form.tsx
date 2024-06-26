@@ -673,6 +673,12 @@ function RuleSetEditor(props: {
                         <div>
                           <p className="text-sm font-semibold">{ruleDef.friendlyName}</p>
                           <p className="text-sm text-gray-500">{ruleDef.description}</p>
+                          <div className="flex gap-1 items-center mt-4">
+                            {ruleDef.authorIcon && (
+                              <img src={ruleDef.authorIcon} className="w-4 h-4 rounded-full" />
+                            )}
+                            {ruleDef.author && <p className="text-xs text-gray-500">{ruleDef.author}</p>}
+                          </div>
                         </div>
                       </div>
                     );
@@ -694,9 +700,19 @@ function RuleSetEditor(props: {
                           setIsRuleDialogOpen(false);
                         }}
                       >
-                        <div>
-                          <p className="text-sm font-semibold">{ruleDef.friendlyName}</p>
-                          <p className="text-sm text-gray-500">{ruleDef.description}</p>
+                        <div className="flex flex-col">
+                          <div className="flex-auto">
+                            <p className="text-sm font-semibold">{ruleDef.friendlyName}</p>
+                            <p className="text-xs text-gray-500">{ruleDef.description}</p>
+                          </div>
+                          {ruleDef.author !== "automod" && (
+                            <div className="flex gap-1 items-center mt-4">
+                              {ruleDef.authorIcon && (
+                                <img src={ruleDef.authorIcon} className="w-4 h-4 rounded-full" />
+                              )}
+                              {ruleDef.author && <p className="text-xs text-gray-500">{ruleDef.author}</p>}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

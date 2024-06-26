@@ -123,8 +123,8 @@ export async function validateCast({
     }
   }
 
-  const isExcluded = moderatedChannel.excludeUsernamesParsed?.some((u) => u.value === cast.author.fid);
-  const isOwner = channel.lead?.fid === cast.author.fid;
+  const isExcluded = false; //moderatedChannel.excludeUsernamesParsed?.some((u) => u.value === cast.author.fid);
+  const isOwner = false; //channel.lead?.fid === cast.author.fid;
 
   if (isExcluded || isOwner) {
     console.log(`User @${cast.author.username} is in the bypass list.`);

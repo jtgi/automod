@@ -23,6 +23,7 @@ import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 import {
   formatHash,
   getSetCache,
+  getSharedEnv,
   isWarpcastCastUrl,
   validateErc1155,
   validateErc20,
@@ -35,13 +36,21 @@ import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
+import { UnrecoverableError } from "bullmq";
 
 export type RuleDefinition = {
   name: RuleName;
+  author: string;
+  authorUrl?: string;
+  authorIcon?: string;
+  icon?: string;
   friendlyName: string;
 
   // Gate rule access to fids
   fidGated?: Array<number>;
+
+  // Gate rule access to channels
+  channelGated?: Array<string>;
   checkType: "user" | "cast";
   description: string;
 
@@ -69,8 +78,13 @@ export type RuleDefinition = {
   >;
 };
 
+const hostUrl = ""; //getSharedEnv().hostUrl;
+
 export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   and: {
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     name: "and",
     category: "all",
@@ -83,6 +97,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   or: {
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     name: "or",
     category: "all",
@@ -96,6 +113,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   subscribesOnParagraph: {
     name: "subscribesOnParagraph",
+    author: "Paragraph",
+    authorUrl: "https://paragraph.xyz",
+    authorIcon: `${hostUrl}/icons/paragraph2.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Subscribes on Paragraph",
@@ -115,6 +135,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   alwaysInclude: {
     name: "alwaysInclude",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "inclusion",
     friendlyName: "Always Include",
@@ -127,6 +150,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsText: {
     name: "containsText",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Contains Text",
@@ -150,6 +176,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   castInThread: {
     name: "castInThread",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Cast is in Thread",
@@ -170,6 +199,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   isHuman: {
     name: "isHuman",
+    author: "botornot",
+    authorUrl: "https://warpcast.com/botornot",
+    authorIcon: `${hostUrl}/icons/botornot.png`,
     allowMultiple: false,
     checkType: "user",
     category: "all",
@@ -183,6 +215,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsEmbeds: {
     name: "containsEmbeds",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Contains Embedded Content",
@@ -231,6 +266,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   textMatchesPattern: {
     name: "textMatchesPattern",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Matches Pattern (Regex)",
@@ -255,6 +293,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   textMatchesLanguage: {
     name: "textMatchesLanguage",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Matches Language",
@@ -278,6 +319,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   castLength: {
     name: "castLength",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Cast Length",
@@ -301,6 +345,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   containsTooManyMentions: {
     name: "containsTooManyMentions",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Contains Mentions",
@@ -320,6 +367,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
   containsLinks: {
     name: "containsLinks",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Contains Links",
@@ -338,6 +388,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   downvote: {
     name: "downvote",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Downvote",
@@ -357,6 +410,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userDoesNotFollow: {
     name: "userDoesNotFollow",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Following",
@@ -378,6 +434,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userIsNotFollowedBy: {
     name: "userIsNotFollowedBy",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Followed By",
@@ -399,6 +458,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requireActiveHypersub: {
     name: "requireActiveHypersub",
+    author: "Hypersub",
+    authorUrl: "https://hypersub.withfarbic.xyz",
+    authorIcon: `${hostUrl}/icons/fabric.svg`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Subscribes on Hypersub",
@@ -432,6 +494,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requiresErc20: {
     name: "requiresErc20",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Holds ERC-20",
@@ -473,6 +538,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requiresErc1155: {
     name: "requiresErc1155",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Holds ERC-1155",
@@ -515,6 +583,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   requiresErc721: {
     name: "requiresErc721",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "Holds ERC-721",
@@ -557,6 +628,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userDoesNotHoldPowerBadge: {
     name: "userDoesNotHoldPowerBadge",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Power Badge",
@@ -570,6 +644,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userIsCohost: {
     name: "userIsCohost",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "Cohosts or Owner",
@@ -581,6 +658,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
 
   userProfileContainsText: {
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     name: "userProfileContainsText",
     allowMultiple: true,
     category: "all",
@@ -605,6 +685,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   },
   userDisplayNameContainsText: {
     name: "userDisplayNameContainsText",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: true,
     category: "all",
     friendlyName: "User Display Name Contains Text",
@@ -630,6 +713,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   userFollowerCount: {
     name: "userFollowerCount",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     allowMultiple: false,
     category: "all",
     friendlyName: "User Follower Count",
@@ -653,9 +739,59 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
+  openRankGlobalEngagement: {
+    name: "openRankGlobalEngagement",
+    author: "OpenRank",
+    authorUrl: "https://openrank.com",
+    authorIcon: `${hostUrl}/icons/openrank.png`,
+    allowMultiple: false,
+    category: "all",
+    friendlyName: "Global Ranking by OpenRank",
+    checkType: "cast",
+    description: "Require the cast author to have a sufficient global ranking.",
+    hidden: false,
+    invertable: false,
+    args: {
+      minRank: {
+        type: "number",
+        friendlyName: "Minimum Rank",
+        required: true,
+        description:
+          "Example: if you enter 100, this rule will check for users ranked 1 to 100. Rankings are based on engagement from trusted accounts.",
+      },
+    },
+  },
+
+  openRankChannel: {
+    name: "openRankChannel",
+    author: "OpenRank",
+    authorUrl: "https://openrank.com",
+    authorIcon: `${hostUrl}/icons/openrank.png`,
+    allowMultiple: false,
+    category: "all",
+    friendlyName: "Channel Ranking by OpenRank",
+    channelGated: ["memes", "design", "sonata"],
+    checkType: "cast",
+    description: "Require the cast author to have a sufficient channel ranking.",
+    hidden: false,
+    invertable: false,
+    args: {
+      minRank: {
+        type: "number",
+        friendlyName: "Minimum Rank",
+        required: true,
+        description:
+          "Example: if you enter 100, this rule will trigger for users ranked 1 to 100 in your channel. Rankings are based on engagement from trusted accounts within your channel.",
+      },
+    },
+  },
+
   userFidInList: {
     name: "userFidInList",
     allowMultiple: false,
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     category: "all",
     friendlyName: "User in List",
     checkType: "user",
@@ -676,6 +812,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
   userFidInRange: {
     name: "userFidInRange",
     allowMultiple: false,
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
     category: "all",
     friendlyName: "User FID in Range",
     checkType: "user",
@@ -861,6 +1000,8 @@ export const ruleNames = [
   "containsTooManyMentions",
   "containsLinks",
   "castLength",
+  "openRankGlobalEngagement",
+  "openRankChannel",
   "subscribesOnParagraph",
   "userProfileContainsText",
   "userDisplayNameContainsText",
@@ -1119,6 +1260,8 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   castInThread: castInThread,
   castLength: castLength,
   downvote: downvoteRule,
+  openRankChannel: openRankChannel,
+  openRankGlobalEngagement: openRankGlobalEngagement,
   userProfileContainsText: userProfileContainsText,
   userDoesNotFollow: userFollows,
   userIsNotFollowedBy: userFollowedBy,
@@ -1998,11 +2141,13 @@ export async function isCohost(props: { fid: number; channel: string }) {
   return role.delegates.some((d) => d.fid === String(props.fid));
 }
 
-export function getRuleDefinitions(fid: string): Record<RuleName, RuleDefinition> {
+export function getRuleDefinitions(fid: string, channelId?: string): Record<RuleName, RuleDefinition> {
   // filter by object value's if fid in value.fidAccess
   const filteredRules = {};
   for (const [key, value] of Object.entries(ruleDefinitions)) {
     if (value.fidGated && !value.fidGated.includes(parseInt(fid))) {
+      continue;
+    } else if (value.channelGated && (!channelId || !value.channelGated.includes(channelId))) {
       continue;
     } else {
       // @ts-ignore
@@ -2011,4 +2156,71 @@ export function getRuleDefinitions(fid: string): Record<RuleName, RuleDefinition
   }
 
   return filteredRules as Record<RuleName, RuleDefinition>;
+}
+
+async function openRankChannel(props: CheckFunctionArgs) {
+  const { cast, rule, channel } = props;
+  const { minRank } = rule.args as { minRank: number };
+
+  const res = await axios.post<GlobalRankResponse>(
+    `https://graph.cast.k3l.io/channels/rankings/${channel.id}/fids`,
+    [cast.author.fid]
+  );
+
+  const { result } = res.data;
+  const user = result.find((u) => u.fid === cast.author.fid);
+
+  if (!user) {
+    return {
+      result: false,
+      message: `@${cast.author.username} is not in /${channel.id} rankings`,
+    };
+  }
+
+  return {
+    result: user.rank <= minRank,
+    message:
+      user.rank <= minRank
+        ? `@${cast.author.username} is ranked #${user.rank} in /${channel.id}`
+        : `@${cast.author.username} is not a top ${minRank} account in ${channel.id}. Their current rank is #${user.rank}.`,
+  };
+}
+
+type GlobalRankResponse = {
+  result: Array<{
+    fid: number;
+    fname: string;
+    username: string;
+    rank: number;
+    score: number;
+    percentile: number;
+  }>;
+};
+
+async function openRankGlobalEngagement(props: CheckFunctionArgs) {
+  const { cast, rule } = props;
+  const { minRank } = rule.args as { minRank: number };
+
+  const res = await axios.post<GlobalRankResponse>(
+    `https://graph.cast.k3l.io/scores/global/engagement/fids`,
+    [cast.author.fid]
+  );
+
+  const { result } = res.data;
+  const user = result.find((u) => u.fid === cast.author.fid);
+
+  if (!user) {
+    return {
+      result: false,
+      message: `@${cast.author.fid} not found in global rankings`,
+    };
+  }
+
+  return {
+    result: user.rank <= minRank,
+    message:
+      user.rank <= minRank
+        ? `@${cast.author.username} is ranked #${user.rank}`
+        : `@${cast.author.username} is not a top ${minRank} account. Their current rank is #${user.rank}.`,
+  };
 }

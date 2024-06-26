@@ -130,7 +130,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     user,
     channel,
     actionDefinitions,
-    ruleDefinitions: getRuleDefinitions(user.id),
+    ruleDefinitions: getRuleDefinitions(user.id, channel.id),
     ruleNames,
     cohostRole,
     bypassInstallLink: actionToInstallLink(addToBypassAction),
