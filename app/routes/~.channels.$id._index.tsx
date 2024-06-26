@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { abbreviateNumber } from "js-abbreviation-number";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -10,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { typeddefer, typedjson, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import {
@@ -18,7 +19,7 @@ import {
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Form, NavLink, useLocation, useSearchParams } from "@remix-run/react";
+import { Await, Form, Link, NavLink } from "@remix-run/react";
 import { actionDefinitions, like } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import {
@@ -29,8 +30,12 @@ import {
   SlidersHorizontalIcon,
 } from "lucide-react";
 import { z } from "zod";
-import { useLocalStorage } from "~/lib/utils";
+import { cn, useLocalStorage } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { CastSenseResponse, getChannelStats } from "~/lib/castsense.server";
+import { Suspense } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -61,12 +66,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
   ]);
 
-  return typedjson({
+  const stats = getChannelStats({ channelId: channel.id });
+
+  return typeddefer({
     user,
     channel,
     moderationLogs,
     actionDefinitions: actionDefinitions,
     env: getSharedEnv(),
+    channelStats: stats,
 
     page,
     pageSize,
@@ -204,7 +212,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { page, pageSize, total, moderationLogs, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const { page, pageSize, total, moderationLogs, actionDefinitions, channelStats } =
+    useTypedLoaderData<typeof loader>();
   const [showCastText, setShowCastText] = useLocalStorage("showCastText", true);
 
   const prevPage = Math.max(page - 1, 0);
@@ -212,9 +221,17 @@ export default function Screen() {
 
   return (
     <div>
+      <Suspense fallback={<StatsLoading />}>
+        <Await resolve={channelStats}>{(channelStats) => <ChannelStats stats={channelStats} />}</Await>
+      </Suspense>
+
+      <div className="py-4">
+        <hr />
+      </div>
+
       <div className="flex justify-between border-b">
         <div id="log-top">
-          <p className="font-semibold">Logs</p>
+          <p className="font-semibold">Activity</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -446,4 +463,104 @@ function getPageInfo({ request }: { request: Request }) {
     pageSize: isNaN(pageSize) ? defaultPageSize : pageSize,
     skip: isNaN(skip) ? 0 : skip,
   };
+}
+
+function StatsLoading() {
+  return (
+    <div className="flex flex-auto gap-4">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Card key={i} className="w-full">
+          <CardHeader>
+            <Skeleton className="w-[50px] h-[10px] rounded-full" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="w-[75px] h-[10px] rounded-full" />
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="w-[50px] h-[10px] rounded-full" />
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function ChannelStats(props: { channelId: string; stats: CastSenseResponse }) {
+  const { stats, channelId } = props;
+  const castReduction = stats.casts_percentage_change < 0;
+  return (
+    <div>
+      <div className="flex flex-wrap gap-4">
+        {stats.current_period_followers && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Followers</CardDescription>
+              <CardTitle className="text-4xl">{stats.current_period_followers}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs text-muted-foreground">
+                {stats.followers_percentage_change} from last month
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Casts</CardDescription>
+            <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+              {abbreviateNumber(stats.current_period_casts)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-xs text-muted-foreground")}>
+              {castReduction ? "" : "+"}
+              {Math.round(stats.casts_percentage_change)}% from last month
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Likes</CardDescription>
+            <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+              {abbreviateNumber(stats.current_period_likes)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-xs text-muted-foreground")}>
+              {castReduction ? "" : "+"}
+              {Math.round(stats.likes_percentage_change)}% from last month
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Replies</CardDescription>
+            <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+              {abbreviateNumber(stats.current_period_replies)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-xs text-muted-foreground")}>
+              {castReduction ? "" : "+"}
+              {Math.round(stats.current_period_replies)}% from last month
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <p className="text-xs text-right mt-1 font-mono">
+        Powered by{" "}
+        <Link
+          to={`https://castsense.xyz/channel/${channelId}`}
+          target="_blank"
+          rel="noreferrer"
+          className="no-underline"
+        >
+          CastSense
+        </Link>
+      </p>
+    </div>
+  );
 }

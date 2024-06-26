@@ -158,6 +158,9 @@ dependencies:
   isbot:
     specifier: ^4.1.0
     version: 4.4.0
+  js-abbreviation-number:
+    specifier: ^1.4.0
+    version: 1.4.0
   lucide-react:
     specifier: ^0.317.0
     version: 0.317.0(react@18.2.0)
@@ -7834,6 +7837,10 @@ packages:
   /jiti@1.21.0:
     resolution: {integrity: sha512-gFqAIbuKyyso/3G2qhiO2OM6shY6EPP/R0+mkDbyspxKazh8BXDC5FiFsUjlczgdNz/vfra0da2y+aHrusLG/Q==}
     hasBin: true
+
+  /js-abbreviation-number@1.4.0:
+    resolution: {integrity: sha512-4sSNspIdfSjCrKm97JZRFgaNgkwBIiVL+hb+piWXqmFW9HaixGa+3G+dSClZvryUZqlcFhMOG3gCeUuAP6lLig==}
+    dev: false
 
   /js-sha3@0.8.0:
     resolution: {integrity: sha512-gF1cRrHhIzNfToc802P800N8PpXS+evLLXfsVpowqmAFR9uwbi89WvXg2QspOmXL8QL86J4T1EpFu+yUkwJY3Q==}
