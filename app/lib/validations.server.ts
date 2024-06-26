@@ -2162,13 +2162,16 @@ async function openRankChannel(props: CheckFunctionArgs) {
   const { cast, rule, channel } = props;
   const { minRank } = rule.args as { minRank: number };
 
-  const res = await axios.post<GlobalRankResponse>(
-    `https://graph.cast.k3l.io/channels/rankings/${channel.id}/fids`,
-    [cast.author.fid]
-  );
-
-  const { result } = res.data;
-  const user = result.find((u) => u.fid === cast.author.fid);
+  const user = await getSetCache({
+    key: `openrank:channel-rank:${channel.id}:${cast.author.fid}`,
+    ttlSeconds: 60 * 60 * 6,
+    get: () =>
+      axios
+        .post<GlobalRankResponse>(`https://graph.cast.k3l.io/channels/rankings/${channel.id}/fids`, [
+          cast.author.fid,
+        ])
+        .then((res) => res.data.result.find((u) => u.fid === cast.author.fid)),
+  });
 
   if (!user) {
     return {
@@ -2201,13 +2204,16 @@ async function openRankGlobalEngagement(props: CheckFunctionArgs) {
   const { cast, rule } = props;
   const { minRank } = rule.args as { minRank: number };
 
-  const res = await axios.post<GlobalRankResponse>(
-    `https://graph.cast.k3l.io/scores/global/engagement/fids`,
-    [cast.author.fid]
-  );
-
-  const { result } = res.data;
-  const user = result.find((u) => u.fid === cast.author.fid);
+  const user = await getSetCache({
+    key: `openrank:global-rank:${cast.author.fid}`,
+    ttlSeconds: 60 * 60 * 6,
+    get: () =>
+      axios
+        .post<GlobalRankResponse>(`https://graph.cast.k3l.io/scores/global/engagement/fids`, [
+          cast.author.fid,
+        ])
+        .then((res) => res.data.result.find((u) => u.fid === cast.author.fid)),
+  });
 
   if (!user) {
     return {
