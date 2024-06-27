@@ -55,16 +55,18 @@ export default function Screen() {
     <div>
       <Badge variant={"secondary"}>Last 30 days</Badge>
 
-      <div className="mt-6">
-        <div>
-          <p className="mb-1 font-medium">Moderation</p>
+      {moderationStats !== null && (
+        <div className="mt-6">
+          <div>
+            <p className="mb-1 font-medium">Moderation</p>
+          </div>
+          <Suspense fallback={<ActivityStatsLoading />}>
+            <Await resolve={moderationStats!}>
+              {(moderationStats) => <ActivityStats stats={moderationStats!} />}
+            </Await>
+          </Suspense>
         </div>
-        <Suspense fallback={<ActivityStatsLoading />}>
-          <Await resolve={moderationStats}>
-            {(moderationStats) => <ActivityStats stats={moderationStats} />}
-          </Await>
-        </Suspense>
-      </div>
+      )}
 
       <div className="mt-8">
         <div className="flex items-end justify-between mb-2">
@@ -81,18 +83,31 @@ export default function Screen() {
 
         <div className="space-y-4">
           <Suspense fallback={<StatsLoading />}>
-            <Await resolve={channelStats}>
+            <Await resolve={channelStats} errorElement={<StatsError />}>
               {(channelStats) => <ChannelStats channelId={channel.id} stats={channelStats} />}
             </Await>
           </Suspense>
 
           <Suspense fallback={<TopEngagersLoading />}>
-            <Await resolve={topUsers}>
+            <Await resolve={topUsers} errorElement={<TopEngagersError />}>
               {(topUsers) => <TopEngagers channelId={channel.id} users={topUsers.results} />}
             </Await>
           </Suspense>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TopEngagersError() {
+  return (
+    <div className="flex flex-auto gap-4">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Top Casters</CardTitle>
+          <CardDescription>No data available yet.</CardDescription>
+        </CardHeader>
+      </Card>
     </div>
   );
 }
@@ -201,6 +216,19 @@ function TopEngagers(props: {
             Powered by <a href={`https://castsense.xyz/channels/${props.channelId}`}>CastSense</a>
           </p>
         </CardFooter>
+      </Card>
+    </div>
+  );
+}
+
+function StatsError() {
+  return (
+    <div className="grid w-full">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Channel Stats</CardTitle>
+          <CardDescription>Not data available yet.</CardDescription>
+        </CardHeader>
       </Card>
     </div>
   );
