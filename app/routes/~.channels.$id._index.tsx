@@ -1,41 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs } from "@remix-run/node";
 import { abbreviateNumber } from "js-abbreviation-number";
 
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 
-import { typeddefer, typedjson, useTypedLoaderData } from "remix-typedjson";
+import { typeddefer, useTypedLoaderData } from "remix-typedjson";
 import invariant from "tiny-invariant";
-import { db } from "~/lib/db.server";
 import {
   getSharedEnv,
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Await, Form, Link, NavLink } from "@remix-run/react";
-import { actionDefinitions, like } from "~/lib/validations.server";
-import { Alert } from "~/components/ui/alert";
-import {
-  ArrowUpRight,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MoreVerticalIcon,
-  SlidersHorizontalIcon,
-} from "lucide-react";
-import { z } from "zod";
-import { cn, useLocalStorage } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
-import { CastSenseResponse, getChannelStats } from "~/lib/castsense.server";
+import { Await } from "@remix-run/react";
+import { actionDefinitions } from "~/lib/validations.server";
+import { HeartIcon, MessageCircle, RefreshCcw } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { CastSenseResponse, getChannelStats, getTopEngagers } from "~/lib/castsense.server";
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
+import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { getModerationStats30Days } from "~/lib/stats.server";
+import { Badge } from "~/components/ui/badge";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -46,429 +33,181 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     channelId: params.id,
   });
 
-  const { page, pageSize, skip } = getPageInfo({ request });
-
-  const [moderationLogs, totalModerationLogs] = await Promise.all([
-    db.moderationLog.findMany({
-      where: {
-        channelId: channel.id,
-      },
-      take: pageSize,
-      skip,
-      orderBy: {
-        createdAt: "desc",
-      },
-    }),
-    db.moderationLog.count({
-      where: {
-        channelId: channel.id,
-      },
-    }),
-  ]);
-
   const stats = getChannelStats({ channelId: channel.id });
+  const topUsers = getTopEngagers({ channelId: channel.id });
+  const moderationStats = getModerationStats30Days({ channelId: channel.id });
 
   return typeddefer({
     user,
     channel,
-    moderationLogs,
     actionDefinitions: actionDefinitions,
     env: getSharedEnv(),
     channelStats: stats,
-
-    page,
-    pageSize,
-    total: totalModerationLogs,
-  });
-}
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  invariant(params.id, "id is required");
-
-  const user = await requireUser({ request });
-  const moderatedChannel = await requireUserCanModerateChannel({
-    userId: user.id,
-    channelId: params.id,
-  });
-
-  const formData = await request.formData();
-  const rawData = Object.fromEntries(formData.entries());
-  const result = z
-    .object({
-      logId: z.string(),
-      intent: z.enum(["end-cooldown", "unban", "like"]),
-    })
-    .safeParse(rawData);
-
-  if (!result.success) {
-    return typedjson(
-      {
-        message: "Invalid data",
-      },
-      { status: 422 }
-    );
-  }
-
-  const log = await db.moderationLog.findUnique({
-    where: {
-      id: result.data.logId,
-    },
-  });
-
-  if (!log) {
-    return typedjson(
-      {
-        message: "Log not found",
-      },
-      { status: 404 }
-    );
-  }
-
-  if (result.data.intent === "end-cooldown") {
-    const updated = await db.cooldown.update({
-      where: {
-        affectedUserId_channelId: {
-          affectedUserId: log.affectedUserFid,
-          channelId: moderatedChannel.id,
-        },
-      },
-      data: {
-        active: false,
-      },
-    });
-
-    if (updated) {
-      await db.moderationLog.create({
-        data: {
-          action: "cooldownEnded",
-          affectedUserFid: log.affectedUserFid,
-          affectedUsername: log.affectedUsername,
-          affectedUserAvatarUrl: log.affectedUserAvatarUrl,
-          castHash: log.castHash,
-          castText: log.castText,
-          actor: user.id,
-          channelId: moderatedChannel.id,
-          reason: `Cooldown ended by @${user.name}`,
-        },
-      });
-    }
-  } else if (result.data.intent === "unban") {
-    const updated = await db.cooldown.update({
-      where: {
-        affectedUserId_channelId: {
-          affectedUserId: log.affectedUserFid,
-          channelId: moderatedChannel.id,
-        },
-      },
-      data: {
-        active: false,
-      },
-    });
-
-    if (updated) {
-      await db.moderationLog.create({
-        data: {
-          action: "unmuted",
-          affectedUserFid: log.affectedUserFid,
-          affectedUsername: log.affectedUsername,
-          affectedUserAvatarUrl: log.affectedUserAvatarUrl,
-          castHash: log.castHash,
-          castText: log.castText,
-          actor: user.id,
-          channelId: moderatedChannel.id,
-          reason: `Unmuted by @${user.name}`,
-        },
-      });
-    }
-  } else if (result.data.intent === "like") {
-    invariant(log.castHash, "castHash is required");
-
-    await like({ cast: { hash: log.castHash } as any, channel: moderatedChannel.id });
-    await db.moderationLog.create({
-      data: {
-        action: "like",
-        affectedUserFid: log.affectedUserFid,
-        affectedUsername: log.affectedUsername,
-        affectedUserAvatarUrl: log.affectedUserAvatarUrl,
-        castHash: log.castHash,
-        castText: log.castText,
-        actor: user.id,
-        channelId: moderatedChannel.id,
-        reason: `Applied manually by @${user.name}`,
-      },
-    });
-  } else {
-    return typedjson(
-      {
-        message: "Invalid intent",
-      },
-      { status: 422 }
-    );
-  }
-
-  return typedjson({
-    message: "success",
+    moderationStats,
+    topUsers,
   });
 }
 
 export default function Screen() {
-  const { page, pageSize, total, moderationLogs, actionDefinitions, channelStats } =
-    useTypedLoaderData<typeof loader>();
-  const [showCastText, setShowCastText] = useLocalStorage("showCastText", true);
-
-  const prevPage = Math.max(page - 1, 0);
-  const nextPage = page + 1 > Math.ceil(total / pageSize) ? null : page + 1;
+  const { channelStats, channel, topUsers, moderationStats } = useTypedLoaderData<typeof loader>();
 
   return (
     <div>
-      <Suspense fallback={<StatsLoading />}>
-        <Await resolve={channelStats}>{(channelStats) => <ChannelStats stats={channelStats} />}</Await>
-      </Suspense>
+      <Badge variant={"secondary"}>Last 30 days</Badge>
 
-      <div className="py-4">
-        <hr />
-      </div>
-
-      <div className="flex justify-between border-b">
-        <div id="log-top">
-          <p className="font-semibold">Activity</p>
+      <div className="mt-6">
+        <div>
+          <p className="mb-1 font-medium">Moderation</p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="rounded-full">
-              <SlidersHorizontalIcon className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuCheckboxItem checked={showCastText} onCheckedChange={setShowCastText}>
-              Show Cast Text
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Suspense fallback={<ActivityStatsLoading />}>
+          <Await resolve={moderationStats}>
+            {(moderationStats) => <ActivityStats stats={moderationStats} />}
+          </Await>
+        </Suspense>
       </div>
-      {moderationLogs.length === 0 ? (
-        <Alert className="mt-2">
-          <div className="text-gray-700">
-            No moderation logs yet. Anytime automod executes an action a log will show here.
-          </div>
-        </Alert>
-      ) : (
-        <>
-          <div className="divide-y">
-            {moderationLogs.map((log) => (
-              <div key={log.id} className="flex flex-col md:flex-row gap-2 py-2">
-                <p
-                  className="text-xs w-[150px] text-gray-400 shrink-0 sm:shrink-1"
-                  title={log.createdAt.toISOString()}
-                >
-                  {log.createdAt.toLocaleString()}
-                </p>
-                <div className="flex gap-2 w-full items-start">
-                  <a
-                    className="no-underline"
-                    target="_blank"
-                    href={`https://warpcast.com/${log.affectedUsername}`}
-                    rel="noreferrer"
-                  >
-                    <Avatar className="block w-11 h-11">
-                      <AvatarImage
-                        src={log.affectedUserAvatarUrl ?? undefined}
-                        alt={"@" + log.affectedUsername}
-                      />
-                      <AvatarFallback>{log.affectedUsername.slice(0, 2).toLocaleUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  </a>
-                  <div className="flex flex-col w-full">
-                    <p className="font-semibold">
-                      <a
-                        href={`https://warpcast.com/${log.affectedUsername}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        @{log.affectedUsername}
-                      </a>
-                    </p>
-                    <p className="break-word text-sm overflow-ellipsis overflow-hidden">
-                      {actionDefinitions[log.action as keyof typeof actionDefinitions].friendlyName},{" "}
-                      {formatText(log.reason)}
-                    </p>
 
-                    {log.castText && showCastText && (
-                      <Alert className="my-2 text-sm text-gray-500 italic  break-all">{log.castText}</Alert>
-                    )}
-
-                    {log.castHash && (
-                      <p>
-                        <a
-                          className="text-[8px] no-underline hover:underline uppercase tracking-wide"
-                          href={`https://warpcast.com/${log.affectedUsername}/${log.castHash.substring(
-                            0,
-                            10
-                          )}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View on Warpcast
-                        </a>
-                        <ArrowUpRight className="inline w-2 h-2 mt-[2px] text-primary" />
-                      </p>
-                    )}
-                  </div>
-
-                  {["cooldown", "mute", "hideQuietly", "warnAndHide"].includes(log.action) && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <MoreVerticalIcon className="w-5 h-5" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {log.action === "hideQuietly" && log.reason.includes("in cooldown until") && (
-                          <Form method="post">
-                            <input type="hidden" name="logId" value={log.id} />
-                            <DropdownMenuItem>
-                              <button
-                                name="intent"
-                                value="end-cooldown"
-                                className="w-full h-full cursor-default text-left"
-                              >
-                                End Cooldown
-                              </button>
-                            </DropdownMenuItem>
-                          </Form>
-                        )}
-                        {log.action === "ban" && (
-                          <Form method="post">
-                            <input type="hidden" name="logId" value={log.id} />
-                            <DropdownMenuItem>
-                              <button
-                                name="intent"
-                                value="unban"
-                                className="w-full h-full cursor-default text-left"
-                              >
-                                Unban
-                              </button>
-                            </DropdownMenuItem>
-                          </Form>
-                        )}
-                        {(log.action === "hideQuietly" || log.action === "warnAndHide") && (
-                          <Form method="post">
-                            <input type="hidden" name="logId" value={log.id} />
-                            <DropdownMenuItem>
-                              <button
-                                name="intent"
-                                value="like"
-                                className="w-full h-full cursor-default text-left"
-                              >
-                                Curate
-                              </button>
-                            </DropdownMenuItem>
-                          </Form>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </div>
-            ))}
+      <div className="mt-8">
+        <div className="flex items-end justify-between mb-2">
+          <div>
+            <p className="font-medium">Engagement</p>
           </div>
-          <div className="mt-12 flex justify-between">
-            <Button
-              variant={"outline"}
-              size={"sm"}
-              className="no-underline"
-              disabled={prevPage === 0}
-              asChild
-            >
-              <NavLink
-                preventScrollReset
-                to={`?page=${prevPage}&pageSize=${pageSize}`}
-                prefetch="intent"
-                className={`text-gray-500 ${
-                  prevPage === 0 ? "cursor-not-allowed pointer-events-none opacity-50" : ""
-                }`}
-                onClick={(e) => {
-                  if (prevPage !== 0) {
-                    document.getElementById("log-top")?.scrollIntoView({ behavior: "smooth" });
-                  } else {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                <ChevronLeftIcon className="w-4 h-4 inline" />
-                Previous
-              </NavLink>
-            </Button>
-            <Button
-              variant={"outline"}
-              size={"sm"}
-              className="no-underline"
-              disabled={nextPage === null}
-              asChild
-            >
-              <NavLink
-                preventScrollReset
-                to={`?page=${nextPage}&pageSize=${pageSize}`}
-                prefetch="intent"
-                className={`text-gray-500 ${
-                  nextPage === null ? "cursor-not-allowed pointer-events-none opacity-50" : ""
-                }`}
-                onClick={(e) => {
-                  if (nextPage !== null) {
-                    document.getElementById("log-top")?.scrollIntoView({ behavior: "smooth" });
-                  } else {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                Next
-                <ChevronRightIcon className="w-4 h-4 inline" />
-              </NavLink>
-            </Button>
-          </div>
-        </>
-      )}
+          <p className="text-xs text-muted-foreground text-right">
+            Powered by{" "}
+            <a href={`https://castsense.xyz/channel/${channel.id}`} target="_blank" rel="noreferrer">
+              CastSense
+            </a>
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <Suspense fallback={<StatsLoading />}>
+            <Await resolve={channelStats}>
+              {(channelStats) => <ChannelStats channelId={channel.id} stats={channelStats} />}
+            </Await>
+          </Suspense>
+
+          <Suspense fallback={<TopEngagersLoading />}>
+            <Await resolve={topUsers}>
+              {(topUsers) => <TopEngagers channelId={channel.id} users={topUsers.results} />}
+            </Await>
+          </Suspense>
+        </div>
+      </div>
     </div>
   );
 }
 
-function formatText(text: string): string {
-  const datePattern = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/g;
-
-  const matches = text.match(datePattern) ?? [];
-  if (matches.length) {
-    for (const match of matches) {
-      const date = new Date(match);
-      const localTimeString = date.toLocaleString();
-      text = text.replace(match, localTimeString);
-    }
-
-    return text;
-  } else {
-    return text;
-  }
+function TopEngagersLoading() {
+  return (
+    <div className="flex flex-auto gap-4">
+      <Card className="w-full">
+        <CardHeader>
+          <div className="flex flex-col gap-2">
+            <Skeleton className="w-[75px] h-[10px] rounded-full" />
+            <Skeleton className="w-[150px] h-[10px] rounded-full" />
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="flex gap-4 items-center w-full">
+              <Skeleton className="w-12 h-12 rounded-full" />
+              <div className="flex flex-col gap-2 w-full">
+                <Skeleton className="w-[100px] h-[10px] rounded-full" />
+                <Skeleton className="w-[150px] h-[10px] rounded-full" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+        <CardFooter>
+          <Skeleton className="w-[50px] h-[10px] rounded-full" />
+        </CardFooter>
+      </Card>
+    </div>
+  );
 }
 
-const defaultPageSize = 50;
+function TopEngagers(props: {
+  channelId: string;
+  users: Array<{ profile: User } & { likes: number; recasts: number; replies: number }>;
+}) {
+  return (
+    <div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Casters</CardTitle>
+          <CardDescription>Most engaging casters in the past 30 days.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y grid grid-cols-1 md:grid-cols-2">
+            {props.users.map((user, i) => (
+              <div className="flex py-2 gap-2" key={i}>
+                <div className="relative">
+                  <div
+                    className="absolute -left-1 z-10 top-0 flex items-center justify-center w-[16px] h-[16px] rounded-full text-white bg-orange-500 text-[9px]"
+                    style={{ fontFamily: "Kode Mono" }}
+                  >
+                    {i + 1}
+                  </div>
+                  <a
+                    className="no-underline"
+                    target="_blank"
+                    href={`https://warpcast.com/${user.profile.username}`}
+                    rel="noreferrer"
+                  >
+                    <Avatar className="block w-11 h-11">
+                      <AvatarImage
+                        src={user.profile.pfp_url ?? undefined}
+                        alt={"@" + user.profile.username}
+                      />
+                      <AvatarFallback>{user.profile.display_name}</AvatarFallback>
+                    </Avatar>
+                  </a>
+                </div>
 
-function getPageInfo({ request }: { request: Request }) {
-  const url = new URL(request.url);
-  const page = Math.max(parseInt(url.searchParams.get("page") || "1"), 1);
-  const pageSize = Math.max(
-    Math.min(parseInt(url.searchParams.get("pageSize") || `${defaultPageSize}`), 100),
-    0
+                <div className="flex flex-col">
+                  <p className="font-medium">
+                    <a
+                      href={`https://warpcast.com/${user.profile.username}`}
+                      target="_blank"
+                      className="no-underline text-foreground"
+                      rel="noreferrer"
+                    >
+                      {user.profile.username}
+                    </a>
+                  </p>
+                  <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+                    <div className="flex gap-1 items-center">
+                      <HeartIcon className="w-3 h-3" />
+                      <span>{abbreviateNumber(user.likes)}</span>
+                    </div>
+                    <div className="flex gap-1 items-center">
+                      <RefreshCcw className="w-3 h-3" />
+                      <span>{abbreviateNumber(user.recasts)}</span>
+                    </div>
+                    <div className="flex gap-1 items-center">
+                      <MessageCircle className="w-3 h-3" />
+                      <span>{abbreviateNumber(user.replies)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+        <CardFooter className="text-xs">
+          <p className="text-muted-foreground">
+            Powered by <a href={`https://castsense.xyz/channels/${props.channelId}`}>CastSense</a>
+          </p>
+        </CardFooter>
+      </Card>
+    </div>
   );
-  const skip = (page - 1) * pageSize;
-
-  return {
-    page: isNaN(page) ? 1 : page,
-    pageSize: isNaN(pageSize) ? defaultPageSize : pageSize,
-    skip: isNaN(skip) ? 0 : skip,
-  };
 }
 
 function StatsLoading() {
   return (
-    <div className="flex flex-auto gap-4">
-      {Array.from({ length: 3 }).map((_, i) => (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {Array.from({ length: 4 }).map((_, i) => (
         <Card key={i} className="w-full">
           <CardHeader>
             <Skeleton className="w-[50px] h-[10px] rounded-full" />
@@ -486,81 +225,150 @@ function StatsLoading() {
 }
 
 function ChannelStats(props: { channelId: string; stats: CastSenseResponse }) {
-  const { stats, channelId } = props;
-  const castReduction = stats.casts_percentage_change < 0;
+  const { stats } = props;
   return (
-    <div>
-      <div className="flex flex-wrap gap-4">
-        {stats.current_period_followers && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Followers</CardDescription>
-              <CardTitle className="text-4xl">{stats.current_period_followers}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xs text-muted-foreground">
-                {stats.followers_percentage_change} from last month
-              </div>
-            </CardContent>
-          </Card>
-        )}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <Card className="w-md sm:w-lg">
+        <CardHeader className="pb-2">
+          <CardDescription>Followers</CardDescription>
+          <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+            {abbreviateNumber(stats.total_followers)}
+          </CardTitle>
+        </CardHeader>
+      </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Casts</CardDescription>
-            <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
-              {abbreviateNumber(stats.current_period_casts)}
-            </CardTitle>
+      <Card className="w-md sm:w-lg">
+        <CardHeader className="pb-2">
+          <CardDescription>Casts</CardDescription>
+          <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+            {abbreviateNumber(stats.current_period_casts)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className={cn("text-xs text-muted-foreground border-b border-dashed")}>
+                  {stats.casts_percentage_change < 0 ? "" : "+"}
+                  {Math.round(stats.casts_percentage_change)}%
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Compared to previous 30 day period.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardContent>
+      </Card>
+
+      <Card className="w-md sm:w-lg">
+        <CardHeader className="pb-2">
+          <CardDescription>Likes</CardDescription>
+          <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+            {abbreviateNumber(stats.current_period_likes)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className={cn("text-xs text-muted-foreground border-b border-dashed")}>
+                  {stats.likes_percentage_change < 0 ? "" : "+"}
+                  {Math.round(stats.likes_percentage_change)}%
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Compared to previous 30 day period.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardContent>
+      </Card>
+
+      <Card className="w-md sm:w-lg">
+        <CardHeader className="pb-2">
+          <CardDescription>Replies</CardDescription>
+          <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+            {abbreviateNumber(stats.current_period_replies)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className={cn("text-xs text-muted-foreground border-b border-dashed")}>
+                  {stats.replies_percentage_change < 0 ? "" : "+"}
+                  {Math.round(stats.replies_percentage_change)}%
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Compared to previous 30 day period.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export function ActivityStatsLoading() {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="w-full">
+          <CardHeader>
+            <Skeleton className="w-[50px] h-[10px] rounded-full" />
           </CardHeader>
           <CardContent>
-            <div className={cn("text-xs text-muted-foreground")}>
-              {castReduction ? "" : "+"}
-              {Math.round(stats.casts_percentage_change)}% from last month
-            </div>
+            <Skeleton className="w-[75px] h-[10px] rounded-full" />
           </CardContent>
+          <CardFooter>
+            <Skeleton className="w-[50px] h-[10px] rounded-full" />
+          </CardFooter>
         </Card>
+      ))}
+    </div>
+  );
+}
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Likes</CardDescription>
-            <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
-              {abbreviateNumber(stats.current_period_likes)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={cn("text-xs text-muted-foreground")}>
-              {castReduction ? "" : "+"}
-              {Math.round(stats.likes_percentage_change)}% from last month
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Replies</CardDescription>
-            <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
-              {abbreviateNumber(stats.current_period_replies)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={cn("text-xs text-muted-foreground")}>
-              {castReduction ? "" : "+"}
-              {Math.round(stats.current_period_replies)}% from last month
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      <p className="text-xs text-right mt-1 font-mono">
-        Powered by{" "}
-        <Link
-          to={`https://castsense.xyz/channel/${channelId}`}
-          target="_blank"
-          rel="noreferrer"
-          className="no-underline"
-        >
-          CastSense
-        </Link>
-      </p>
+export function ActivityStats(props: { stats: ModerationStats30Days }) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Card className="w-md sm:w-lg">
+        <CardHeader>
+          <CardDescription>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="border-b border-dashed">Approval Rate</TooltipTrigger>
+                <TooltipContent>
+                  <p>The % of casts into the channel that are curated into Main</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardDescription>
+          <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+            {Math.round(props.stats.approvalRate * 100)}%
+          </CardTitle>
+        </CardHeader>
+      </Card>
+      <Card className="w-md sm:w-lg">
+        <CardHeader>
+          <CardDescription>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="border-b border-dashed">Approved Casters</TooltipTrigger>
+                <TooltipContent>
+                  <p>The unique number of users who have had casts curated into Main.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardDescription>
+          <CardTitle className="text-2xl" style={{ fontFamily: "Kode Mono" }}>
+            {abbreviateNumber(props.stats.uniqueCasters)}
+          </CardTitle>
+        </CardHeader>
+      </Card>
     </div>
   );
 }

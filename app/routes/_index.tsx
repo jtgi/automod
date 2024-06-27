@@ -193,7 +193,7 @@ export default function Home() {
                           <>
                             <Farcaster className="mr-2 h-5 w-5" />
                             <span>Login with Farcaster</span>
-                            <div id="fc-btn-wrap" className="absolute">
+                            <div id="fc-btn-wrap" className="absolute w-full sm:w-[250px]">
                               <SignInButton onSuccess={handleSuccess} />
                             </div>
                           </>

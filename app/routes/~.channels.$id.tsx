@@ -111,7 +111,8 @@ export default function ChannelRoot() {
           <SidebarNav
             items={
               [
-                { to: `/~/channels/${channel.id}`, title: "Activity", end: true },
+                { to: `/~/channels/${channel.id}`, title: "Overview", end: true },
+                { to: `/~/channels/${channel.id}/activity`, title: "Activity" },
                 { to: `/~/channels/${channel.id}/edit`, title: "Rules" },
                 {
                   to: `/~/channels/${channel.id}/roles`,
