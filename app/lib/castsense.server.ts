@@ -1,16 +1,26 @@
 import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
+import { getSetCache } from "./utils.server";
 
 const baseUrl = `https://www.castsense.xyz`;
 
 export async function getChannelStats(props: { channelId: string }) {
-  return axios
-    .get<CastSenseResponse>(`${baseUrl}/api/channel/${props.channelId}/stats`)
-    .then((res) => res.data);
+  const cacheKey = `channelStats:${props.channelId}`;
+  return getSetCache({
+    key: cacheKey,
+    ttlSeconds: 60 * 60 * 4,
+    get: () =>
+      axios.get<CastSenseResponse>(`${baseUrl}/api/channel/${props.channelId}/stats`).then((res) => res.data),
+  });
 }
 
 export async function getTopEngagers(props: { channelId: string }) {
-  return axios.get(`${baseUrl}/api/channel/${props.channelId}/top-engagers`).then((res) => res.data);
+  const cacheKey = `topEngagers:${props.channelId}`;
+  return getSetCache({
+    key: cacheKey,
+    ttlSeconds: 60 * 60 * 4,
+    get: () => axios.get(`${baseUrl}/api/channel/${props.channelId}/top-engagers`).then((res) => res.data),
+  });
 }
 
 export type TopEngagersResponse = {

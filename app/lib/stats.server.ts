@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { db } from "./db.server";
+import { getSetCache } from "./utils.server";
 
 export type ModerationStats30Days = {
   likes: number;
@@ -8,39 +10,47 @@ export type ModerationStats30Days = {
 };
 
 export async function getModerationStats30Days({ channelId }: { channelId: string }) {
-  const [actionCounts, uniqueCasters] = await Promise.all([
-    db.moderationLog.groupBy({
-      _count: {
-        action: true,
-      },
-      where: {
-        channelId,
-        createdAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        },
-        action: {
-          in: ["like", "hideQuietly"],
-        },
-      },
-      by: ["action"],
-    }),
-    db.$queryRaw<{ count: number }[]>`
-    select count(affectedUserFid) as count
-    from moderationLog
-    where channelId = ${channelId}
-    and createdAt >= ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
-    and action = 'like'
-  `.then((res) => res[0]?.count.toString() || "0"),
-  ]);
+  const cacheKey = `moderationStats30Days:${channelId}`;
 
-  const likes = actionCounts.find((c) => c.action === "like")?._count.action || 0;
-  const hides = actionCounts.find((c) => c.action === "hideQuietly")?._count.action || 0;
-  const approvalRate = likes / (likes + hides);
+  return getSetCache({
+    key: cacheKey,
+    ttlSeconds: 60 * 60 * 4,
+    get: async () => {
+      const [actionCounts, uniqueCasters] = await Promise.all([
+        db.moderationLog.groupBy({
+          _count: {
+            action: true,
+          },
+          where: {
+            channelId,
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            },
+            action: {
+              in: ["like", "hideQuietly"],
+            },
+          },
+          by: ["action"],
+        }),
+        db.$queryRaw<{ count: number }[]>`
+        select count(affectedUserFid) as count
+        from moderationLog
+        where channelId = ${channelId}
+        and createdAt >= ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+        and action = 'like'
+      `.then((res: any) => res[0]?.count.toString() || "0"),
+      ]);
 
-  return {
-    likes,
-    hides,
-    approvalRate,
-    uniqueCasters: parseInt(uniqueCasters),
-  };
+      const likes = actionCounts.find((c) => c.action === "like")?._count.action || 0;
+      const hides = actionCounts.find((c) => c.action === "hideQuietly")?._count.action || 0;
+      const approvalRate = likes / (likes + hides);
+
+      return {
+        likes,
+        hides,
+        approvalRate,
+        uniqueCasters: parseInt(uniqueCasters),
+      };
+    },
+  });
 }

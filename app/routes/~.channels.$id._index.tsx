@@ -13,15 +13,15 @@ import {
 } from "~/lib/utils.server";
 import { Await } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
-import { HeartIcon, MessageCircle, RefreshCcw } from "lucide-react";
+import { HeartIcon, MessageCircle, RefreshCcw, User } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { CastSenseResponse, getChannelStats, getTopEngagers } from "~/lib/castsense.server";
 import { Suspense } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { User as NeynarUser } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { getModerationStats30Days } from "~/lib/stats.server";
+import { ModerationStats30Days, getModerationStats30Days } from "~/lib/stats.server";
 import { Badge } from "~/components/ui/badge";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -128,7 +128,7 @@ function TopEngagersLoading() {
 
 function TopEngagers(props: {
   channelId: string;
-  users: Array<{ profile: User } & { likes: number; recasts: number; replies: number }>;
+  users: Array<{ profile: NeynarUser } & { likes: number; recasts: number; replies: number }>;
 }) {
   return (
     <div>
@@ -159,7 +159,9 @@ function TopEngagers(props: {
                         src={user.profile.pfp_url ?? undefined}
                         alt={"@" + user.profile.username}
                       />
-                      <AvatarFallback>{user.profile.display_name}</AvatarFallback>
+                      <AvatarFallback className="uppercase">
+                        {user.profile.username.slice(0, 2)}
+                      </AvatarFallback>
                     </Avatar>
                   </a>
                 </div>
@@ -314,18 +316,13 @@ function ChannelStats(props: { channelId: string; stats: CastSenseResponse }) {
 
 export function ActivityStatsLoading() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {Array.from({ length: 4 }).map((_, i) => (
+    <div className="grid grid-cols-2 gap-4">
+      {Array.from({ length: 2 }).map((_, i) => (
         <Card key={i} className="w-full">
-          <CardHeader>
+          <CardHeader className="flex flex-col gap-4">
+            <Skeleton className="w-[75px] h-[10px] rounded-full" />
             <Skeleton className="w-[50px] h-[10px] rounded-full" />
           </CardHeader>
-          <CardContent>
-            <Skeleton className="w-[75px] h-[10px] rounded-full" />
-          </CardContent>
-          <CardFooter>
-            <Skeleton className="w-[50px] h-[10px] rounded-full" />
-          </CardFooter>
         </Card>
       ))}
     </div>
@@ -340,7 +337,7 @@ export function ActivityStats(props: { stats: ModerationStats30Days }) {
           <CardDescription>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger className="border-b border-dashed">Approval Rate</TooltipTrigger>
+                <TooltipTrigger className="border-b border-dashed">Curation Rate</TooltipTrigger>
                 <TooltipContent>
                   <p>The % of casts into the channel that are curated into Main</p>
                 </TooltipContent>
@@ -357,7 +354,7 @@ export function ActivityStats(props: { stats: ModerationStats30Days }) {
           <CardDescription>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger className="border-b border-dashed">Approved Casters</TooltipTrigger>
+                <TooltipTrigger className="border-b border-dashed">Curated Casters</TooltipTrigger>
                 <TooltipContent>
                   <p>The unique number of users who have had casts curated into Main.</p>
                 </TooltipContent>
