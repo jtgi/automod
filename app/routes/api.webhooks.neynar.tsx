@@ -217,7 +217,6 @@ export async function validateCast({
 
   if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
     console.log(`[${channel.id}] No rules for channel.`);
-    await toggleWebhook({ channelId: moderatedChannel.id, active: false });
     return logs;
   }
 
