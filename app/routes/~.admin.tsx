@@ -142,13 +142,6 @@ export async function action({ request }: ActionFunctionArgs) {
         return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
       }
 
-      if (hasNoRules(moderatedChannel)) {
-        return successResponse({
-          request,
-          message: "Channel has no automated rules. Nothing to recover.",
-        });
-      }
-
       await recoverQueue.add(
         "recover",
         {
@@ -184,11 +177,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
       for (const moderatedChannel of moderatedChannels) {
         console.log(`[global recovery]: enqueuing ${moderatedChannel.id}`);
-
-        if (hasNoRules(moderatedChannel)) {
-          console.log(`[global recovery]: skipping ${moderatedChannel.id} - no rules`);
-          continue;
-        }
 
         await recoverQueue.add(
           "recover",
