@@ -355,25 +355,36 @@ export async function sweep(args: SweepArgs) {
  * casts that have not yet been moderated. This is
  * useful post incident or post downtime.
  */
-export async function recover(args: SweepArgs) {
+export async function recover(
+  args: SweepArgs & {
+    reprocessModeratedCasts?: boolean;
+  }
+) {
   const channel = await getChannel({ name: args.channelId });
 
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
-    const alreadyProcessed = await db.moderationLog.findMany({
-      select: {
-        castHash: true,
-      },
-      where: {
-        castHash: {
-          in: page.casts.map((cast) => cast.hash),
+    let alreadyProcessedHashes = new Set();
+    if (!args.reprocessModeratedCasts) {
+      const alreadyProcessed = await db.moderationLog.findMany({
+        select: {
+          castHash: true,
         },
-      },
-    });
+        where: {
+          castHash: {
+            in: page.casts.map((cast) => cast.hash),
+          },
+        },
+      });
 
-    const alreadyProcessedHashes = new Set(
-      alreadyProcessed.filter((log): log is { castHash: string } => !!log.castHash).map((log) => log.castHash)
-    );
+      alreadyProcessedHashes = new Set(
+        alreadyProcessed
+          .filter((log): log is { castHash: string } => !!log.castHash)
+          .map((log) => log.castHash)
+      );
+    } else {
+      alreadyProcessedHashes = new Set();
+    }
 
     const unprocessedCasts = page.casts.filter((cast) => !alreadyProcessedHashes.has(cast.hash));
 

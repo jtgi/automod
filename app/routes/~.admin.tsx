@@ -15,6 +15,7 @@ import { FormEvent, Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
 import { FullModeratedChannel } from "./api.webhooks.neynar";
+import { Checkbox } from "~/components/ui/checkbox";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -104,6 +105,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const limit = parseInt((formData.get("limit") as string) ?? "1000");
     const untilTimeLocal = (formData.get("untilTime") as string) ?? "";
     const untilHash = (formData.get("untilHash") as string) ?? "";
+    const reprocessModeratedCasts = (formData.get("reprocessModeratedCasts") as string) ?? "false";
 
     let untilTimeUtc: string | undefined;
 
@@ -124,7 +126,6 @@ export async function action({ request }: ActionFunctionArgs) {
         where: {
           id: channel,
           active: true,
-          ruleSets: {},
         },
         include: {
           ruleSets: true,
@@ -156,6 +157,7 @@ export async function action({ request }: ActionFunctionArgs) {
           limit,
           untilTimeUtc: untilTimeUtc ?? undefined,
           untilHash: untilHash ?? undefined,
+          reprocessModeratedCasts: reprocessModeratedCasts === "on",
         },
         {
           removeOnComplete: 300,
@@ -196,6 +198,7 @@ export async function action({ request }: ActionFunctionArgs) {
             limit,
             untilTimeUtc: untilTimeUtc ?? undefined,
             untilHash: untilHash ?? undefined,
+            reprocessModeratedCasts: reprocessModeratedCasts === "on",
           },
           {
             removeOnComplete: 300,
@@ -285,6 +288,9 @@ export default function Admin() {
             </FieldLabel>
             <FieldLabel label="Limit" className="flex-col items-start">
               <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
+            </FieldLabel>
+            <FieldLabel label="Reprocess" position="right">
+              <Checkbox name="reprocessModeratedCasts" defaultValue={"off"} />
             </FieldLabel>
             <Button name="action" value="recover">
               Recover

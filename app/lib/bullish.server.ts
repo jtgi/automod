@@ -364,7 +364,7 @@ export const recoverWorker = new Worker(
   {
     connection,
     concurrency: 25,
-    autorun: process.env.NODE_ENV === "production",
+    // autorun: process.env.NODE_ENV === "production",
   }
 );
 
