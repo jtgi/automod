@@ -69,6 +69,7 @@ export default function ChannelRoot() {
     setIsNotConfigured(!signerFid || warpcastChannel.moderatorFid !== +signerFid);
   }, []);
 
+  console.log({ isNotConfigured });
   return (
     <div>
       <Link
@@ -134,40 +135,38 @@ export default function ChannelRoot() {
         </div>
       </div>
 
-      {process.env.NODE_ENV !== "development" && (
-        <Dialog defaultOpen={isNotConfigured}>
-          <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
-            <DialogHeader>
-              <DialogTitle>One last step...</DialogTitle>
-              <DialogDescription asChild>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    Open up{" "}
-                    <a href={`https://warpcast.com/~/channel/${channel.id}`} target="_blank" rel="noreferrer">
-                      /{channel.id}
-                    </a>{" "}
-                    and set{" "}
-                    <a href={`https://warpcast.com/${signerUsername}`} target="_blank" rel="noreferrer">
-                      @{signerUsername}
-                    </a>{" "}
-                    as the moderator.
-                  </div>
-                  <Button asChild>
-                    <a
-                      className="no-underline"
-                      href={`https://warpcast.com/~/channel/${channel.id}/settings/moderation`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open /{channel.id} <ArrowUpRight className="inline ml-1 w-3 h-3" />
-                    </a>
-                  </Button>
+      <Dialog defaultOpen={isNotConfigured}>
+        <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>One last step...</DialogTitle>
+            <DialogDescription asChild>
+              <div className="flex flex-col gap-4">
+                <div>
+                  Open up{" "}
+                  <a href={`https://warpcast.com/~/channel/${channel.id}`} target="_blank" rel="noreferrer">
+                    /{channel.id}
+                  </a>{" "}
+                  and set{" "}
+                  <a href={`https://warpcast.com/${signerUsername}`} target="_blank" rel="noreferrer">
+                    @{signerUsername}
+                  </a>{" "}
+                  as the moderator.
                 </div>
-              </DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      )}
+                <Button asChild>
+                  <a
+                    className="no-underline"
+                    href={`https://warpcast.com/~/channel/${channel.id}/settings/moderation`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open /{channel.id} <ArrowUpRight className="inline ml-1 w-3 h-3" />
+                  </a>
+                </Button>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

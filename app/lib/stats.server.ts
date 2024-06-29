@@ -43,7 +43,7 @@ export async function getModerationStats30Days({ channelId }: { channelId: strin
 
       const likes = actionCounts.find((c) => c.action === "like")?._count.action || 0;
       const hides = actionCounts.find((c) => c.action === "hideQuietly")?._count.action || 0;
-      const approvalRate = likes / (likes + hides);
+      const approvalRate = likes === 0 && hides === 0 ? 0 : likes / (likes + hides);
 
       return {
         likes,
