@@ -69,7 +69,6 @@ export default function ChannelRoot() {
     setIsNotConfigured(!signerFid || warpcastChannel.moderatorFid !== +signerFid);
   }, []);
 
-  console.log({ isNotConfigured });
   return (
     <div>
       <Link
@@ -135,7 +134,7 @@ export default function ChannelRoot() {
         </div>
       </div>
 
-      <Dialog defaultOpen={isNotConfigured}>
+      <Dialog open={isNotConfigured} onOpenChange={(open) => setIsNotConfigured(open)}>
         <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
           <DialogHeader>
             <DialogTitle>One last step...</DialogTitle>
