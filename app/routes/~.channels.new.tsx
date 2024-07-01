@@ -91,8 +91,14 @@ export async function action({ request }: ActionFunctionArgs) {
       banThreshold: channelResult.data.banThreshold,
       excludeCohosts: channelResult.data.excludeCohosts,
       excludeUsernames: JSON.stringify(channelResult.data.excludeUsernames),
-      inclusionRuleSet: JSON.stringify(channelResult.data.inclusionRuleSet),
-      exclusionRuleSet: JSON.stringify(channelResult.data.exclusionRuleSet),
+      inclusionRuleSet: JSON.stringify({
+        rule: channelResult.data.inclusionRuleSet?.ruleParsed,
+        actions: channelResult.data.inclusionRuleSet?.actionsParsed,
+      }),
+      exclusionRuleSet: JSON.stringify({
+        rule: channelResult.data.exclusionRuleSet?.ruleParsed,
+        actions: channelResult.data.exclusionRuleSet?.actionsParsed,
+      }),
       ruleSets: {
         create: channelResult.data.ruleSets.map((ruleSet) => {
           return {

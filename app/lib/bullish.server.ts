@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
+import Bottleneck from "bottleneck";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
 import {
@@ -23,6 +24,20 @@ const connection = new IORedis({
   port: Number(process.env.REDIS_PORT),
   password: process.env.REDIS_PASSWORD,
   maxRetriesPerRequest: null,
+});
+
+const bottleneckConnection = new Bottleneck.IORedisConnection({
+  clientOptions: {
+    connection,
+  },
+});
+
+export const openRankLimiter = new Bottleneck({
+  maxConcurrent: 5,
+  minTime: 200,
+  datastore: "redis",
+  clearDatastore: false,
+  connection: bottleneckConnection,
 });
 
 export const webhookQueue = new Queue("webhookQueue", {
@@ -236,7 +251,7 @@ export const webhookWorker = new Worker(
   {
     connection,
     lockDuration: 30_000,
-    concurrency: 15,
+    concurrency: 25,
     autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );

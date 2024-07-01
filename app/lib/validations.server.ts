@@ -37,6 +37,7 @@ import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { UnrecoverableError } from "bullmq";
+import { openRankLimiter } from "./bullish.server";
 
 export type RuleDefinition = {
   name: RuleName;
@@ -2166,11 +2167,13 @@ async function openRankChannel(props: CheckFunctionArgs) {
     key: `openrank:channel-rank:${channel.id}:${cast.author.fid}`,
     ttlSeconds: 60 * 60 * 6,
     get: () =>
-      axios
-        .post<GlobalRankResponse>(`https://graph.cast.k3l.io/channels/rankings/${channel.id}/fids`, [
-          cast.author.fid,
-        ])
-        .then((res) => res.data.result.find((u) => u.fid === cast.author.fid)),
+      openRankLimiter.schedule(() =>
+        axios
+          .post<GlobalRankResponse>(`https://graph.cast.k3l.io/channels/rankings/${channel.id}/fids`, [
+            cast.author.fid,
+          ])
+          .then((res) => res.data.result.find((u) => u.fid === cast.author.fid))
+      ),
   });
 
   if (!user) {
@@ -2208,11 +2211,13 @@ async function openRankGlobalEngagement(props: CheckFunctionArgs) {
     key: `openrank:global-rank:${cast.author.fid}`,
     ttlSeconds: 60 * 60 * 6,
     get: () =>
-      axios
-        .post<GlobalRankResponse>(`https://graph.cast.k3l.io/scores/global/engagement/fids`, [
-          cast.author.fid,
-        ])
-        .then((res) => res.data.result.find((u) => u.fid === cast.author.fid)),
+      openRankLimiter.schedule(() =>
+        axios
+          .post<GlobalRankResponse>(`https://graph.cast.k3l.io/scores/global/engagement/fids`, [
+            cast.author.fid,
+          ])
+          .then((res) => res.data.result.find((u) => u.fid === cast.author.fid))
+      ),
   });
 
   if (!user) {
