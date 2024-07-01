@@ -24,7 +24,7 @@ import { cn } from "~/lib/utils";
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
 
-  if (user.role !== "superadmin" || user.name !== "wbnns") {
+  if (user.role !== "superadmin" && user.name !== "wbnns") {
     throw redirect("/maintenance");
   }
 
