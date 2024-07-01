@@ -236,7 +236,7 @@ export const webhookWorker = new Worker(
   {
     connection,
     lockDuration: 30_000,
-    concurrency: 100,
+    concurrency: 50,
     autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
