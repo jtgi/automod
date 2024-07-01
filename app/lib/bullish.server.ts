@@ -28,14 +28,17 @@ const connection = new IORedis({
 
 const bottleneckConnection = new Bottleneck.IORedisConnection({
   clientOptions: {
-    connection,
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT),
+    password: process.env.REDIS_PASSWORD,
+    maxRetriesPerRequest: null,
   },
 });
 
 export const openRankLimiter = new Bottleneck({
   maxConcurrent: 5,
   minTime: 200,
-  datastore: "redis",
+  datastore: "ioredis",
   clearDatastore: false,
   connection: bottleneckConnection,
 });
