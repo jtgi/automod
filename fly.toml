@@ -30,4 +30,5 @@ primary_region = 'lax'
 
 
 [[vm]]
-  size = "performance-2x"
+  size = "shared-cpu-2x"
+  memory = 1024
