@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { db } from "~/lib/db.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
@@ -23,6 +23,10 @@ import { cn } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
+
+  if (user.role !== "superadmin" || user.name !== "wbnns") {
+    throw redirect("/maintenance");
+  }
 
   const channels = await db.moderatedChannel.findMany({
     where: {

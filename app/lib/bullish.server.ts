@@ -237,7 +237,7 @@ export const webhookWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 100,
-    // autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 
@@ -262,7 +262,7 @@ export const castWorker = new Worker(
     connection,
     lockDuration: 30_000,
     concurrency: 75,
-    // autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 castWorker.on("error", (err: Error) => {
@@ -364,7 +364,7 @@ export const recoverWorker = new Worker(
   {
     connection,
     concurrency: 25,
-    // autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 
@@ -392,7 +392,7 @@ export const sweepWorker = new Worker(
   {
     connection,
     concurrency: 25,
-    autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 
@@ -438,7 +438,7 @@ export const simulationWorker = new Worker(
   },
   {
     connection,
-    autorun: process.env.NODE_ENV === "production",
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 
@@ -522,7 +522,7 @@ export const syncWorker = new Worker(
       }
     }
   },
-  { connection, autorun: process.env.NODE_ENV === "production" }
+  { connection, autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES }
 );
 
 syncWorker.on("error", (err) => {

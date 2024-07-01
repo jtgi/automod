@@ -69,7 +69,13 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const neynarChannel = await getChannel({ name: channelResult.data.id });
+  const neynarChannel = await getChannel({ name: channelResult.data.id }).catch(() => null);
+  if (!neynarChannel) {
+    return errorResponse({
+      request,
+      message: `Couldn't find that channel. Spell it right?`,
+    });
+  }
 
   const newChannel = await db.moderatedChannel.create({
     data: {
