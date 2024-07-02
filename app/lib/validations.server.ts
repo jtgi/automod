@@ -2169,9 +2169,15 @@ async function openRankChannel(props: CheckFunctionArgs) {
     get: () =>
       openRankLimiter.schedule(() =>
         axios
-          .post<GlobalRankResponse>(`https://graph.cast.k3l.io/channels/rankings/${channel.id}/fids`, [
-            cast.author.fid,
-          ])
+          .post<GlobalRankResponse>(
+            `https://graph.cast.k3l.io/priority/channels/rankings/${channel.id}/fids`,
+            [cast.author.fid],
+            {
+              headers: {
+                "API-Key": process.env.OPENRANK_API_KEY,
+              },
+            }
+          )
           .then((res) => res.data.result.find((u) => u.fid === cast.author.fid))
       ),
   });
@@ -2213,9 +2219,15 @@ async function openRankGlobalEngagement(props: CheckFunctionArgs) {
     get: () =>
       openRankLimiter.schedule(() =>
         axios
-          .post<GlobalRankResponse>(`https://graph.cast.k3l.io/scores/global/engagement/fids`, [
-            cast.author.fid,
-          ])
+          .post<GlobalRankResponse>(
+            `https://graph.cast.k3l.io/priority/scores/global/engagement/fids`,
+            [cast.author.fid],
+            {
+              headers: {
+                "API-Key": process.env.OPENRANK_API_KEY,
+              },
+            }
+          )
           .then((res) => res.data.result.find((u) => u.fid === cast.author.fid))
       ),
   });

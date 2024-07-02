@@ -562,7 +562,7 @@ export function defaultProcessCastJobArgs(hash: string): JobsOptions {
     removeOnFail: 5000,
     backoff: {
       type: "exponential",
-      delay: 10_000,
+      delay: 2_000,
     },
     attempts: 4,
   };
