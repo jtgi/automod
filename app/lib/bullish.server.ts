@@ -36,8 +36,7 @@ const bottleneckConnection = new Bottleneck.IORedisConnection({
 });
 
 export const openRankLimiter = new Bottleneck({
-  maxConcurrent: 5,
-  minTime: 200,
+  maxConcurrent: 80,
   datastore: "ioredis",
   clearDatastore: false,
   connection: bottleneckConnection,
