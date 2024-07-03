@@ -29,21 +29,12 @@ async function seed() {
     },
   };
 
-  const containsHotChocolate: Rule = {
-    name: "containsText",
-    type: "CONDITION",
-    args: {
-      searchText: "hot chocolate",
-      caseSensitive: true,
-    },
-  };
-
   const orRule: Rule = {
     name: "and",
     type: "LOGICAL",
     args: {},
     operation: "OR",
-    conditions: [containsHotChocolate, containsSpam],
+    conditions: [containsSpam],
   };
 
   const actions: Array<Action> = [
@@ -53,34 +44,42 @@ async function seed() {
   ];
 
   const fields = {
-    id: "jtgi",
     banThreshold: 3,
     userId: user.id,
+    imageUrl: `/icons/automod.png`,
+    inclusionRuleSet: JSON.stringify({
+      rule: orRule,
+      actions: actions,
+    }),
     url: "https://warpcast.com/~/channel/jtgi",
   };
 
-  const modChannel = await db.moderatedChannel.upsert({
-    where: {
-      id: "jtgi",
-    },
-    create: fields,
-    update: fields,
-  });
-
-  const rules = await db.ruleSet.upsert({
-    where: {
-      id: "seededRules",
-    },
-    update: {
-      rule: JSON.stringify(orRule),
-      actions: JSON.stringify(actions),
-    },
-    create: {
-      id: "seededRules",
-      rule: JSON.stringify(orRule),
-      actions: JSON.stringify(actions),
-      channelId: modChannel.id,
-    },
+  [
+    "jtgi",
+    "samantha",
+    "base",
+    "coop-recs",
+    "rainbow",
+    "seaport",
+    "farcasther",
+    "degen",
+    "fitness",
+    "higher",
+    "zk",
+    "replyguys",
+    "ogs",
+    "wake",
+  ].forEach(async (id) => {
+    await db.moderatedChannel.upsert({
+      where: {
+        id: id,
+      },
+      create: {
+        id,
+        ...fields,
+      },
+      update: fields,
+    });
   });
 }
 
