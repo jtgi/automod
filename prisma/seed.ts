@@ -1,6 +1,3 @@
-// cryptoadz: 0x1cb1a5e65610aeff2551a50f76a87a7d3fb649c6
-
-import { Prisma } from "@prisma/client";
 import { db } from "~/lib/db.server";
 import { Action, Rule } from "~/lib/validations.server";
 

@@ -30,7 +30,7 @@ export async function sendNotification(props: {
     await axios.put(
       "https://api.warpcast.com/v2/ext-send-direct-cast",
       {
-        recipientFid: 5179, //for now send to jtgi,  +fid,
+        recipientFid: +fid,
         message,
         idempotencyKey: nonce,
       },

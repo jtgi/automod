@@ -1,5 +1,5 @@
 import { ActionFunctionArgs, json } from "@remix-run/node";
-import { refreshAccountStatus } from "~/lib/auth.server";
+import { refreshAccountStatus } from "~/lib/subscription.server";
 import { neynar } from "~/lib/neynar.server";
 
 export async function action({ request }: ActionFunctionArgs) {

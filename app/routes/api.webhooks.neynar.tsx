@@ -17,9 +17,8 @@ import {
 } from "~/lib/validations.server";
 import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
-import { PlanType, userPlans } from "~/lib/auth.server";
+import { PlanType, userPlans } from "~/lib/subscription.server";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
-import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {

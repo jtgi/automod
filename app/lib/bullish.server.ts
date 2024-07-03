@@ -3,12 +3,7 @@ import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
 import Bottleneck from "bottleneck";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
-import {
-  ValidateCastArgs,
-  getUsage as getTotalUsage,
-  isUserOverUsage as usageCheck,
-  validateCast,
-} from "~/routes/api.webhooks.neynar";
+import { ValidateCastArgs, getUsage as getTotalUsage, validateCast } from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
 import { getChannel, pageChannelCasts } from "./neynar.server";
@@ -16,7 +11,7 @@ import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getWarpcastChannel } from "./warpcast.server";
 import { automodFid } from "~/routes/~.channels.$id";
-import { userPlans } from "./auth.server";
+import { syncSubscriptions, userPlans } from "./subscription.server";
 import { sendNotification } from "./notifications.server";
 
 const connection = new IORedis({
@@ -53,6 +48,27 @@ export type ValidateCastArgsV2 = {
   };
   channelName: string;
 };
+
+export const subscriptionQueue = new Queue("subscriptionQueue", {
+  connection,
+});
+
+subscriptionQueue.add(
+  "subscriptionSync",
+  {},
+  { jobId: "subscriptionSync", repeat: { pattern: "0 0 * * *" } }
+);
+
+export const subscriptionWorker = new Worker(
+  "subscriptionQueue",
+  async () => {
+    console.log("Checking subscription status for all active users");
+    await syncSubscriptions();
+  },
+  {
+    connection,
+  }
+);
 
 export const webhookWorker = new Worker(
   "webhookQueue",
@@ -179,20 +195,20 @@ export const webhookWorker = new Worker(
         moderatedChannel,
         fid: moderatedChannel.user.id,
         type: "usage",
-        nonce: `cast-usage-warning-${moderatedChannel.id}-${moderatedChannel.user.plan}-${new Date()
+        nonce: `cast-usage-warning-${moderatedChannel.user.id}-${moderatedChannel.user.plan}-${new Date()
           .toISOString()
           .substring(0, 7)}`,
-        message: `Hey, you've used 85% of your usage limit for the month. Upgrade your plan to avoid any disruption.\n\nhttps://automod.sh/~/account`,
+        message: `Heads up, you've used 85% of your automated moderation limit for the month. Upgrade your plan to avoid any disruption.\n\nFor a full breakdown of your usage and limits, open up https://automod.sh/~/account`,
       });
     } else if (totalUsage >= plan.maxCasts && totalUsage < plan.maxCasts * 1.05) {
       sendNotification({
         moderatedChannel,
         fid: moderatedChannel.user.id,
         type: "usage",
-        nonce: `cast-usage-full-${moderatedChannel.id}-${moderatedChannel.user.plan}-${new Date()
+        nonce: `cast-usage-full-${moderatedChannel.user.id}-${moderatedChannel.user.plan}-${new Date()
           .toISOString()
           .substring(0, 7)}`,
-        message: `You're over your usage limit for the month. Rule based moderation will be disabled shortly. Upgrade your plan to get back online.\n\nhttps://automod.sh/~/account`,
+        message: `You're over your usage limit for the month. Automatic moderation will be disabled shortly. Upgrade your plan to get back online.\n\nhttps://automod.sh/~/account`,
       });
     } else if (totalUsage >= plan.maxCasts * 1.05) {
       console.error(`User ${moderatedChannel.userId} is over usage limit. Moderation disabled.`);

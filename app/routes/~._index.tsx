@@ -8,7 +8,6 @@ import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
 import { BatteryWarningIcon, RefreshCwIcon } from "lucide-react";
 import { Link, useFetcher } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { PlanType, refreshAccountStatus, userPlans } from "~/lib/auth.server";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import {
   Dialog,
@@ -20,6 +19,7 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
+import { PlanType, refreshAccountStatus, userPlans } from "~/lib/subscription.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -283,7 +283,7 @@ function RefreshAccountButton(props: ButtonProps) {
           </>
         ) : (
           <>
-            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh Account
+            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh
           </>
         )}
       </Button>

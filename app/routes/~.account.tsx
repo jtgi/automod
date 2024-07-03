@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, useFetcher } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Button, ButtonProps } from "~/components/ui/button";
-import { PlanDef, PlanType, planTypes, refreshAccountStatus, userPlans } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { requireUser, successResponse } from "~/lib/utils.server";
 import {
@@ -19,7 +18,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { ArrowUpRight, RefreshCwIcon, RocketIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { cn } from "~/lib/utils";
+import { userPlans, refreshAccountStatus, PlanType, PlanDef } from "~/lib/subscription.server";
+import { abbreviateNumber } from "js-abbreviation-number";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -99,7 +99,7 @@ export default function Screen() {
                   <TableRow>
                     <TableCell>Casts Processed</TableCell>
                     <TableCell>
-                      {currentMonthTotal.toLocaleString()} / {plan.maxCasts.toLocaleString()}
+                      {abbreviateNumber(currentMonthTotal, 0)} / {abbreviateNumber(plan.maxCasts, 0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -175,7 +175,7 @@ function RefreshAccountButton(props: ButtonProps) {
           </>
         ) : (
           <>
-            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh Account
+            <RefreshCwIcon className="w-3 h-3 mr-1" /> Refresh
           </>
         )}
       </Button>

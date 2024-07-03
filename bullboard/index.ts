@@ -6,6 +6,7 @@ import {
   castQueue,
   recoverQueue,
   simulationQueue,
+  subscriptionQueue,
   sweepQueue,
   syncQueue,
   webhookQueue,
@@ -22,6 +23,7 @@ createBullBoard({
     new BullMQAdapter(syncQueue),
     new BullMQAdapter(webhookQueue),
     new BullMQAdapter(recoverQueue),
+    new BullMQAdapter(subscriptionQueue),
   ],
   serverAdapter: serverAdapter,
 });

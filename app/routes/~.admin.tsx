@@ -1,21 +1,23 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionFunctionArgs, LoaderFunctionArgs, defer, json } from "@remix-run/node";
+import { ActionFunctionArgs, LoaderFunctionArgs, defer } from "@remix-run/node";
 import { Await, Form, useLoaderData } from "@remix-run/react";
 import { redirect, typedjson } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
 import { Input } from "~/components/ui/input";
-import { commitSession, getSession, refreshAccountStatus } from "~/lib/auth.server";
+import { commitSession, getSession } from "~/lib/auth.server";
+
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
-import { isRecoverActive, recover } from "./~.channels.$id.tools";
+import { isRecoverActive } from "./~.channels.$id.tools";
 import { recoverQueue } from "~/lib/bullish.server";
-import { FormEvent, Suspense } from "react";
+import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
 import { FullModeratedChannel } from "./api.webhooks.neynar";
 import { Checkbox } from "~/components/ui/checkbox";
+import { refreshAccountStatus } from "~/lib/subscription.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -250,7 +252,7 @@ export default function Admin() {
               <Input name="username" placeholder="jtgi" />
             </FieldLabel>
             <Button name="action" value="refreshAccount">
-              Refresh Account
+              Refresh
             </Button>
           </Form>
 
