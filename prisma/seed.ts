@@ -20,6 +20,21 @@ async function seed() {
     },
   });
 
+  await db.user.upsert({
+    where: {
+      id: "576",
+    },
+    create: {
+      id: "576",
+      name: "nonlinear.eth",
+      role: "user",
+    },
+    update: {
+      id: "576",
+      role: "user",
+    },
+  });
+
   const containsSpam: Rule = {
     name: "containsText",
     type: "CONDITION",

@@ -9,7 +9,7 @@ import { GodStrategy } from "./god-strategy";
 import { clientsByChainId } from "./viem.server";
 import { base } from "viem/chains";
 import { getAddress, getContract } from "viem";
-import { hypersubAbi721 } from "./abis";
+import { hypersubAbi721, hypersubAbiV2 } from "./abis";
 import { neynar } from "./neynar.server";
 
 export const sessionStorage = createCookieSessionStorage({
@@ -146,18 +146,18 @@ export const userPlans = {
   prime: {
     id: "prime",
     displayName: "Prime",
-    price: "$7.77/mo",
-    link: "https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg",
+    price: "$14.99/mo",
+    link: "https://hypersub.withfabric.xyz/s/automod/2",
     maxChannels: 5,
-    maxCasts: 50_000,
+    maxCasts: 25_000,
   },
   ultra: {
     id: "ultra",
     displayName: "Ultra",
-    price: "$23.33/mo",
-    link: "https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw",
+    price: "$39.99/mo",
+    link: "https://hypersub.withfabric.xyz/s/automod",
     maxChannels: Infinity,
-    maxCasts: 500_000,
+    maxCasts: 250_000,
   },
   vip: {
     id: "vip",
@@ -186,7 +186,7 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
 }> {
   const client = clientsByChainId[base.id];
   const primeContractAddress = process.env.PRIME_CONTRACT_ADDRESS!;
-  const ultraContractAddress = process.env.ULTRA_CONTRACT_ADDRESS!;
+  const hypersubV2ContractAddress = process.env.HYPERSUBV2_CONTRACT_ADDRESS!;
 
   const primeContract = getContract({
     address: getAddress(primeContractAddress),
@@ -194,9 +194,9 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
     client,
   });
 
-  const ultraContract = getContract({
-    address: getAddress(ultraContractAddress),
-    abi: hypersubAbi721,
+  const hypersubV2Contract = getContract({
+    address: getAddress(hypersubV2ContractAddress),
+    abi: hypersubAbiV2,
     client,
   });
 
@@ -208,19 +208,18 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
 
   const user = rsp.users[0];
   for (const address of user.verified_addresses.eth_addresses) {
-    const [primeSecondsRemaining, ultraSecondsRemaining] = await Promise.all([
+    const [primeSecondsRemaining, v2SecondsRemaining] = await Promise.all([
       primeContract.read.balanceOf([getAddress(address)]),
-      ultraContract.read.balanceOf([getAddress(address)]),
+      hypersubV2Contract.read.balanceOf([getAddress(address)]),
     ]);
 
-    if (ultraSecondsRemaining > 0) {
-      const subInfo = await ultraContract.read.subscriptionOf([getAddress(address)]);
-      const tokenId = subInfo[0];
+    if (v2SecondsRemaining > 0) {
+      const subInfo = await hypersubV2Contract.read.subscriptionOf([getAddress(address)]);
 
       return {
-        plan: "ultra",
-        tokenId: tokenId.toString(),
-        expiresAt: new Date(Date.now() + Number(ultraSecondsRemaining * 1000n)),
+        plan: subInfo.tierId === 1 ? "ultra" : "prime",
+        tokenId: subInfo.tokenId.toString(),
+        expiresAt: new Date(subInfo.expiresAt * 1000),
       };
     } else if (primeSecondsRemaining > 0) {
       const subInfo = await primeContract.read.subscriptionOf([getAddress(address)]);

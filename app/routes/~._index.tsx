@@ -116,19 +116,11 @@ export default function FrameConfig() {
               <AlertDescription>
                 <p>
                   Upgrade to{" "}
-                  <a
-                    href="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href="https://hypersub.withfabric.xyz/s/automod/2" target="_blank" rel="noreferrer">
                     Prime
                   </a>{" "}
                   or{" "}
-                  <a
-                    href="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href="https://hypersub.withfabric.xyz/s/automod" target="_blank" rel="noreferrer">
                     Ultra
                   </a>{" "}
                   for way more.
@@ -154,19 +146,11 @@ export default function FrameConfig() {
               <AlertDescription>
                 <p>
                   Automated moderation is currently paused. Upgrade to{" "}
-                  <a
-                    href="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href="https://hypersub.withfabric.xyz/s/automod/2" target="_blank" rel="noreferrer">
                     Prime
                   </a>{" "}
                   or{" "}
-                  <a
-                    href="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href="https://hypersub.withfabric.xyz/s/automod" target="_blank" rel="noreferrer">
                     Ultra
                   </a>
                   .
@@ -206,20 +190,20 @@ export default function FrameConfig() {
                             <Link
                               target="_blank"
                               className="no-underline"
-                              to="https://hypersub.withfabric.xyz/collection/automod-prime-xn1rknylk4cg"
+                              to="https://hypersub.withfabric.xyz/s/automod/2"
                               rel="noreferrer"
                             >
-                              Prime (5 channels, $7.77/mo)
+                              Prime (5 channels, 25k casts, and more)
                             </Link>
                           </Button>
                           <Button asChild>
                             <Link
                               target="_blank"
                               className="no-underline"
-                              to="https://hypersub.withfabric.xyz/collection/automod-ultra-owcren2irlkw"
+                              to="https://hypersub.withfabric.xyz/s/automod"
                               rel="noreferrer"
                             >
-                              Ultra (Unlimited Channels, $23/mo)
+                              Ultra (Unlimited Channels, 250k casts, and more)
                             </Link>
                           </Button>
                         </div>
