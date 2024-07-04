@@ -27,36 +27,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-async function getDau() {
-  const rsp = await axios.get(`https://api.warpcast.com/v2/all-channels`);
-  const channels = rsp.data.result.channels;
-  const moderatedChannels = await db.moderatedChannel.findMany({
-    select: {
-      id: true,
-    },
-  });
-
-  const signerFids = await db.signer.findMany({});
-  const automodFids = [...signerFids.map((s) => +s.fid), automodFid];
-  const active = [];
-  const setupIncomplete = [];
-
-  for (const channel of channels) {
-    if (automodFids.includes(channel.moderatorFid)) {
-      active.push(channel);
-    } else {
-      if (moderatedChannels.find((mc) => mc.id.toLowerCase() === channel.id.toLowerCase())) {
-        setupIncomplete.push(channel);
-      }
-    }
-  }
-
-  return {
-    active,
-    setupIncomplete,
-  };
-}
-
 export async function action({ request }: ActionFunctionArgs) {
   await requireSuperAdmin({ request });
 
@@ -89,10 +59,32 @@ export async function action({ request }: ActionFunctionArgs) {
       message: `Refreshed. Plan is ${plan.plan}, expiring ${plan.expiresAt?.toISOString()}`,
     });
   } else if (action === "impersonate") {
-    const username = (formData.get("username") as string) ?? "";
+    let username = (formData.get("username") as string) ?? "";
+    const channel = (formData.get("channelOwner") as string) ?? "";
 
-    if (!username) {
-      return errorResponse({ request, message: "Please enter a username" });
+    if (!username && !channel) {
+      return errorResponse({ request, message: "Enter a username or channel owner" });
+    }
+
+    if (channel) {
+      const channelOwner = await db.moderatedChannel.findFirst({
+        select: {
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        where: {
+          id: channel,
+        },
+      });
+
+      if (!channelOwner) {
+        return errorResponse({ request, message: "Channel not found" });
+      }
+
+      username = channelOwner.user.name;
     }
 
     const session = await getSession(request.headers.get("Cookie"));
@@ -260,6 +252,9 @@ export default function Admin() {
             <FieldLabel label="Impersonate Username" className="flex-col items-start">
               <Input name="username" placeholder="username" />
             </FieldLabel>
+            <FieldLabel label="Impersonate Channel Owner" className="flex-col items-start">
+              <Input name="channelOwner" placeholder="memes" />
+            </FieldLabel>
             <Button name="action" value="impersonate">
               Impersonate
             </Button>
@@ -359,4 +354,34 @@ export function hasNoRules(moderatedChannel: FullModeratedChannel) {
 
 export function hasRules(moderatedChannel: FullModeratedChannel) {
   return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length !== 0;
+}
+
+async function getDau() {
+  const rsp = await axios.get(`https://api.warpcast.com/v2/all-channels`);
+  const channels = rsp.data.result.channels;
+  const moderatedChannels = await db.moderatedChannel.findMany({
+    select: {
+      id: true,
+    },
+  });
+
+  const signerFids = await db.signer.findMany({});
+  const automodFids = [...signerFids.map((s) => +s.fid), automodFid];
+  const active = [];
+  const setupIncomplete = [];
+
+  for (const channel of channels) {
+    if (automodFids.includes(channel.moderatorFid)) {
+      active.push(channel);
+    } else {
+      if (moderatedChannels.find((mc) => mc.id.toLowerCase() === channel.id.toLowerCase())) {
+        setupIncomplete.push(channel);
+      }
+    }
+  }
+
+  return {
+    active,
+    setupIncomplete,
+  };
 }

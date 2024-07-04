@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "pnpm exec prisma generate && remix build --sourcemap && sentry-upload-sourcemaps --org double-play --project auto-mod",
-    "db:reset": "prisma db push --force-reset && prisma db seed",
+    "db:reset": "./scripts/dbReset.sh",
+    "db:prod": "fly pg connect -a automod-pg -d automod",
     "dev": "remix dev --manual",
     "bullboard": "tsx bullboard/index.ts",
     "test": "exit 0",

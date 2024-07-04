@@ -16,42 +16,22 @@ export class GodStrategy extends Strategy<User, { username: string }> {
     const username = session.get("impersonateAs");
 
     if (!username) {
-      return await this.failure(
-        "not allowed",
-        request,
-        sessionStorage,
-        options
-      );
+      return await this.failure("not allowed", request, sessionStorage, options);
     }
 
     const user = await authenticator.isAuthenticated(request);
     if (!user) {
-      return await this.failure(
-        "not authenticated",
-        request,
-        sessionStorage,
-        options
-      );
+      return await this.failure("not authenticated", request, sessionStorage, options);
     }
 
     if (user.role !== "superadmin") {
-      return await this.failure(
-        "unauthorized",
-        request,
-        sessionStorage,
-        options
-      );
+      return await this.failure("unauthorized", request, sessionStorage, options);
     }
 
     const impersonatedUser = await this.verify({ username });
 
     if (!impersonatedUser) {
-      return await this.failure(
-        `${username} not found`,
-        request,
-        sessionStorage,
-        options
-      );
+      return await this.failure(`${username} not found`, request, sessionStorage, options);
     }
 
     console.warn(`${user.name} is impersonating as ${impersonatedUser.name}`);

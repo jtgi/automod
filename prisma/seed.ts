@@ -1,8 +1,9 @@
+import { ModeratedChannel, Prisma } from "@prisma/client";
 import { db } from "~/lib/db.server";
 import { Action, Rule } from "~/lib/validations.server";
 
 async function seed() {
-  const user = await db.user.upsert({
+  const jtgi = await db.user.upsert({
     where: {
       id: "5179",
     },
@@ -17,7 +18,7 @@ async function seed() {
     },
   });
 
-  await db.user.upsert({
+  const nonlinear = await db.user.upsert({
     where: {
       id: "576",
     },
@@ -64,36 +65,47 @@ async function seed() {
     },
   ];
 
-  const fields = {
-    id: "jtgi",
-    banThreshold: 3,
-    userId: user.id,
-    url: "https://warpcast.com/~/channel/jtgi",
-  };
+  const jtgiChannels = [
+    "samantha",
+    "base",
+    "coop-recs",
+    "rainbow",
+    "seaport",
+    "farcasther",
+    "degen",
+    "fitness",
+    "higher",
+    "zk",
+    "replyguys",
+    "ogs",
+    "wake",
+  ];
+  const nonlinearChannels = ["memes", "manysuchcases", "hypermod"];
 
-  const modChannel = await db.moderatedChannel.upsert({
-    where: {
-      id: "jtgi",
-    },
-    create: fields,
-    update: fields,
-  });
+  function createChannel(userId: string, channelId: string): Promise<ModeratedChannel> {
+    return db.moderatedChannel.upsert({
+      where: {
+        id: channelId,
+      },
+      create: {
+        id: channelId,
+        userId,
+        url: `https://warpcast.com/~/channel/${channelId}`,
+      },
+      update: {
+        id: channelId,
+        userId,
+        url: `https://warpcast.com/~/channel/${channelId}`,
+        inclusionRuleSet: JSON.stringify({
+          rule: orRule,
+          actions: actions,
+        }),
+      },
+    });
+  }
 
-  const rules = await db.ruleSet.upsert({
-    where: {
-      id: "seededRules",
-    },
-    update: {
-      rule: JSON.stringify(orRule),
-      actions: JSON.stringify(actions),
-    },
-    create: {
-      id: "seededRules",
-      rule: JSON.stringify(orRule),
-      actions: JSON.stringify(actions),
-      channelId: modChannel.id,
-    },
-  });
+  await Promise.all(jtgiChannels.map((channelId) => createChannel(jtgi.id, channelId)));
+  await Promise.all(nonlinearChannels.map((channelId) => createChannel(nonlinear.id, channelId)));
 }
 
 seed()

@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   const message =
     (session.get("message") as { id: string; type: string; message: string } | null) ?? undefined;
-  const impersonateAs = session.get("impersonateAs") ?? undefined;
+  const impersonateAs = (session.get("impersonateAs") as string) ?? undefined;
 
   const [status] = await Promise.all([
     db.status.findFirst({
@@ -56,6 +56,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Index() {
   const { status, env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
+
+  const isSuperAdmin = user.role === "superadmin";
 
   useEffect(() => {
     if (message) {
@@ -133,7 +135,7 @@ export default function Index() {
                     Account
                   </Link>
                 </DropdownMenuItem>
-                {user.role === "superadmin" && (
+                {isSuperAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/~/admin" className="no-underline text-foreground">
                       Admin

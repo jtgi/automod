@@ -817,9 +817,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     authorUrl: "https://automod.sh",
     authorIcon: `${hostUrl}/icons/automod.png`,
     category: "all",
-    friendlyName: "User FID in Range",
+    friendlyName: "User FID",
     checkType: "user",
-    description: "Check if the user's FID is within a range",
+    description: "Check if the user's FID is less than or greater than a certain value",
     hidden: false,
     invertable: false,
     args: {
@@ -827,12 +827,12 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "number",
         friendlyName: "Less than",
         placeholder: "No Minimum",
-        description: "Setting a value of 5 would trigger this rule if the fid is 5 or above",
+        description: "Setting a value of 5 would trigger this rule if the fid is 1 thru 4",
       },
       maxFid: {
         type: "number",
         friendlyName: "More than",
-        description: "Setting a value of 10 would trigger this rule if the fid is 1 thru 10.",
+        description: "Setting a value of 10 would trigger this rule if the fid is 11 or above.",
       },
     },
   },
@@ -2083,19 +2083,10 @@ export function userFidInRange(args: CheckFunctionArgs) {
   const { cast, rule } = args;
   const { minFid, maxFid } = rule.args as { minFid?: number; maxFid?: number };
 
-  // if (minFid && maxFid && maxFid < minFid) {
-  //   if (cast.author.fid > maxFid && cast.author.fid < minFid) {
-  //     return {
-  //       result: true,
-  //       message: `FID #${cast.author.fid} is within range`,
-  //     };
-  //   }
-  // }
-
   if (minFid) {
     if (cast.author.fid < minFid) {
       return {
-        result: false,
+        result: true,
         message: `FID #${cast.author.fid} is less than ${minFid}`,
       };
     }
@@ -2104,15 +2095,24 @@ export function userFidInRange(args: CheckFunctionArgs) {
   if (maxFid) {
     if (cast.author.fid > maxFid) {
       return {
-        result: false,
+        result: true,
         message: `FID #${cast.author.fid} is greater than ${maxFid}`,
       };
     }
   }
 
+  let failureMessage = "";
+  if (minFid && maxFid) {
+    failureMessage = `FID #${cast.author.fid} is not between ${minFid} and ${maxFid}`;
+  } else if (minFid) {
+    failureMessage = `FID #${cast.author.fid} is greater than ${minFid}`;
+  } else if (maxFid) {
+    failureMessage = `FID #${cast.author.fid} is less than ${maxFid}`;
+  }
+
   return {
-    result: true,
-    message: `FID #${cast.author.fid} is within range`,
+    result: false,
+    message: failureMessage,
   };
 }
 
