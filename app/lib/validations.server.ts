@@ -1321,6 +1321,11 @@ export async function unlike(props: { cast: Cast; channel: string }) {
   });
 
   const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
+
+  console.log(
+    `Unliking with @${signerAlloc ? signerAlloc.signer.username : "automod"}, cast: ${props.cast.hash}`
+  );
+
   await neynar.deleteReactionFromCast(uuid, "like", props.cast.hash);
 }
 

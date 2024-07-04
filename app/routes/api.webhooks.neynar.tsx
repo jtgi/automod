@@ -330,6 +330,16 @@ export async function validateCast({
     }
     return logs;
   } else {
+    if (!simulation) {
+      await actionFunctions["hideQuietly"]({
+        channel: channel.id,
+        cast,
+        action: { type: "hideQuietly" },
+        options: {
+          executeOnProtocol,
+        },
+      });
+    }
     logs.push(
       await logModerationAction(
         moderatedChannel.id,
