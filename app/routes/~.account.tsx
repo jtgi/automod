@@ -99,13 +99,22 @@ export default function Screen() {
                   <TableRow>
                     <TableCell>Casts Processed</TableCell>
                     <TableCell>
-                      {abbreviateNumber(currentMonthTotal, 0)} / {abbreviateNumber(plan.maxCasts, 0)}
+                      {abbreviateNumber(currentMonthTotal, 0)} /{" "}
+                      {plan.maxCasts === Infinity
+                        ? Infinity.toLocaleString()
+                        : abbreviateNumber(plan.maxCasts, 0)}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Channels</TableCell>
                     <TableCell>
                       {channels.length} / {plan.maxChannels.toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell>Expires</TableCell>
+                    <TableCell>
+                      {user.planExpiry ? new Date(user.planExpiry).toLocaleDateString() : Infinity.toString()}
                     </TableCell>
                   </TableRow>
                 </TableBody>

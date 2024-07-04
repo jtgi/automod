@@ -11,7 +11,7 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive, isSweepActive } from "./~.channels.$id.tools";
-import { recoverQueue, sweepQueue } from "~/lib/bullish.server";
+import { recoverQueue, subscriptionQueue, sweepQueue, syncQueue } from "~/lib/bullish.server";
 import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
@@ -36,29 +36,31 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (action === "refreshAccount") {
     const username = (formData.get("username") as string) ?? "";
-    if (!username) {
-      return errorResponse({ request, message: "Please enter a username" });
+    if (username) {
+      const fid = await db.user.findFirst({
+        select: {
+          id: true,
+        },
+        where: {
+          name: username.toLowerCase(),
+        },
+      });
+
+      if (!fid) {
+        return errorResponse({ request, message: "User not found" });
+      }
+
+      const plan = await refreshAccountStatus({ fid: fid.id });
+
+      return successResponse({
+        request,
+        message: `Refreshed. Plan is ${plan.plan}, expiring ${plan.expiresAt?.toISOString()}`,
+      });
+    } else {
+      await subscriptionQueue.add("subscriptionSync", {}, { removeOnComplete: true, removeOnFail: true });
+
+      return successResponse({ request, message: "Syncing all subscriptions" });
     }
-
-    const fid = await db.user.findFirst({
-      select: {
-        id: true,
-      },
-      where: {
-        name: username.toLowerCase(),
-      },
-    });
-
-    if (!fid) {
-      return errorResponse({ request, message: "User not found" });
-    }
-
-    const plan = await refreshAccountStatus({ fid: fid.id });
-
-    return successResponse({
-      request,
-      message: `Refreshed. Plan is ${plan.plan}, expiring ${plan.expiresAt?.toISOString()}`,
-    });
   } else if (action === "impersonate") {
     let username = (formData.get("username") as string) ?? "";
     const channel = (formData.get("channelOwner") as string) ?? "";
@@ -290,7 +292,7 @@ export default function Admin() {
         <div className="space-y-20">
           <refreshFetcher.Form method="post" className="space-y-4">
             <FieldLabel label="Refresh Account Status" className="flex-col items-start">
-              <Input name="username" placeholder="jtgi" />
+              <Input name="username" placeholder="Refresh All" />
             </FieldLabel>
             <Button name="action" value="refreshAccount" disabled={refreshFetcher.state !== "idle"}>
               Refresh
