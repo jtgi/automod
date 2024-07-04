@@ -1364,24 +1364,22 @@ export function containsText(props: CheckFunctionArgs) {
     message: result ? `Cast contains "${searchText}"` : `Cast does not contain "${searchText}"`,
   };
 }
-type BotOrNotResponse = {
-  fids: { fid: number; result: { bot?: boolean } }[];
-};
+type BotOrNotResponse = { fid: number; result: { bot?: boolean; status: "complete" | "analyzing" } };
 export async function isHuman(args: CheckFunctionArgs) {
   const { cast } = args;
   const rsp = await axios.get<BotOrNotResponse>(
-    `https://cast-action-bot-or-not.vercel.app/api/botornot/mod/v1?fids=${cast.author.fid}`,
+    `https://cast-action-bot-or-not.vercel.app/api/botornot/mod/v1?fid=${cast.author.fid}&forceAnalyzeIfEmpty=true`,
     {
       timeout: 5_000,
       timeoutErrorMessage: "Bot or Not API timed out",
     }
   );
 
-  const { fids } = rsp.data;
-  const isBot = fids[0].result.bot;
+  const isBot = rsp.data.result.bot;
 
   if (isBot === undefined) {
-    throw new Error("Bot or Not API did not return a result");
+    // retry later
+    throw new Error(`Bot or not status for fid #${rsp.data.fid}: ${rsp.data.result.status}`);
   }
 
   return {
