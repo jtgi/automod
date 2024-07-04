@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ActionFunctionArgs, LoaderFunctionArgs, defer } from "@remix-run/node";
-import { Await, Form, useLoaderData } from "@remix-run/react";
+import { Await, Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { redirect, typedjson } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
@@ -10,14 +10,15 @@ import { commitSession, getSession } from "~/lib/auth.server";
 
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
-import { isRecoverActive } from "./~.channels.$id.tools";
-import { recoverQueue } from "~/lib/bullish.server";
+import { isRecoverActive, isSweepActive } from "./~.channels.$id.tools";
+import { recoverQueue, sweepQueue } from "~/lib/bullish.server";
 import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
 import { FullModeratedChannel } from "./api.webhooks.neynar";
 import { Checkbox } from "~/components/ui/checkbox";
 import { refreshAccountStatus } from "~/lib/subscription.server";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -100,6 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const untilTimeLocal = (formData.get("untilTime") as string) ?? "";
     const untilHash = (formData.get("untilHash") as string) ?? "";
     const reprocessModeratedCasts = (formData.get("reprocessModeratedCasts") as string) ?? "false";
+    const recoverType = (formData.get("recoverType") as string) ?? "recover";
 
     let untilTimeUtc: string | undefined;
 
@@ -132,26 +134,49 @@ export async function action({ request }: ActionFunctionArgs) {
         },
       });
 
-      if (await isRecoverActive(moderatedChannel.id)) {
-        return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
-      }
-
-      await recoverQueue.add(
-        "recover",
-        {
-          channelId: moderatedChannel.id,
-          moderatedChannel,
-          limit,
-          untilTimeUtc: untilTimeUtc ?? undefined,
-          untilHash: untilHash ?? undefined,
-          reprocessModeratedCasts: reprocessModeratedCasts === "on",
-        },
-        {
-          removeOnComplete: 300,
-          removeOnFail: 300,
-          attempts: 3,
+      if (recoverType === "recover") {
+        if (await isRecoverActive(moderatedChannel.id)) {
+          return errorResponse({ request, message: "Recovery already in progress. Hang tight." });
         }
-      );
+
+        await recoverQueue.add(
+          "recover",
+          {
+            channelId: moderatedChannel.id,
+            moderatedChannel,
+            limit,
+            untilTimeUtc: untilTimeUtc ?? undefined,
+            untilHash: untilHash ?? undefined,
+            reprocessModeratedCasts: reprocessModeratedCasts === "on",
+          },
+          {
+            removeOnComplete: 300,
+            removeOnFail: 300,
+            attempts: 3,
+          }
+        );
+      } else if (recoverType === "sweep") {
+        if (await isSweepActive(moderatedChannel.id)) {
+          return errorResponse({ request, message: "Sweep already in progress. Hang tight." });
+        }
+
+        await sweepQueue.add(
+          "sweep",
+          {
+            channelId: moderatedChannel.id,
+            moderatedChannel,
+            limit,
+            untilTimeUtc: untilTimeUtc ?? undefined,
+            untilHash: untilHash ?? undefined,
+          },
+          {
+            removeOnComplete: true,
+            removeOnFail: true,
+            jobId: `sweep-${moderatedChannel.id}`,
+            attempts: 3,
+          }
+        );
+      }
     } else {
       // start for all active channels
       const moderatedChannels = await db.moderatedChannel.findMany({
@@ -172,28 +197,47 @@ export async function action({ request }: ActionFunctionArgs) {
       for (const moderatedChannel of moderatedChannels) {
         console.log(`[global recovery]: enqueuing ${moderatedChannel.id}`);
 
-        await recoverQueue.add(
-          "recover",
-          {
-            channelId: moderatedChannel.id,
-            moderatedChannel,
-            limit,
-            untilTimeUtc: untilTimeUtc ?? undefined,
-            untilHash: untilHash ?? undefined,
-            reprocessModeratedCasts: reprocessModeratedCasts === "on",
-          },
-          {
-            removeOnComplete: 300,
-            removeOnFail: 300,
-            attempts: 3,
-          }
-        );
+        if (recoverType === "recover") {
+          await recoverQueue.add(
+            "recover",
+            {
+              channelId: moderatedChannel.id,
+              moderatedChannel,
+              limit,
+              untilTimeUtc: untilTimeUtc ?? undefined,
+              untilHash: untilHash ?? undefined,
+              reprocessModeratedCasts: reprocessModeratedCasts === "on",
+            },
+            {
+              removeOnComplete: 300,
+              removeOnFail: 300,
+              attempts: 3,
+            }
+          );
+        } else if (recoverType === "sweep") {
+          await sweepQueue.add(
+            "sweep",
+            {
+              channelId: moderatedChannel.id,
+              moderatedChannel,
+              limit,
+              untilTimeUtc: untilTimeUtc ?? undefined,
+              untilHash: untilHash ?? undefined,
+            },
+            {
+              removeOnComplete: true,
+              removeOnFail: true,
+              jobId: `sweep-${moderatedChannel.id}`,
+              attempts: 3,
+            }
+          );
+        }
       }
     }
 
     return successResponse({
       request,
-      message: "Recovering! This will take a while. Monitor progress in the logs.",
+      message: `${recoverType}ing! This will take a while.`,
     });
   } else if (action === "clearStatus") {
     await db.status.updateMany({
@@ -234,34 +278,40 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Admin() {
   const { dau } = useLoaderData<typeof loader>();
+  const refreshFetcher = useFetcher<typeof loader>();
+  const impersonateFetcher = useFetcher<typeof loader>();
+  const recoverFetcher = useFetcher<typeof loader>();
+  const statusFetcher = useFetcher<typeof loader>();
+
   return (
     <div className="flex flex-col sm:flex-row gap-8 w-full">
       <div className="w-full">
         <h3>Admin</h3>
         <div className="space-y-20">
-          <Form method="post" className="space-y-4">
+          <refreshFetcher.Form method="post" className="space-y-4">
             <FieldLabel label="Refresh Account Status" className="flex-col items-start">
               <Input name="username" placeholder="jtgi" />
             </FieldLabel>
-            <Button name="action" value="refreshAccount">
+            <Button name="action" value="refreshAccount" disabled={refreshFetcher.state !== "idle"}>
               Refresh
             </Button>
-          </Form>
+          </refreshFetcher.Form>
 
-          <Form method="post" className="space-y-4">
+          <impersonateFetcher.Form method="post" className="space-y-4">
             <FieldLabel label="Impersonate Username" className="flex-col items-start">
               <Input name="username" placeholder="username" />
             </FieldLabel>
             <FieldLabel label="Impersonate Channel Owner" className="flex-col items-start">
               <Input name="channelOwner" placeholder="memes" />
             </FieldLabel>
-            <Button name="action" value="impersonate">
+            <Button name="action" value="impersonate" disabled={impersonateFetcher.state !== "idle"}>
               Impersonate
             </Button>
-          </Form>
+          </impersonateFetcher.Form>
 
-          <Form method="post" className="space-y-4">
-            <FieldLabel label="Recover Channel (empty for all)" className="flex-col items-start">
+          <recoverFetcher.Form method="post" className="space-y-4">
+            <p className="font-medium">Recovery</p>
+            <FieldLabel label="Channel (empty for all)" className="flex-col items-start">
               <Input name="channel" placeholder="all channels" />
             </FieldLabel>
             <FieldLabel label="Until" className="flex-col items-start">
@@ -274,15 +324,32 @@ export default function Admin() {
             <FieldLabel label="Limit" className="flex-col items-start">
               <Input type="number" name="limit" placeholder="limit" defaultValue={1000} />
             </FieldLabel>
-            <FieldLabel label="Reprocess" position="right">
-              <Checkbox name="reprocessModeratedCasts" defaultValue={"off"} />
+            <FieldLabel
+              label="Reprocess"
+              position="right"
+              description="Even if an entry in the moderation log already exists, reprocess it."
+            >
+              <Checkbox className="align-start" name="reprocessModeratedCasts" defaultValue={"off"} />
             </FieldLabel>
-            <Button name="action" value="recover">
-              Recover
+            <div className="text-sm">
+              <p className="font-medium mb-1">Type</p>
+              <RadioGroup name="recoverType" defaultValue="recover">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="recover" id="recover" />
+                  <label htmlFor="sweep">Recover</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="sweep" id="sweep" />
+                  <label htmlFor="sweep">Sweep</label>
+                </div>
+              </RadioGroup>
+            </div>
+            <Button name="action" value="recover" disabled={recoverFetcher.state !== "idle"}>
+              Submit
             </Button>
-          </Form>
+          </recoverFetcher.Form>
 
-          <Form method="post" className="space-y-4">
+          <statusFetcher.Form method="post" className="space-y-4">
             <FieldLabel label="Status" className="flex-col items-start">
               <Input name="channel" placeholder="channel" />
             </FieldLabel>
@@ -293,14 +360,19 @@ export default function Admin() {
               <Input name="link" />
             </FieldLabel>
             <div className="flex gap-2">
-              <Button name="action" value="status">
+              <Button name="action" value="status" disabled={statusFetcher.state !== "idle"}>
                 Submit
               </Button>
-              <Button name="action" value="clearStatus" variant={"secondary"}>
+              <Button
+                name="action"
+                value="clearStatus"
+                variant={"secondary"}
+                disabled={statusFetcher.state !== "idle"}
+              >
                 Clear
               </Button>
             </div>
-          </Form>
+          </statusFetcher.Form>
         </div>
       </div>
 
@@ -321,9 +393,11 @@ export default function Admin() {
 
                   <div className="flex flex-col gap-2">
                     <h2>Setup Incomplete - {_dau.setupIncomplete.length.toLocaleString()}</h2>
-                    {_dau.setupIncomplete.map((c) => (
-                      <ChannelStat key={c.id} c={c} />
-                    ))}
+                    {_dau.setupIncomplete
+                      .sort((a, b) => b.followerCount - a.followerCount)
+                      .map((c) => (
+                        <ChannelStat key={c.id} c={c} />
+                      ))}
                   </div>
                 </>
               );
