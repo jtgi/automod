@@ -11,7 +11,7 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive, isSweepActive } from "./~.channels.$id.tools";
-import { recoverQueue, subscriptionQueue, sweepQueue, syncQueue } from "~/lib/bullish.server";
+import { recoverQueue, delayedSubscriptionQueue, sweepQueue, syncQueue } from "~/lib/bullish.server";
 import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
@@ -57,7 +57,11 @@ export async function action({ request }: ActionFunctionArgs) {
         message: `Refreshed. Plan is ${plan.plan}, expiring ${plan.expiresAt?.toISOString()}`,
       });
     } else {
-      await subscriptionQueue.add("subscriptionSync", {}, { removeOnComplete: true, removeOnFail: true });
+      await delayedSubscriptionQueue.add(
+        "subscriptionSyncAdmin",
+        {},
+        { removeOnComplete: true, removeOnFail: true }
+      );
 
       return successResponse({ request, message: "Syncing all subscriptions" });
     }

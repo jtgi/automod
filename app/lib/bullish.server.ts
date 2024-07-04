@@ -49,15 +49,11 @@ export type ValidateCastArgsV2 = {
   channelName: string;
 };
 
-export const subscriptionQueue = new Queue("subscriptionQueue", {
+export const delayedSubscriptionQueue = new Queue("subscriptionQueue", {
   connection,
 });
 
-subscriptionQueue.add(
-  "subscriptionSync",
-  {},
-  { jobId: "subscriptionSync", repeat: { pattern: "0 0 * * *" } }
-);
+delayedSubscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
 
 export const subscriptionWorker = new Worker(
   "subscriptionQueue",
@@ -69,6 +65,15 @@ export const subscriptionWorker = new Worker(
     connection,
   }
 );
+
+subscriptionWorker.on("error", (err: Error) => {
+  Sentry.captureException(err);
+  console.error(`Subscription worker error`, err);
+});
+
+subscriptionWorker.on("failed", (job, err) => {
+  console.error("Subscription worker failed", err);
+});
 
 export const webhookWorker = new Worker(
   "webhookQueue",
