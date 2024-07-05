@@ -7,17 +7,10 @@ import {
   BadgeDollarSign,
   BarChart,
   Bot,
-  Check,
   DollarSign,
-  FileSearch,
-  Globe,
   HeartHandshake,
-  Lightbulb,
   Loader2,
-  LucideProps,
-  Merge,
   Plug,
-  Receipt,
   Users,
 } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -31,11 +24,8 @@ import invariant from "tiny-invariant";
 import { db } from "~/lib/db.server";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { FarcasterIcon } from "~/components/FarcasterIcon";
-import { Container } from "~/components/container";
-import { MarketingPage } from "~/components/marketing";
-import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { User } from "@prisma/client";
-import { ArrowTopRightIcon, MagicWandIcon } from "@radix-ui/react-icons";
+import { MagicWandIcon } from "@radix-ui/react-icons";
 
 // export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
