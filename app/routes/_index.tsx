@@ -252,7 +252,7 @@ export default function Home() {
               />
             </div>
           </div>
-          <div className="flex flex-col items-center justify-center space-y-2">
+          <div className="pt-8">
             <LoginButton user={user} error={error} env={env} />
           </div>
         </div>
@@ -267,7 +267,7 @@ export default function Home() {
           className="p-7 text-xs py-12 w-full"
           style={{
             backgroundImage:
-              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(0,3,32,0.87) 20.8%, rgba(0,10,35,0.84) 74.4% )",
+              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(10,3,32,0.87) 20.8%, rgba(10,10,35,0.84) 74.4% )",
           }}
         >
           <div className="max-w-5xl mx-auto flex justify-between">
