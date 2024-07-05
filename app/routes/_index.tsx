@@ -133,38 +133,18 @@ export default function Home() {
     audioClone.play().catch((error) => console.error("Error playing the sound:", error));
   };
 
-  const cardData = [
-    {
-      title: "Automated Moderation",
-      description:
-        "Moderate your channel feed with over 20 different composable rules. Block spam, boost token holders, and more.",
-    },
-    {
-      title: "Farcaster Native Integrations",
-      description: "Integrate with your favorite tools like Hypersub, Paragraph, OpenRank and more.",
-    },
-    {
-      title: "Real-time Insights",
-      description: "Get real-time insights into your community with detailed analytics.",
-    },
-    {
-      title: "Easy to Use",
-      description: "Get started in minutes with our easy-to-use dashboard.",
-    },
-  ];
-
   return (
     <>
-      <main
-        className="w-full h-full"
-        style={{
-          backgroundImage:
-            "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
-        }}
-      >
+      <main className="w-full h-full">
         {/* hero */}
-        <div className="mx-auto flex max-w-2xl flex-col items-center justify-center space-y-6 p-7 pb-20 pt-20">
-          <section className="text-center">
+        <div
+          className="flex flex-col items-center justify-center space-y-6 p-7 pb-20 pt-20"
+          style={{
+            backgroundImage:
+              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
+          }}
+        >
+          <section className="text-center max-w-2xl mx-auto">
             <h1 className="text-3xl logo text-white mb-4">automod</h1>
             <h1
               className="text-center text-4xl sm:text-5xl text-[#f9ffd9] tracking-tighter leading-1"
@@ -172,11 +152,11 @@ export default function Home() {
                 fontFamily: "Kode Mono",
               }}
             >
-              Channel moderation on autopilot.
+              Put your channel on autopilot.
             </h1>
             <p className="text-white/80 text-md sm:text-xl mt-4">
-              Managing channels is too much work. With automod you decide who and what shows up in your
-              channel and let automation take care of the rest.
+              Choose from 25+ composable rules to automatically filter out and curate meaningful content in
+              your channel.
             </p>
 
             <div className="flex flex-col items-center justify-center space-y-2">
@@ -228,12 +208,14 @@ export default function Home() {
           </section>
         </div>
 
-        <div className="py-4 px-8">
-          <hr className="border-white/10" />
-        </div>
-
         {/* features */}
-        <div className="space-y-20 p-7 py-24 sm:px-12">
+        <div
+          className="p-7 py-24 sm:px-12"
+          style={{
+            backgroundImage:
+              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(0,3,32,0.87) 20.8%, rgba(0,10,35,0.84) 74.4% )",
+          }}
+        >
           <div className="justify-left mx-auto flex max-w-5xl flex-col items-center space-y-6">
             <div className="grid grid-cols-1 gap-14 gap-y-12 sm:grid-cols-2 sm:gap-12">
               <FeatureCard
@@ -289,18 +271,29 @@ export default function Home() {
 
         {/* footer */}
 
-        <footer className="p-7 max-w-5xl mx-auto text-center text-xs py-12 flex items-center gap-8 justify-between">
-          <p className="flex items-center gap-4">
-            <Link to="/disclosure" className="text-white/40 no-underline">
-              Disclosure
-            </Link>
-            <Link to="/privacy" className="text-white/40 no-underline">
-              Privacy
-            </Link>
-            <Link to="/tos" className="text-white/40 no-underline">
-              Terms
-            </Link>
-          </p>
+        <footer
+          className="p-7 text-xs py-12 w-full"
+          style={{
+            backgroundImage:
+              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(0,3,32,0.87) 20.8%, rgba(0,10,35,0.84) 74.4% )",
+          }}
+        >
+          <div className="max-w-5xl mx-auto flex justify-between">
+            <p className="flex items-center gap-4">
+              <Link to="/disclosure" className="text-white/40 no-underline">
+                Disclosure
+              </Link>
+              <Link to="/privacy" className="text-white/40 no-underline">
+                Privacy
+              </Link>
+              <Link to="/tos" className="text-white/40 no-underline">
+                Terms
+              </Link>
+            </p>
+            <p style={{ fontFamily: "Kode Mono" }} className="text-white/20">
+              made in tokyo
+            </p>
+          </div>
         </footer>
       </main>
     </>
