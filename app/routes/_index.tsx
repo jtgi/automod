@@ -156,7 +156,7 @@ export default function Home() {
               >
                 Put your channel on autopilot.
               </h1>
-              <p className="text-white/80 text-md sm:text-xl mt-2 max-w-2xl">
+              <p className="text-white/80 text-md sm:text-xl mt-2 max-w-2xl mx-auto">
                 Choose from 25+ composable rules to automatically curate meaningful content in your channel.
               </p>
             </div>
