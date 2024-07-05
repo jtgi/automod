@@ -166,9 +166,9 @@ export default function Home() {
             </div>
 
             <section className="flex flex-col items-center mt-12">
-              <p className="mb-2 text-[#f9ffd9]">
-                Join hundreds of beloved <FarcasterIcon className="-mt-[2px] inline w-4 h-4 text-white" />{" "}
-                channels
+              <p className="mb-2 text-[#f9ffd9]/80 text-xs">
+                Used by hundreds of beloved{" "}
+                <FarcasterIcon className="-mt-[2px] inline w-3 h-3 text-white/80" /> channels
               </p>
               <div className="flex -space-x-1">
                 {activeChannels
@@ -205,7 +205,6 @@ export default function Home() {
                     );
                   })}
               </div>
-              <p className="text-xs text-[#f9ffd9] opacity-60 mt-2">Over 1 million automated actions taken</p>
             </section>
           </section>
         </div>
@@ -362,7 +361,7 @@ function LoginButton(props: {
   }, []);
 
   return (
-    <section className="flex flex-col items-center mt-8">
+    <section className="flex flex-col items-center mt-8 w-full">
       {error && (
         <Alert className="mb-8" variant="destructive">
           {error}
@@ -375,7 +374,7 @@ function LoginButton(props: {
           className="no-underline relative w-full sm:w-[250px] text-white/80 hover:text-white/100 border-black active:translate-y-[2px] bg-slate-800/80 hover:bg-slate-800 transition-all duration-100"
           variant={"outline"}
         >
-          <Link to="/~">
+          <Link to="/~" className="w-full">
             Use Automod <ArrowRight className="w-4 h-4 ml-2" />
           </Link>
         </Button>
