@@ -135,38 +135,36 @@ export default function Home() {
 
   return (
     <>
-      <main className="w-full h-full">
+      <main
+        className="w-full h-full"
+        style={{
+          backgroundImage:
+            "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
+        }}
+      >
         {/* hero */}
-        <div
-          className="flex flex-col items-center justify-center space-y-6 p-7 pb-20 pt-20"
-          style={{
-            backgroundImage:
-              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
-          }}
-        >
-          <section className="text-center max-w-2xl mx-auto">
+        <div className="flex flex-col items-center justify-center space-y-6 p-7 pb-20 pt-20">
+          <section className="text-center max-w-3xl mx-auto">
             <h1 className="text-3xl logo text-white mb-4">automod</h1>
-            <h1
-              className="text-center text-4xl sm:text-5xl text-[#f9ffd9] tracking-tighter leading-1"
-              style={{
-                fontFamily: "Kode Mono",
-              }}
-            >
-              Put your channel on autopilot.
-            </h1>
-            <p className="text-white/80 text-md sm:text-xl mt-4">
-              Choose from 25+ composable rules to automatically filter out and curate meaningful content in
-              your channel.
-            </p>
+            <div className="py-8">
+              <h1
+                className="text-center text-5xl sm:text-6xl text-[#f9ffd9] tracking-tighter leading-1"
+                style={{}}
+              >
+                Put your channel on autopilot.
+              </h1>
+              <p className="text-white/80 text-md sm:text-xl mt-2 max-w-2xl">
+                Choose from 25+ composable rules to automatically curate meaningful content in your channel.
+              </p>
+            </div>
 
-            <div className="flex flex-col items-center justify-center space-y-2">
+            <div className="flex flex-col items-center justify-center pb-4">
               <LoginButton user={user} error={error} env={env} />
             </div>
 
             <section className="flex flex-col items-center mt-8">
               <p className="mb-2 text-[#f9ffd9]">
-                Used by hundreds of beloved <FarcasterIcon className="-mt-[2px] inline w-4 h-4 text-white" />{" "}
-                channels
+                Join 200+ beloved <FarcasterIcon className="-mt-[2px] inline w-4 h-4 text-white" /> channels
               </p>
               <div className="flex -space-x-1">
                 {activeChannels
@@ -209,13 +207,7 @@ export default function Home() {
         </div>
 
         {/* features */}
-        <div
-          className="p-7 py-24 sm:px-12"
-          style={{
-            backgroundImage:
-              "radial-gradient( circle farthest-corner at 10% 20%,  rgba(0,3,32,0.87) 20.8%, rgba(0,10,35,0.84) 74.4% )",
-          }}
-        >
+        <div className="p-7 py-24 sm:px-12">
           <div className="justify-left mx-auto flex max-w-5xl flex-col items-center space-y-6">
             <div className="grid grid-cols-1 gap-14 gap-y-12 sm:grid-cols-2 sm:gap-12">
               <FeatureCard
@@ -363,7 +355,7 @@ function LoginButton(props: {
       {user ? (
         <Button
           asChild
-          className="no-underline relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/80 hover:bg-primary transition-all duration-100"
+          className="no-underline relative w-full sm:w-[250px] text-white/80 hover:text-white/100 border-black active:translate-y-[2px] bg-slate-800/80 hover:bg-slate-800 transition-all duration-100"
           variant={"outline"}
         >
           <Link to="/~">
@@ -378,7 +370,7 @@ function LoginButton(props: {
                 return (
                   <AuthKitProvider config={farcasterConfig}>
                     <Button
-                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/100 hover:bg-primary transition-all duration-100"
+                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 border-black active:translate-y-[2px] bg-slate-800/80 hover:bg-slate-800 transition-all duration-100"
                       variant={"outline"}
                     >
                       {loggingIn ? (
