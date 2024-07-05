@@ -143,7 +143,7 @@ export default function Home() {
     >
       <div className="w-full h-full z-10 relative">
         {/* hero */}
-        <div className="flex flex-col items-center justify-center space-y-6 p-7 pb-20 pt-20">
+        <div className="flex flex-col items-center justify-center space-y-6 p-7 pb-10 pt-20">
           <section className="text-center max-w-3xl mx-auto">
             <h1 className="text-3xl logo text-white mb-4">automod</h1>
             <div className="py-4 sm:py-8">
@@ -207,8 +207,19 @@ export default function Home() {
           </section>
         </div>
 
+        <div className="p-7 sm:px-12">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full max-w-3xl mx-auto h-full object-cover border-slate-700/80 border-[10px] rounded-[20px] shadow-lg"
+            src="/videos/automod-demo-complete.mp4"
+          />
+        </div>
+
         {/* features */}
-        <div className="p-7 py-24 sm:px-12">
+        <div className="p-7 pt-8 pb-24 sm:px-12">
           <div className="justify-left mx-auto flex max-w-5xl flex-col items-center space-y-6">
             <div className="grid grid-cols-1 gap-14 gap-y-12 sm:grid-cols-2 sm:gap-12">
               <FeatureCard
@@ -253,7 +264,7 @@ export default function Home() {
               />
             </div>
           </div>
-          <div className="pt-8">
+          <div className="pt-16">
             <LoginButton user={user} error={error} env={env} />
           </div>
         </div>
