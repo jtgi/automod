@@ -56,6 +56,10 @@ export const links: LinksFunction = () => [
     href: "https://fonts.googleapis.com/css2?family=Kode+Mono:wght@700&display=swap",
     rel: "stylesheet",
   },
+  {
+    href: "https://fonts.googleapis.com/css2?family=Rubik:wght@700&display=swap",
+    rel: "stylesheet",
+  },
 ];
 
 export async function loader({ request }: LoaderFunctionArgs) {

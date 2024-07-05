@@ -149,7 +149,10 @@ export default function Home() {
             <div className="py-4 sm:py-8">
               <h1
                 className="text-center text-5xl sm:text-6xl text-[#f9ffd9] tracking-tighter leading-1"
-                style={{}}
+                style={{
+                  fontFamily: "Rubik",
+                  fontWeight: 700,
+                }}
               >
                 Put your channel on autopilot.
               </h1>
