@@ -291,7 +291,7 @@ export default function Home() {
 
         {/* footer */}
 
-        <footer className="max-w-5xl mx-auto text-center text-xs py-12 flex items-center gap-8 justify-between">
+        <footer className="p-7 max-w-5xl mx-auto text-center text-xs py-12 flex items-center gap-8 justify-between">
           <p className="flex items-center gap-4">
             <Link to="/disclosure" className="text-white/40 no-underline">
               Disclosure
