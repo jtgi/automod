@@ -15,9 +15,12 @@ export async function syncSubscriptions() {
   });
 
   for (const user of activeUsers) {
-    console.log(`[${user.id}]: checking subscription status`);
     const plan = await refreshAccountStatus({ fid: user.id });
-    console.log(`[${user.id}]: plan: ${plan.plan}, expiry: ${plan.expiresAt?.toISOString()}`);
+    console.log(
+      `[subsync] ${user.name} plan: ${plan.plan}, expiry: ${
+        plan.expiresAt?.toISOString() || Infinity.toString()
+      }`
+    );
   }
 }
 

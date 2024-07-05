@@ -19,6 +19,8 @@ import { FullModeratedChannel } from "./api.webhooks.neynar";
 import { Checkbox } from "~/components/ui/checkbox";
 import { refreshAccountStatus } from "~/lib/subscription.server";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { Loader } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -383,11 +385,57 @@ export default function Admin() {
       </div>
 
       <div className="space-y-20 min-w-[300px] text-sm">
-        <Suspense fallback="Loading">
+        <Suspense
+          fallback={
+            <div className="flex justify-center h-full w-full">
+              <Loader className="animate-spin w-5 h-5" />
+            </div>
+          }
+        >
           <Await resolve={dau}>
             {(_dau) => {
               return (
                 <>
+                  <div className="flex flex-col gap-2">
+                    <h3>Account Breakdown</h3>
+                    {_dau.usersByPlan.map((u) => (
+                      <div key={u.plan} className="flex justify-between items-center">
+                        <p>{u.plan}</p>
+                        <p>{u._count._all}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <h3>New Signups (72h) - {_dau.newSignups.length.toLocaleString()}</h3>
+                    {_dau.newSignups.map((u) => (
+                      <div key={u.id} className="flex gap-3 items-center">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={u.avatarUrl ?? undefined} />
+                          <AvatarFallback>{u.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <a href={`https://warpcast.com/${u.name}`} target="_blank" rel="noreferrer">
+                          {u.name}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <h3>New Channels (72h) - {_dau.newChannels.length.toLocaleString()}</h3>
+                    {_dau.newChannels.map((c) => (
+                      <div key={c.id} className="flex gap-3 items-center">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={c.imageUrl ?? undefined} />
+                          <AvatarFallback>{c.id[0]}</AvatarFallback>
+                        </Avatar>
+                        <a href={`https://warpcast.com/~/channel/${c.id}`} target="_blank" rel="noreferrer">
+                          /{c.id}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="flex flex-col gap-2">
                     <h3>Active Channels - {_dau.active.length.toLocaleString()}</h3>
                     {_dau.active
@@ -417,13 +465,13 @@ export default function Admin() {
 
 function ChannelStat({ c }: { c: any }) {
   return (
-    <div className="flex gap-2">
-      <div className="w-[200px]">
+    <div className="flex gap-2 justify-between">
+      <div className="w-full">
         <a target="_blank" href={`https://warpcast.com/~/channel/${c.id}`} rel="noreferrer">
           /{c.id}
         </a>
       </div>
-      <div>{c.followerCount.toLocaleString()}</div>
+      <div className="font-mono">{c.followerCount.toLocaleString()}</div>
     </div>
   );
 }
@@ -460,8 +508,40 @@ async function getDau() {
     }
   }
 
+  const usersByPlan = await db.user.groupBy({
+    by: ["plan"],
+    _count: {
+      _all: true,
+    },
+  });
+
+  const newSignups = await db.user.findMany({
+    where: {
+      createdAt: {
+        gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 72),
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const newChannels = await db.moderatedChannel.findMany({
+    where: {
+      createdAt: {
+        gte: new Date(new Date().getTime() - 1000 * 60 * 60 * 72),
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
   return {
     active,
     setupIncomplete,
+    usersByPlan,
+    newChannels,
+    newSignups,
   };
 }
