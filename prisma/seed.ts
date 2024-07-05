@@ -42,21 +42,12 @@ async function seed() {
     },
   };
 
-  const containsHotChocolate: Rule = {
-    name: "containsText",
-    type: "CONDITION",
-    args: {
-      searchText: "hot chocolate",
-      caseSensitive: true,
-    },
-  };
-
   const orRule: Rule = {
     name: "and",
     type: "LOGICAL",
     args: {},
     operation: "OR",
-    conditions: [containsHotChocolate, containsSpam],
+    conditions: [containsSpam],
   };
 
   const actions: Array<Action> = [
