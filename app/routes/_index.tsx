@@ -7,6 +7,7 @@ import {
   BadgeDollarSign,
   BarChart,
   Bot,
+  Check,
   DollarSign,
   HeartHandshake,
   Loader2,
@@ -26,6 +27,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { FarcasterIcon } from "~/components/FarcasterIcon";
 import { User } from "@prisma/client";
 import { MagicWandIcon } from "@radix-ui/react-icons";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { cn } from "~/lib/utils";
 
 // export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
@@ -164,14 +167,14 @@ export default function Home() {
           <section className="text-center">
             <h1 className="text-3xl logo text-white mb-4">automod</h1>
             <h1
-              className="text-center text-5xl sm:text-5xl text-[#f9ffd9] tracking-tighter leading-1"
+              className="text-center text-4xl sm:text-5xl text-[#f9ffd9] tracking-tighter leading-1"
               style={{
                 fontFamily: "Kode Mono",
               }}
             >
               Channel moderation on autopilot.
             </h1>
-            <p className="text-white/80 text-lg sm:text-xl mt-4">
+            <p className="text-white/80 text-md sm:text-xl mt-4">
               Managing channels is too much work. With automod you decide who and what shows up in your
               channel and let automation take care of the rest.
             </p>
@@ -181,7 +184,7 @@ export default function Home() {
             </div>
 
             <section className="flex flex-col items-center mt-8">
-              <p className="mb-2 text-white">
+              <p className="mb-2 text-[#f9ffd9]">
                 Used by hundreds of beloved <FarcasterIcon className="-mt-[2px] inline w-4 h-4 text-white" />{" "}
                 channels
               </p>
@@ -224,15 +227,6 @@ export default function Home() {
             </section>
           </section>
         </div>
-
-        {/* <video
-          className="w-full rounded-lg shadow-md mx-auto max-w-[600px]"
-          autoPlay
-          loop
-          muted
-          playsInline
-          src="/videos/automod-rules-demo.mp4"
-        /> */}
 
         <div className="py-4 px-8">
           <hr className="border-white/10" />
@@ -288,6 +282,10 @@ export default function Home() {
             <LoginButton user={user} error={error} env={env} />
           </div>
         </div>
+
+        {/* <div className="py-7 max-w-5xl mx-auto">
+          <PricingTable />
+        </div> */}
 
         {/* footer */}
 
@@ -387,7 +385,7 @@ function LoginButton(props: {
                 return (
                   <AuthKitProvider config={farcasterConfig}>
                     <Button
-                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/80 hover:bg-primary transition-all duration-100"
+                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 active:translate-y-[2px] bg-primary/100 hover:bg-primary transition-all duration-100"
                       variant={"outline"}
                     >
                       {loggingIn ? (
@@ -410,5 +408,141 @@ function LoginButton(props: {
         </>
       )}
     </section>
+  );
+}
+
+function PricingTable() {
+  const frequencies = [
+    { value: "monthly", label: "Monthly", priceSuffix: "/month" },
+    { value: "annually", label: "Annually", priceSuffix: "/year" },
+  ];
+  const tiers = [
+    {
+      name: "Basic",
+      id: "tier-freelancer",
+      href: "#",
+      price: { monthly: "FREE", annually: "FREE" },
+      description: "The essentials to provide your best work for clients.",
+      features: ["Process 3000 casts", "Up to 3 channels", "Basic analytics", "1 Moderator Role"],
+      mostPopular: false,
+    },
+    {
+      name: "Prime",
+      id: "tier-startup",
+      href: "#",
+      price: { monthly: "$14.99", annually: "$179.88" },
+      description: "A plan that scales with your rapidly growing channel.",
+      features: ["Process 25,000 casts", "Up to 5 channels", "Webhooks", "Unlimited Moderator Roles"],
+      mostPopular: false,
+    },
+    {
+      name: "Ultra",
+      id: "tier-enterprise",
+      href: "#",
+      price: { monthly: "$39.99", annually: "$479.99" },
+      description: "Channels at scale",
+      features: [
+        "Process 250,000 casts",
+        "Unlimited channels",
+        "Priority Support",
+        "Automod Team Support",
+        "Unlimited Moderator Roles",
+        "Webhooks",
+      ],
+      mostPopular: false,
+    },
+  ];
+
+  const [frequency, setFrequency] = useState(frequencies[0]);
+
+  return (
+    <div className="bg-white py-24 sm:py-32">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="text-base font-semibold leading-7 text-indigo-600">Pricing</h2>
+          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            Pricing plans for teams of&nbsp;all&nbsp;sizes
+          </p>
+        </div>
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
+          Choose an affordable plan that’s packed with the best features for engaging your audience, creating
+          customer loyalty, and driving sales.
+        </p>
+        <div className="mt-16 flex justify-center">
+          <fieldset aria-label="Payment frequency">
+            <RadioGroup
+              value={frequency.value}
+              onValueChange={(value) => setFrequency(frequencies.find((f) => f.value === value)!)}
+              className="grid grid-cols-2 gap-x-1 rounded-full p-1 text-center text-xs font-semibold leading-5 ring-1 ring-inset ring-gray-200"
+            >
+              {frequencies.map((option) => (
+                <RadioGroupItem
+                  key={option.value}
+                  value={option.value}
+                  className="cursor-pointer rounded-full px-2.5 py-1 text-gray-500 data-[checked]:bg-indigo-600 data-[checked]:text-white"
+                >
+                  {option.label}
+                </RadioGroupItem>
+              ))}
+            </RadioGroup>
+          </fieldset>
+        </div>
+        <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+          {tiers.map((tier) => (
+            <div
+              key={tier.id}
+              className={cn(
+                tier.mostPopular ? "ring-2 ring-indigo-600" : "ring-1 ring-gray-200",
+                "rounded-3xl p-8 xl:p-10"
+              )}
+            >
+              <div className="flex items-center justify-between gap-x-4">
+                <h3
+                  id={tier.id}
+                  className={cn(
+                    tier.mostPopular ? "text-indigo-600" : "text-gray-900",
+                    "text-lg font-semibold leading-8"
+                  )}
+                >
+                  {tier.name}
+                </h3>
+                {tier.mostPopular ? (
+                  <p className="rounded-full bg-indigo-600/10 px-2.5 py-1 text-xs font-semibold leading-5 text-indigo-600">
+                    Most popular
+                  </p>
+                ) : null}
+              </div>
+              <p className="mt-4 text-sm leading-6 text-gray-600">{tier.description}</p>
+              <p className="mt-6 flex items-baseline gap-x-1">
+                <span className="text-4xl font-bold tracking-tight text-gray-900">
+                  {tier.price[frequency.value]}
+                </span>
+                <span className="text-sm font-semibold leading-6 text-gray-600">{frequency.priceSuffix}</span>
+              </p>
+              <a
+                href={tier.href}
+                aria-describedby={tier.id}
+                className={cn(
+                  tier.mostPopular
+                    ? "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500"
+                    : "text-indigo-600 ring-1 ring-inset ring-indigo-200 hover:ring-indigo-300",
+                  "mt-6 block rounded-md px-3 py-2 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                )}
+              >
+                Buy plan
+              </a>
+              <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600 xl:mt-10">
+                {tier.features.map((feature) => (
+                  <li key={feature} className="flex gap-x-3">
+                    <Check aria-hidden="true" className="h-6 w-5 flex-none text-indigo-600" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
