@@ -134,19 +134,19 @@ export default function Home() {
   };
 
   return (
-    <>
-      <main
-        className="w-full h-full"
-        style={{
-          backgroundImage:
-            "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
-        }}
-      >
+    <main
+      className="w-full h-full relative"
+      style={{
+        backgroundImage:
+          "radial-gradient( circle farthest-corner at 10% 20%,  rgba(237,3,32,0.87) 20.8%, rgba(242,121,1,0.84) 74.4% )",
+      }}
+    >
+      <div className="w-full h-full z-10 relative">
         {/* hero */}
         <div className="flex flex-col items-center justify-center space-y-6 p-7 pb-20 pt-20">
           <section className="text-center max-w-3xl mx-auto">
             <h1 className="text-3xl logo text-white mb-4">automod</h1>
-            <div className="py-8">
+            <div className="py-4 sm:py-8">
               <h1
                 className="text-center text-5xl sm:text-6xl text-[#f9ffd9] tracking-tighter leading-1"
                 style={{}}
@@ -158,13 +158,14 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex flex-col items-center justify-center pb-4">
+            <div className="flex flex-col items-center justify-center">
               <LoginButton user={user} error={error} env={env} />
             </div>
 
-            <section className="flex flex-col items-center mt-8">
+            <section className="flex flex-col items-center mt-12">
               <p className="mb-2 text-[#f9ffd9]">
-                Join 200+ beloved <FarcasterIcon className="-mt-[2px] inline w-4 h-4 text-white" /> channels
+                Join hundreds of beloved <FarcasterIcon className="-mt-[2px] inline w-4 h-4 text-white" />{" "}
+                channels
               </p>
               <div className="flex -space-x-1">
                 {activeChannels
@@ -287,8 +288,9 @@ export default function Home() {
             </p>
           </div>
         </footer>
-      </main>
-    </>
+      </div>
+      <FarcasterIcon className="w-screen h-screen absolute -top-12 left-0 opacity-5 mix-blend-multiply" />
+    </main>
   );
 }
 
@@ -370,11 +372,11 @@ function LoginButton(props: {
                 return (
                   <AuthKitProvider config={farcasterConfig}>
                     <Button
-                      className="relative w-full sm:w-[250px] text-white/80 hover:text-white/100 border-black active:translate-y-[2px] bg-slate-800/80 hover:bg-slate-800 transition-all duration-100"
+                      className="relative w-full min-w-[250px] sm:w-[250px] text-white/80 hover:text-white/100 border-black active:translate-y-[2px] bg-slate-800/80 hover:bg-slate-800 transition-all duration-100"
                       variant={"outline"}
                     >
                       {loggingIn ? (
-                        <Loader2 className=" animate-spin h-4 w-4" />
+                        <Loader2 className="animate-spin h-4 w-4" />
                       ) : (
                         <>
                           <Farcaster className="mr-2 h-5 w-5" />
