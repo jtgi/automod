@@ -16,6 +16,7 @@ import { clientsByChainId } from "./viem.server";
 import { cache } from "./cache.server";
 import { ActionType } from "./validations.server";
 import { actionToPermission } from "./permissions.server";
+import { getWarpcastChannelOwner } from "./warpcast.server";
 
 export async function convertSvgToPngBase64(svgString: string) {
   const buffer: Buffer = await sharp(Buffer.from(svgString)).png().toBuffer();
@@ -555,4 +556,9 @@ export function debounceAsync<T extends (...args: any[]) => Promise<any>>(func: 
       }, wait);
     });
   };
+}
+
+export async function isUserChannelLead(props: { userId: string; channelId: string }) {
+  const leadFid = await getWarpcastChannelOwner({ channel: props.channelId });
+  return +props.userId === leadFid;
 }

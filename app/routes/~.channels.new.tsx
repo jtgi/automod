@@ -81,6 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
     data: {
       id: channelResult.data.id,
       active: true,
+      feedType: "custom",
       url: neynarChannel.url,
       user: {
         connect: {

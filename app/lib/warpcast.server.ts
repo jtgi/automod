@@ -69,6 +69,24 @@ export async function getWarpcastChannel(props: { channel: string }): Promise<Wa
   return rsp.data.result.channel;
 }
 
+export async function getWarpcastChannels() {
+  return getSetCache({
+    key: `all-warpcast-channels`,
+    get: async () => {
+      const rsp = await http.get<{ result: { channels: Array<WarpcastChannel> } }>(
+        `https://api.warpcast.com/v2/all-channels`
+      );
+      return rsp.data.result.channels;
+    },
+    ttlSeconds: 60 * 5,
+  });
+}
+
+export async function getOwnedChannels(props: { fid: number }) {
+  const channels = await getWarpcastChannels();
+  return channels.filter((c) => c.leadFid === props.fid);
+}
+
 export async function cooldown({ channel, cast, action }: { channel: string; cast: Cast; action: Action }) {
   const { duration } = (action as any).args;
 

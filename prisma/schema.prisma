@@ -62,7 +62,8 @@ model ModeratedChannel {
   active            Boolean            @default(true)
   imageUrl          String?
   url               String?
-  userId            String
+  feedType          String
+  userId            String             @default("custom")
   banThreshold      Int?
   slowModeHours     Int                @default(0)
   excludeCohosts    Boolean            @default(true)
