@@ -11,10 +11,12 @@ async function seed() {
       id: "5179",
       name: "jtgi",
       role: "superadmin",
+      plan: "vip",
     },
     update: {
       id: "5179",
       role: "superadmin",
+      plan: "vip",
     },
   });
 
@@ -56,21 +58,7 @@ async function seed() {
     },
   ];
 
-  const jtgiChannels = [
-    "samantha",
-    "base",
-    "coop-recs",
-    "rainbow",
-    "seaport",
-    "farcasther",
-    "degen",
-    "fitness",
-    "higher",
-    "zk",
-    "replyguys",
-    "ogs",
-    "wake",
-  ];
+  const jtgiChannels = ["tmp", "automod", "jtgi", "samantha", "base", "coop-recs", "rainbow"];
   const nonlinearChannels = ["memes", "manysuchcases", "hypermod"];
 
   function createChannel(userId: string, channelId: string): Promise<ModeratedChannel> {
@@ -97,6 +85,28 @@ async function seed() {
 
   await Promise.all(jtgiChannels.map((channelId) => createChannel(jtgi.id, channelId)));
   await Promise.all(nonlinearChannels.map((channelId) => createChannel(nonlinear.id, channelId)));
+
+  await db.cooldown.deleteMany({});
+  await db.cooldown.createMany({
+    data: [
+      {
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expiresAt: undefined, // ban
+        active: true,
+        affectedUserId: "3",
+        channelId: "tmp",
+      },
+      {
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        active: true,
+        affectedUserId: "2",
+        channelId: "tmp",
+      },
+    ],
+  });
 }
 
 seed()
