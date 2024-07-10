@@ -321,7 +321,7 @@ export default function Screen() {
                     )}
                   </div>
 
-                  {["cooldown", "mute", "hideQuietly", "warnAndHide"].includes(log.action) && (
+                  {["cooldown", "mute", "hideQuietly", "warnAndHide", "like"].includes(log.action) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger>
                         <MoreVerticalIcon className="w-5 h-5" />
