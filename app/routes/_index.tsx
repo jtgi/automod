@@ -209,7 +209,7 @@ export default function Home() {
             playsInline
             className="w-full max-w-3xl mx-auto h-full object-cover border-slate-700/80 border-[10px] rounded-[20px] shadow-lg"
             src="/videos/automod-demo-complete.mp4"
-            controls
+          
           />
         </div>
 

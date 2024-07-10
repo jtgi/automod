@@ -118,6 +118,7 @@ export default function ChannelRoot() {
                   to: `/~/channels/${channel.id}/roles`,
                   title: "Moderators",
                 },
+                { to: `/~/channels/${channel.id}/bans`, title: "Bans" },
                 { to: `/~/channels/${channel.id}/tools`, title: "Tools" },
                 user.id === channel.userId
                   ? {

@@ -18,8 +18,8 @@ import {
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Await, Form, NavLink } from "@remix-run/react";
-import { actionDefinitions, like } from "~/lib/validations.server";
+import { Form, NavLink } from "@remix-run/react";
+import { actionDefinitions, like, unlike } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import {
   ArrowUpRight,
@@ -31,13 +31,7 @@ import {
 import { z } from "zod";
 import { useLocalStorage } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { getChannelStats } from "~/lib/castsense.server";
-import { Suspense } from "react";
-import { abbreviateNumber } from "js-abbreviation-number";
-import { Card, CardHeader, CardDescription, CardTitle, CardContent, CardFooter } from "~/components/ui/card";
-import { ModerationStats30Days, getModerationStats30Days } from "~/lib/stats.server";
-import { Skeleton } from "~/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { getModerationStats30Days } from "~/lib/stats.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
@@ -98,7 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = z
     .object({
       logId: z.string(),
-      intent: z.enum(["end-cooldown", "unban", "like"]),
+      intent: z.enum(["end-cooldown", "unban", "like", "hideQuietly"]),
     })
     .safeParse(rawData);
 
@@ -189,6 +183,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await db.moderationLog.create({
       data: {
         action: "like",
+        affectedUserFid: log.affectedUserFid,
+        affectedUsername: log.affectedUsername,
+        affectedUserAvatarUrl: log.affectedUserAvatarUrl,
+        castHash: log.castHash,
+        castText: log.castText,
+        actor: user.id,
+        channelId: moderatedChannel.id,
+        reason: `Applied manually by @${user.name}`,
+      },
+    });
+  } else if (result.data.intent === "hideQuietly") {
+    invariant(log.castHash, "castHash is required");
+
+    await unlike({ cast: { hash: log.castHash } as any, channel: moderatedChannel.id });
+    await db.moderationLog.create({
+      data: {
+        action: "hideQuietly",
         affectedUserFid: log.affectedUserFid,
         affectedUsername: log.affectedUsername,
         affectedUserAvatarUrl: log.affectedUserAvatarUrl,
@@ -310,7 +321,7 @@ export default function Screen() {
                     )}
                   </div>
 
-                  {["cooldown", "mute", "hideQuietly", "warnAndHide"].includes(log.action) && (
+                  {["cooldown", "mute", "hideQuietly", "warnAndHide", "like"].includes(log.action) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger>
                         <MoreVerticalIcon className="w-5 h-5" />
@@ -330,6 +341,22 @@ export default function Screen() {
                             </DropdownMenuItem>
                           </Form>
                         )}
+
+                        {log.action === "like" && (
+                          <Form method="post">
+                            <input type="hidden" name="logId" value={log.id} />
+                            <DropdownMenuItem>
+                              <button
+                                name="intent"
+                                value="hideQuietly"
+                                className="w-full h-full cursor-default text-left"
+                              >
+                                Hide
+                              </button>
+                            </DropdownMenuItem>
+                          </Form>
+                        )}
+
                         {log.action === "ban" && (
                           <Form method="post">
                             <input type="hidden" name="logId" value={log.id} />

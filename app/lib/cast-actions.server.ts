@@ -19,32 +19,36 @@ export const addToBypassAction = {
   image: `${env.hostUrl}/actions/bypass.png`,
 } as const;
 
+export const cooldown24Action = {
+  action: {
+    type: "post",
+  },
+  description: "Hide all messages from a user for 24 hours",
+  automodAction: "cooldown",
+  name: "24h Cooldown",
+  icon: "no-entry",
+  postUrl: `${env.hostUrl}/api/actions/cooldown`,
+  aboutUrl: "https://automod.sh",
+  image: `${env.hostUrl}/actions/cooldown24.png`,
+} as const;
+
+export const banAction = {
+  automodAction: "ban",
+  action: {
+    type: "post",
+  },
+  name: actionDefinitions["ban"].friendlyName,
+  description: actionDefinitions["ban"].description,
+  icon: "sign-out",
+  postUrl: `${env.hostUrl}/api/actions/ban`,
+  aboutUrl: "https://automod.sh",
+  image: `${env.hostUrl}/actions/ban.png`,
+} as const;
+
 export const actions = [
   addToBypassAction,
-  {
-    action: {
-      type: "post",
-    },
-    description: "Hide all messages from a user for 24 hours",
-    automodAction: "cooldown",
-    name: "24h Cooldown",
-    icon: "no-entry",
-    postUrl: `${env.hostUrl}/api/actions/cooldown`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/cooldown24.png`,
-  },
-  {
-    automodAction: "ban",
-    action: {
-      type: "post",
-    },
-    name: actionDefinitions["ban"].friendlyName,
-    description: actionDefinitions["ban"].description,
-    icon: "sign-out",
-    postUrl: `${env.hostUrl}/api/actions/ban`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/ban.png`,
-  },
+  cooldown24Action,
+  banAction,
   {
     automodAction: "downvote",
     action: {

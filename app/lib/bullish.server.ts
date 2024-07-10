@@ -53,7 +53,9 @@ export const delayedSubscriptionQueue = new Queue("subscriptionQueue", {
   connection,
 });
 
-delayedSubscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
+if (process.env.NODE_ENV === "production") {
+  delayedSubscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
+}
 
 export const subscriptionWorker = new Worker(
   "subscriptionQueue",
