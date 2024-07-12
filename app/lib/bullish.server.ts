@@ -38,7 +38,7 @@ export const openRankLimiter = new Bottleneck({
 });
 
 export const nodeRpcLimiter = new Bottleneck({
-  maxConcurrent: 10,
+  maxConcurrent: 20,
   datastore: "ioredis",
   clearDatastore: false,
   connection: bottleneckConnection,
