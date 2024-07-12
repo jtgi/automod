@@ -43,7 +43,7 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
 
 function getDelay(err: AxiosError, retryCount: number) {
   if (err.response?.status === 429 && err.config?.url?.includes("neynar")) {
-    return 2 ** (retryCount ** 30_000);
+    return 2 ** retryCount * 30_000;
   }
 
   return 2 ** retryCount * retryDelay;
