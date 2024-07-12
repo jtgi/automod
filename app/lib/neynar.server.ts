@@ -16,8 +16,13 @@ export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string
       },
     }
   );
-  const webhooks =
-    (webhook.data.webhook?.subscription?.filters?.["cast.created"]?.root_parent_urls as string[]) || [];
+  const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
+    ?.root_parent_urls as string[];
+
+  if (!webhooks || !webhooks.length) {
+    console.log(`no webhooks found returned from neynar, this shouldn't happen`);
+    throw new Error("no webhooks returned from neynar. this shouldn't happen");
+  }
 
   if (webhooks.includes(rootParentUrl)) {
     return;
@@ -65,8 +70,13 @@ export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: stri
       },
     }
   );
-  const webhooks =
-    (webhook.data.webhook?.subscription?.filters?.["cast.created"]?.root_parent_urls as string[]) || [];
+  const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
+    ?.root_parent_urls as string[];
+
+  if (!webhooks || !webhooks.length) {
+    console.log(`no webhooks found returned from neynar, this shouldn't happen`);
+    throw new Error("no webhooks returned from neynar. this shouldn't happen");
+  }
 
   if (!webhooks.includes(rootParentUrl)) {
     return;
