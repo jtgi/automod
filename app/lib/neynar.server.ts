@@ -7,9 +7,7 @@ import axios from "axios";
 import { getSetCache, getSharedEnv } from "./utils.server";
 import { http } from "./http.server";
 
-export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!, {
-  axiosInstance: http,
-});
+export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!, { axiosInstance: http });
 
 export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string }) {
   const webhook = await axios.get(

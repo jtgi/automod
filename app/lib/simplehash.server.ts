@@ -1,7 +1,6 @@
-import axios from "axios";
 import { getSetCache } from "./utils.server";
 import { base, mainnet, optimism, zora } from "viem/chains";
-import { http } from "./warpcast.server";
+import { http } from "./http.server";
 
 export function nftsByWallets(props: { chains: string[]; contractAddresses: string[]; wallets: string[] }) {
   const cacheKey = `nftsByWallets:${props.chains.join(",")}:${props.contractAddresses.join(
