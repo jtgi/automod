@@ -37,7 +37,7 @@ import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { UnrecoverableError } from "bullmq";
-import { openRankLimiter } from "./bullish.server";
+import { nodeRpcLimiter, openRankLimiter } from "./bullish.server";
 
 export type RuleDefinition = {
   name: RuleName;
@@ -1890,7 +1890,7 @@ export async function holdsErc721(args: CheckFunctionArgs) {
     isOwner = await getSetCache({
       key: `erc721-owner:${contractAddress}:${tokenId}`,
       get: async () => {
-        const owner = await contract.read.ownerOf([BigInt(tokenId)]);
+        const owner = await nodeRpcLimiter.schedule(() => contract.read.ownerOf([BigInt(tokenId)]));
         return [cast.author.custody_address, ...cast.author.verifications].some(
           (address) => address.toLowerCase() === owner.toLowerCase()
         );
@@ -1901,7 +1901,7 @@ export async function holdsErc721(args: CheckFunctionArgs) {
     for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
       const balance = await getSetCache({
         key: `erc721-balance:${contractAddress}:${address}`,
-        get: () => contract.read.balanceOf([getAddress(address)]),
+        get: () => nodeRpcLimiter.schedule(() => contract.read.balanceOf([getAddress(address)])),
         ttlSeconds: 60 * 60 * 2,
       });
 
@@ -1997,7 +1997,8 @@ export async function holdsErc1155(args: CheckFunctionArgs) {
     for (const address of [cast.author.custody_address, ...cast.author.verifications]) {
       const balance = await getSetCache({
         key: `erc1155-${contractAddress}-${address}-${tokenId}`,
-        get: () => contract.read.balanceOf([getAddress(address), BigInt(tokenId)]),
+        get: () =>
+          nodeRpcLimiter.schedule(() => contract.read.balanceOf([getAddress(address), BigInt(tokenId)])),
         ttlSeconds: 60 * 60 * 2,
       });
 
@@ -2068,7 +2069,7 @@ export async function verifyErc20Balance({
   });
 
   const balances = (await Promise.all(
-    wallets.map((add) => contract.read.balanceOf([getAddress(add)]))
+    wallets.map((add) => nodeRpcLimiter.schedule(() => contract.read.balanceOf([getAddress(add)])))
   )) as bigint[];
   const decimals = await contract.read.decimals();
   const minBalanceBigInt = parseUnits(minBalanceRequired ?? "0", decimals);

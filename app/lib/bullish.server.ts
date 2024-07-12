@@ -37,6 +37,13 @@ export const openRankLimiter = new Bottleneck({
   connection: bottleneckConnection,
 });
 
+export const nodeRpcLimiter = new Bottleneck({
+  maxConcurrent: 10,
+  datastore: "ioredis",
+  clearDatastore: false,
+  connection: bottleneckConnection,
+});
+
 export const webhookQueue = new Queue("webhookQueue", {
   connection,
 });

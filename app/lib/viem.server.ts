@@ -3,7 +3,16 @@ import { arbitrum, base, mainnet, zora, optimism } from "viem/chains";
 
 const mainnetClient = createPublicClient({
   chain: mainnet,
-  transport: http(`https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`),
+  transport: fallback(
+    [
+      http(`https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`),
+      http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`),
+    ],
+    {
+      retryCount: 3,
+      retryDelay: 2000,
+    }
+  ),
 });
 
 const optimismClient = createPublicClient({
