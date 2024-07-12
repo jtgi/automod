@@ -1,4 +1,5 @@
-import axiosFactory from "axios";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import axiosFactory, { AxiosError } from "axios";
 
 const retryDelay = 1000;
 
@@ -27,7 +28,7 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
   if (config.__retryCount < 3) {
     // Max retry limit
     config.__retryCount += 1;
-    const backoffDelay = 2 ** config.__retryCount * retryDelay;
+    const backoffDelay = getDelay(err, config.__retryCount);
     console.warn(`Received HTTP ${err.response.status}, retrying in ${backoffDelay}ms`);
 
     return new Promise((resolve) => {
@@ -39,3 +40,11 @@ http.interceptors.response.use(undefined, function axiosRetryInterceptor(err) {
 
   return Promise.reject(err);
 });
+
+function getDelay(err: AxiosError, retryCount: number) {
+  if (err.response?.status === 429 && err.config?.url?.includes("neynar")) {
+    return 2 ** (retryCount ** 30_000);
+  }
+
+  return 2 ** retryCount * retryDelay;
+}
