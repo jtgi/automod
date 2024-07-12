@@ -5,7 +5,11 @@ import { FollowResponseUser, Reaction } from "@neynar/nodejs-sdk/build/neynar-ap
 import { CastWithInteractions, Channel, User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { getSetCache, getSharedEnv } from "./utils.server";
-export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!);
+import { http } from "./http.server";
+
+export const neynar = new NeynarAPIClient(process.env.NEYNAR_API_KEY!, {
+  axiosInstance: http,
+});
 
 export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string }) {
   const webhook = await axios.get(
