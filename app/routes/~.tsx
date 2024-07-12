@@ -1,6 +1,6 @@
 import { AuthKitProvider } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, Outlet } from "@remix-run/react";
+import { Form, Link, Outlet, useResolvedPath } from "@remix-run/react";
 import { useEffect } from "react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { toast } from "sonner";
@@ -58,6 +58,7 @@ export default function Index() {
   const { status, env, message, impersonateAs, user } = useTypedLoaderData<typeof loader>();
 
   const isSuperAdmin = user.role === "superadmin";
+  const path = useResolvedPath();
 
   useEffect(() => {
     if (message) {

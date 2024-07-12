@@ -26,6 +26,7 @@ import { RuleSet } from "@prisma/client";
 import { addToBypassAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
+import { recoverQueue } from "~/lib/bullish.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -63,6 +64,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       where: {
         id: modChannel.id,
       },
+      include: {
+        user: true,
+        ruleSets: {
+          where: {
+            active: true,
+          },
+        },
+      },
       data: {
         banThreshold: ch.data.banThreshold,
         slowModeHours: ch.data.slowModeHours,
@@ -92,8 +101,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ]);
 
   if (shouldFlipEnabled) {
-    // fire and forget
     toggleWebhook({ channelId: modChannel.id, active: true }).catch(console.error);
+
+    /**
+     * Always run a recovery post channel update. This helps in
+     * cases where a channel has been disabled for a while and
+     * then reenables. This way they don't have to run a sweep
+     * manually.
+     *
+     * This could be a user initiated action in the future.
+     */
+    recoverQueue.add("recover", {
+      channelId: modChannel.id,
+      moderatedChannel: modChannel,
+      limit: 250,
+    });
   }
 
   session.flash("message", {
