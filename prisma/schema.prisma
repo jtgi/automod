@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // prod: 10 connections, 30s timeout
   url      = env("DATABASE_URL")
 }
 

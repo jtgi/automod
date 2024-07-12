@@ -301,7 +301,7 @@ export const castWorker = new Worker(
   {
     connection,
     lockDuration: 30_000,
-    concurrency: 75,
+    concurrency: 10,
     autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
