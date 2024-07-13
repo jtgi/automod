@@ -21,29 +21,6 @@ const connection = new IORedis({
   maxRetriesPerRequest: null,
 });
 
-const bottleneckConnection = new Bottleneck.IORedisConnection({
-  clientOptions: {
-    host: process.env.REDIS_HOST,
-    port: Number(process.env.REDIS_PORT),
-    password: process.env.REDIS_PASSWORD,
-    maxRetriesPerRequest: null,
-  },
-});
-
-export const openRankLimiter = new Bottleneck({
-  maxConcurrent: 80,
-  datastore: "ioredis",
-  clearDatastore: false,
-  connection: bottleneckConnection,
-});
-
-export const nodeRpcLimiter = new Bottleneck({
-  maxConcurrent: 20,
-  datastore: "ioredis",
-  clearDatastore: false,
-  connection: bottleneckConnection,
-});
-
 export const webhookQueue = new Queue("webhookQueue", {
   connection,
 });

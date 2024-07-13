@@ -35,7 +35,6 @@ import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
-import { openRankLimiter } from "./bullish.server";
 
 export type RuleDefinition = {
   name: RuleName;
