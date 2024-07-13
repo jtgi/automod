@@ -104,6 +104,20 @@ export async function validateCast({
 }: ValidateCastArgs): Promise<Array<ModerationLog>> {
   const logs: Array<ModerationLog> = [];
 
+  moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
+    where: {
+      id: moderatedChannel.id,
+    },
+    include: {
+      user: true,
+      ruleSets: {
+        where: {
+          active: true,
+        },
+      },
+    },
+  });
+
   // dear future, some casts are missing an author, assuming a
   // race/error with cast hydration and webhooks.
   // refetch, if it fails throw w/exponential backoff.
