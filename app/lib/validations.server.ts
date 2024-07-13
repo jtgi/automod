@@ -23,7 +23,6 @@ import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 import {
   formatHash,
   getSetCache,
-  getSharedEnv,
   isWarpcastCastUrl,
   validateErc1155,
   validateErc20,
@@ -36,8 +35,7 @@ import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
-import { UnrecoverableError } from "bullmq";
-import { nodeRpcLimiter, openRankLimiter } from "./bullish.server";
+import { openRankLimiter } from "./bullish.server";
 
 export type RuleDefinition = {
   name: RuleName;
@@ -2170,19 +2168,17 @@ async function openRankChannel(props: CheckFunctionArgs) {
     key: `openrank:channel-rank:${channel.id}:${cast.author.fid}`,
     ttlSeconds: 60 * 60 * 6,
     get: () =>
-      openRankLimiter.schedule(() =>
-        axios
-          .post<GlobalRankResponse>(
-            `https://graph.cast.k3l.io/priority/channels/rankings/${channel.id}/fids`,
-            [cast.author.fid],
-            {
-              headers: {
-                "API-Key": process.env.OPENRANK_API_KEY,
-              },
-            }
-          )
-          .then((res) => res.data.result.find((u) => u.fid === cast.author.fid))
-      ),
+      axios
+        .post<GlobalRankResponse>(
+          `https://graph.cast.k3l.io/priority/channels/rankings/${channel.id}/fids`,
+          [cast.author.fid],
+          {
+            headers: {
+              "API-Key": process.env.OPENRANK_API_KEY,
+            },
+          }
+        )
+        .then((res) => res.data.result.find((u) => u.fid === cast.author.fid)),
   });
 
   if (!user) {
@@ -2220,19 +2216,17 @@ async function openRankGlobalEngagement(props: CheckFunctionArgs) {
     key: `openrank:global-rank:${cast.author.fid}`,
     ttlSeconds: 60 * 60 * 6,
     get: () =>
-      openRankLimiter.schedule(() =>
-        axios
-          .post<GlobalRankResponse>(
-            `https://graph.cast.k3l.io/priority/scores/global/engagement/fids`,
-            [cast.author.fid],
-            {
-              headers: {
-                "API-Key": process.env.OPENRANK_API_KEY,
-              },
-            }
-          )
-          .then((res) => res.data.result.find((u) => u.fid === cast.author.fid))
-      ),
+      axios
+        .post<GlobalRankResponse>(
+          `https://graph.cast.k3l.io/priority/scores/global/engagement/fids`,
+          [cast.author.fid],
+          {
+            headers: {
+              "API-Key": process.env.OPENRANK_API_KEY,
+            },
+          }
+        )
+        .then((res) => res.data.result.find((u) => u.fid === cast.author.fid)),
   });
 
   if (!user) {
