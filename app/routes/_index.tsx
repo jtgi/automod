@@ -97,25 +97,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const user = await authenticator.isAuthenticated(request);
 
-  return typedjson(
-    {
-      env: getSharedEnv(),
-      user,
-      invite,
-      error,
-      activeChannels,
-    },
-    {
-      headers: {
-        "Cache-Control": `public, max-age=${60 * 60 * 24}`,
-      },
-    }
-  );
+  return typedjson({
+    env: getSharedEnv(),
+    user,
+    invite,
+    error,
+    activeChannels,
+  });
 }
 
 export default function Home() {
-  const { user, env, error, invite, activeChannels } = useTypedLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const { user, env, error, activeChannels } = useTypedLoaderData<typeof loader>();
   const coin = useRef<HTMLAudioElement>();
 
   useEffect(() => {
@@ -172,7 +164,7 @@ export default function Home() {
               </p>
               <div className="flex -space-x-1">
                 {activeChannels
-                  // .filter((c) => !!c.imageUrl)
+                  .filter((c) => !!c.imageUrl)
                   .map((channel, index) => {
                     return (
                       <Popover key={channel.id}>

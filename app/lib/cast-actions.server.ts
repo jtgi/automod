@@ -45,44 +45,50 @@ export const banAction = {
   image: `${env.hostUrl}/actions/ban.png`,
 } as const;
 
+export const downvoteAction = {
+  automodAction: "downvote",
+  action: {
+    type: "post",
+  },
+  name: actionDefinitions["downvote"].friendlyName,
+  description: actionDefinitions["downvote"].description,
+  icon: "thumbsdown",
+  postUrl: `${env.hostUrl}/api/actions/downvote`,
+  aboutUrl: "https://automod.sh",
+  image: `${env.hostUrl}/actions/downvote.png`,
+} as const;
+
+export const likeAction = {
+  automodAction: "like",
+  action: {
+    type: "post",
+  },
+  name: actionDefinitions["like"].friendlyName,
+  description: actionDefinitions["like"].description,
+  icon: "thumbsup",
+  postUrl: `${env.hostUrl}/api/actions/like`,
+  aboutUrl: "https://automod.sh",
+  image: `${env.hostUrl}/actions/curate.png`,
+} as const;
+
+export const unlikeAction = {
+  automodAction: "unlike",
+  action: {
+    type: "post",
+  },
+  name: actionDefinitions["unlike"].friendlyName,
+  description: actionDefinitions["unlike"].description,
+  icon: "eye-closed",
+  postUrl: `${env.hostUrl}/api/actions/unlike`,
+  aboutUrl: "https://automod.sh",
+  image: `${env.hostUrl}/actions/hideQuietly.png`,
+} as const;
+
 export const actions = [
   addToBypassAction,
   cooldown24Action,
   banAction,
-  {
-    automodAction: "downvote",
-    action: {
-      type: "post",
-    },
-    name: actionDefinitions["downvote"].friendlyName,
-    description: actionDefinitions["downvote"].description,
-    icon: "thumbsdown",
-    postUrl: `${env.hostUrl}/api/actions/downvote`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/downvote.png`,
-  },
-  {
-    automodAction: "like",
-    action: {
-      type: "post",
-    },
-    name: actionDefinitions["like"].friendlyName,
-    description: actionDefinitions["like"].description,
-    icon: "thumbsup",
-    postUrl: `${env.hostUrl}/api/actions/like`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/curate.png`,
-  },
-  {
-    automodAction: "unlike",
-    action: {
-      type: "post",
-    },
-    name: actionDefinitions["unlike"].friendlyName,
-    description: actionDefinitions["unlike"].description,
-    icon: "eye-closed",
-    postUrl: `${env.hostUrl}/api/actions/unlike`,
-    aboutUrl: "https://automod.sh",
-    image: `${env.hostUrl}/actions/hideQuietly.png`,
-  },
+  downvoteAction,
+  likeAction,
+  unlikeAction,
 ] as const satisfies Array<CastAction>;

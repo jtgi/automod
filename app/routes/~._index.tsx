@@ -1,11 +1,11 @@
 /* eslint-disable react/no-unescaped-entities */
-import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
+import { typedjson, useTypedLoaderData } from "remix-typedjson";
 
 import { db } from "~/lib/db.server";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Button, ButtonProps } from "~/components/ui/button";
 import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
-import { BatteryWarningIcon, RefreshCwIcon } from "lucide-react";
+import { RefreshCwIcon } from "lucide-react";
 import { Link, useFetcher } from "@remix-run/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -20,6 +20,7 @@ import {
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
 import { PlanType, refreshAccountStatus, userPlans } from "~/lib/subscription.server";
+import { ModeratedChannel } from "@prisma/client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -100,7 +101,7 @@ export default function FrameConfig() {
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link className="no-underline" to="/~/channels/new">
+              <Link className="no-underline" to="/~/channels/new/1">
                 + New Bot
               </Link>
             </Button>
@@ -222,7 +223,7 @@ export default function FrameConfig() {
                 </Dialog>
               ) : (
                 <Button asChild>
-                  <Link className="no-underline" to="/~/channels/new">
+                  <Link className="no-underline" to="/~/channels/new/1">
                     + New Bot
                   </Link>
                 </Button>
@@ -236,28 +237,31 @@ export default function FrameConfig() {
                   key={channel.id}
                   prefetch="intent"
                 >
-                  <div className="flex gap-2 rounded-lg p-4 shadow border hover:border-orange-200 hover:shadow-orange-200 transition-all duration-300 items-center">
-                    <img
-                      src={channel.imageUrl ?? undefined}
-                      alt={channel.id}
-                      className="h-12 w-12 rounded-full block"
-                    />
-                    <div className="w-full overflow-hidden">
-                      <h3
-                        title={channel.id}
-                        className=" text-ellipsis whitespace-nowrap overflow-hidden"
-                        style={{ fontFamily: "Kode Mono" }}
-                      >
-                        /{channel.id}
-                      </h3>
-                    </div>
-                  </div>
+                  <ChannelCard channel={channel} />
                 </Link>
               ))}
             </div>
           </section>
         </div>
       )}
+    </div>
+  );
+}
+
+export function ChannelCard(props: { channel: Pick<ModeratedChannel, "id" | "imageUrl"> }) {
+  const { channel } = props;
+  return (
+    <div className="flex gap-2 rounded-lg p-4 shadow border hover:border-orange-200 hover:shadow-orange-200 transition-all duration-300 items-center">
+      <img src={channel.imageUrl ?? undefined} alt={channel.id} className="h-12 w-12 rounded-full block" />
+      <div className="w-full overflow-hidden">
+        <h3
+          title={channel.id}
+          className=" text-ellipsis whitespace-nowrap overflow-hidden"
+          style={{ fontFamily: "Kode Mono" }}
+        >
+          /{channel.id}
+        </h3>
+      </div>
     </div>
   );
 }

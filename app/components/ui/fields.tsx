@@ -14,7 +14,7 @@ export function FieldLabel(
   const { className, ...rest } = props.labelProps || {};
 
   return (
-    <div className={cn(`flex items-center gap-1`, props.className)}>
+    <div className={cn(`flex gap-1`, props.className)}>
       {_position === "left" ? (
         <>
           <label className={cn("text-sm font-medium text-gray-700", _labelClassName)} {...rest}>

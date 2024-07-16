@@ -18,19 +18,18 @@ export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string
       },
     }
   );
-  const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
+  const existingWebhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
     ?.root_parent_urls as string[];
-
-  if (!webhooks || !webhooks.length) {
-    console.log(`no webhooks found returned from neynar, this shouldn't happen`);
-    throw new Error("no webhooks returned from neynar. this shouldn't happen");
+  if (!existingWebhooks || !existingWebhooks.length) {
+    console.error(`No existing webhooks found for webhook ${process.env.NEYNAR_WEBHOOK_ID!}`);
+    throw new Error("No existing webhooks found for webhook");
   }
 
-  if (webhooks.includes(rootParentUrl)) {
+  if (existingWebhooks.includes(rootParentUrl)) {
     return;
   }
 
-  webhooks.push(rootParentUrl);
+  existingWebhooks.push(rootParentUrl);
 
   return axios
     .put(
@@ -43,7 +42,7 @@ export async function registerWebhook({ rootParentUrl }: { rootParentUrl: string
         subscription: {
           "cast.created": {
             author_fids: [],
-            root_parent_urls: webhooks,
+            root_parent_urls: existingWebhooks,
             parent_urls: [],
             mentioned_fids: [],
           },
@@ -72,19 +71,27 @@ export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: stri
       },
     }
   );
+<<<<<<< HEAD
   const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
     ?.root_parent_urls as string[];
 
   if (!webhooks || !webhooks.length) {
     console.log(`no webhooks found returned from neynar, this shouldn't happen`);
     throw new Error("no webhooks returned from neynar. this shouldn't happen");
+=======
+  const existingWebhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
+    .root_parent_urls as string[];
+  if (!existingWebhooks || !existingWebhooks.length) {
+    console.error(`No existing webhooks found for webhook ${process.env.NEYNAR_WEBHOOK_ID!}`);
+    throw new Error("No existing webhooks found for webhook");
+>>>>>>> onb
   }
 
-  if (!webhooks.includes(rootParentUrl)) {
+  if (!existingWebhooks.includes(rootParentUrl)) {
     return;
   }
 
-  webhooks.splice(webhooks.indexOf(rootParentUrl), 1);
+  existingWebhooks.splice(existingWebhooks.indexOf(rootParentUrl), 1);
 
   return axios.put(
     `https://api.neynar.com/v2/farcaster/webhook/`,
@@ -96,7 +103,7 @@ export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: stri
       subscription: {
         "cast.created": {
           author_fids: [],
-          root_parent_urls: webhooks,
+          root_parent_urls: existingWebhooks,
           parent_urls: [],
           mentioned_fids: [],
         },

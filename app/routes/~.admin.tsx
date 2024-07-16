@@ -484,7 +484,7 @@ export function hasRules(moderatedChannel: FullModeratedChannel) {
   return moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length !== 0;
 }
 
-async function getDau() {
+export async function getDau() {
   const rsp = await axios.get(`https://api.warpcast.com/v2/all-channels`);
   const channels = rsp.data.result.channels;
   const moderatedChannels = await db.moderatedChannel.findMany({
