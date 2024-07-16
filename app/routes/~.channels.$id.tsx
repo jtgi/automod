@@ -138,7 +138,7 @@ export default function ChannelRoot() {
       <Dialog open={isNotConfigured} onOpenChange={(open) => setIsNotConfigured(open)}>
         <DialogContent onOpenAutoFocus={(evt) => evt.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>One last step...</DialogTitle>
+            <DialogTitle>Automod isn't set as Moderator</DialogTitle>
             <DialogDescription asChild>
               <div className="flex flex-col gap-4">
                 <div>
