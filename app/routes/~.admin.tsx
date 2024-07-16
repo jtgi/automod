@@ -21,6 +21,7 @@ import { refreshAccountStatus } from "~/lib/subscription.server";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Loader } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { getChannel } from "~/lib/neynar.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
@@ -36,7 +37,59 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const action = formData.get("action");
 
-  if (action === "refreshAccount") {
+  if (action === "createChannelFor") {
+    const username = (formData.get("username") as string) ?? "";
+    const channelId = (formData.get("channelId") as string)?.toLowerCase() ?? "";
+
+    if (!username) {
+      return errorResponse({ request, message: "Enter a username" });
+    }
+
+    const user = await db.user.findFirst({
+      where: {
+        name: username.toLowerCase(),
+      },
+    });
+
+    if (!user) {
+      return errorResponse({ request, message: "User not found" });
+    }
+
+    if (!channelId) {
+      return errorResponse({ request, message: "Enter a channel id" });
+    }
+
+    const channel = await db.moderatedChannel.findFirst({
+      where: {
+        id: channelId,
+      },
+    });
+
+    if (channel) {
+      return errorResponse({ request, message: `Channel already exists, owned by ${channel.userId}` });
+    }
+
+    const neynarChannel = await getChannel({ name: channelId }).catch(() => null);
+    if (!neynarChannel) {
+      return errorResponse({
+        request,
+        message: "Channel not found on neynar",
+      });
+    }
+
+    await db.moderatedChannel.create({
+      data: {
+        id: neynarChannel.id,
+        userId: user.id,
+        active: true,
+        url: neynarChannel.url,
+        feedType: "recommended",
+        imageUrl: neynarChannel.image_url,
+      },
+    });
+
+    return successResponse({ request, message: `Created ${neynarChannel.id} for @${username}` });
+  } else if (action === "refreshAccount") {
     const username = (formData.get("username") as string) ?? "";
     if (username) {
       const fid = await db.user.findFirst({
@@ -290,6 +343,7 @@ export default function Admin() {
   const impersonateFetcher = useFetcher<typeof loader>();
   const recoverFetcher = useFetcher<typeof loader>();
   const statusFetcher = useFetcher<typeof loader>();
+  const createChannelFetcher = useFetcher<typeof loader>();
 
   return (
     <div className="flex flex-col sm:flex-row gap-8 w-full">
@@ -381,6 +435,19 @@ export default function Admin() {
               </Button>
             </div>
           </statusFetcher.Form>
+
+          <createChannelFetcher.Form method="post" className="space-y-4">
+            <p>Create Channel for User</p>
+            <FieldLabel label="Username of Owner" className="flex-col items-start">
+              <Input name="username" placeholder="username" required />
+            </FieldLabel>
+            <FieldLabel label="Channel Id" className="flex-col items-start">
+              <Input name="channelId" placeholder="channel id" required />
+            </FieldLabel>
+            <Button name="action" value="createChannelFor" disabled={createChannelFetcher.state !== "idle"}>
+              Create
+            </Button>
+          </createChannelFetcher.Form>
         </div>
       </div>
 

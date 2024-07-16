@@ -213,7 +213,7 @@ function TopEngagers(props: {
         </CardContent>
         <CardFooter className="text-xs">
           <p className="text-muted-foreground">
-            Powered by <a href={`https://castsense.xyz/channels/${props.channelId}`}>CastSense</a>
+            Powered by <a href={`https://castsense.xyz/channel/${props.channelId}`}>CastSense</a>
           </p>
         </CardFooter>
       </Card>

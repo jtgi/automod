@@ -1,12 +1,11 @@
-import { LoaderFunctionArgs, defer } from "@remix-run/node";
-import { Await, Link } from "@remix-run/react";
-import { TypedAwait, typeddefer, typedjson, useTypedLoaderData } from "remix-typedjson";
+import { LoaderFunctionArgs } from "@remix-run/node";
+import { Link } from "@remix-run/react";
+import { TypedAwait, typeddefer, useTypedLoaderData } from "remix-typedjson";
 import { db } from "~/lib/db.server";
 import { requireUser } from "~/lib/utils.server";
 import { getOwnedChannels } from "~/lib/warpcast.server";
 import { ChannelCard } from "./~._index";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { ChannelHeader } from "./~.channels.new.3";
 import { Button } from "~/components/ui/button";
 import { Suspense } from "react";
 import { Skeleton } from "~/components/ui/skeleton";
