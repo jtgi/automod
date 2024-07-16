@@ -41,9 +41,10 @@ export default function Screen() {
             return (
               <Card>
                 <CardHeader>
-                  <CardTitle>Hmm, no channels found.</CardTitle>
+                  <CardTitle>What channel would you like to setup?</CardTitle>
                   <CardDescription>
-                    You have to be the owner of the channel to create an automod configuration.
+                    Looks like you don't have any channels left to setup. If you're expecting a channel to be
+                    here, you must be the owner to install automod.
                   </CardDescription>
                 </CardHeader>
                 <CardFooter>
@@ -67,7 +68,7 @@ export default function Screen() {
                   {channelOptions.map((channel) => (
                     <Link
                       to={{ pathname: `/~/channels/new/2`, search: `?channelId=${channel.id}` }}
-                      className="no-underline"
+                      className="no-underline min-w-[200px]"
                       key={channel.id}
                       prefetch="intent"
                     >
