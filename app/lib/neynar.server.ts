@@ -71,20 +71,11 @@ export async function unregisterWebhook({ rootParentUrl }: { rootParentUrl: stri
       },
     }
   );
-<<<<<<< HEAD
-  const webhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
-    ?.root_parent_urls as string[];
-
-  if (!webhooks || !webhooks.length) {
-    console.log(`no webhooks found returned from neynar, this shouldn't happen`);
-    throw new Error("no webhooks returned from neynar. this shouldn't happen");
-=======
   const existingWebhooks = webhook.data.webhook?.subscription?.filters?.["cast.created"]
     .root_parent_urls as string[];
   if (!existingWebhooks || !existingWebhooks.length) {
     console.error(`No existing webhooks found for webhook ${process.env.NEYNAR_WEBHOOK_ID!}`);
     throw new Error("No existing webhooks found for webhook");
->>>>>>> onb
   }
 
   if (!existingWebhooks.includes(rootParentUrl)) {
