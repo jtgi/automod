@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE "ModeratedChannel" ADD COLUMN     "feedType" TEXT NOT NULL DEFAULT "custom";
+ALTER TABLE "ModeratedChannel" ADD COLUMN "feedType" TEXT NOT NULL DEFAULT 'custom';
