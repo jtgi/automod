@@ -26,7 +26,12 @@ import { RuleSet } from "@prisma/client";
 import { addToBypassAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
-import { recoverQueue } from "~/lib/bullish.server";
+import { recoverQueue, sweepQueue } from "~/lib/bullish.server";
+import { useSearchParams } from "@remix-run/react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { ArrowUpRight } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { useState } from "react";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -36,6 +41,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     userId: user.id,
     channelId: params.id,
   });
+  const url = new URL(request.url);
+  const isOnboarding = url.searchParams.get("onboarding");
 
   const data = await request.json();
 
@@ -103,19 +110,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (shouldFlipEnabled) {
     toggleWebhook({ channelId: modChannel.id, active: true }).catch(console.error);
 
-    /**
-     * Always run a recovery post channel update. This helps in
-     * cases where a channel has been disabled for a while and
-     * then reenables. This way they don't have to run a sweep
-     * manually.
-     *
-     * This could be a user initiated action in the future.
-     */
-    recoverQueue.add("recover", {
-      channelId: modChannel.id,
-      moderatedChannel: modChannel,
-      limit: 250,
-    });
+    if (isOnboarding) {
+      /**
+       * If the channel is being enabled for the first time, we want to
+       * run a sweep to catch up on any changed rules.
+       */
+      sweepQueue.add("sweep", {
+        channelId: modChannel.id,
+        moderatedChannel: modChannel,
+        limit: 250,
+      });
+    } else {
+      /**
+       * Always run a recovery post channel update. This helps in
+       * cases where a channel has been disabled for a while and
+       * then reenables. This way they don't have to run a sweep
+       * manually.
+       */
+      recoverQueue.add("recover", {
+        channelId: modChannel.id,
+        moderatedChannel: modChannel,
+        limit: 250,
+      });
+    }
   }
 
   session.flash("message", {
@@ -163,6 +180,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function Screen() {
   const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole, bypassInstallLink } =
     useTypedLoaderData<typeof loader>();
+
+  const [searchParams] = useSearchParams();
 
   function patchNewRuleSet(
     inclusion: boolean,

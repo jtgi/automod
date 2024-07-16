@@ -27,19 +27,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return typedjson({
     user,
     channel,
-    actionDefinitions,
-    ruleDefinitions: getRuleDefinitions(user.id),
-    ruleNames,
-    env: getSharedEnv(),
-    bypassInstallLink: actionToInstallLink(addToBypassAction),
   });
 }
 
 export default function Screen() {
-  const { user, channel, actionDefinitions, bypassInstallLink, ruleDefinitions, ruleNames, env } =
-    useTypedLoaderData<typeof loader>();
+  const { channel } = useTypedLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const [feedType, setFeedType] = useState("recommended");
 
   return (
     <Card>
@@ -66,16 +59,7 @@ export default function Screen() {
         }}
       >
         <CardContent>
-          <RadioGroup
-            name="feed"
-            className="space-y-4"
-            defaultValue="recommended"
-            onChange={(e) => {
-              // get selected radio
-              const selectedRadio = e.target as HTMLInputElement;
-              setFeedType(selectedRadio.value);
-            }}
-          >
+          <RadioGroup name="feed" className="space-y-4" defaultValue="recommended">
             <FieldLabel
               label="Recommended"
               labelProps={{ htmlFor: "recommended" }}
@@ -93,58 +77,6 @@ export default function Screen() {
             >
               <RadioGroupItem className="mt-[2px]" id="custom" value="custom" />
             </FieldLabel>
-            {feedType === "custom" && (
-              <CurationForm
-                bypassInstallLink={bypassInstallLink}
-                actionDefinitions={actionDefinitions}
-                ruleDefinitions={ruleDefinitions}
-                ruleNames={ruleNames}
-                defaultValues={{
-                  excludeCohosts: true,
-                  inclusionRuleSet: {
-                    target: "all",
-                    active: true,
-                    ruleParsed: [
-                      {
-                        name: "userDoesNotHoldPowerBadge",
-                        type: "CONDITION",
-                        args: {},
-                      },
-                      {
-                        name: "userIsNotFollowedBy",
-                        type: "CONDITION",
-                        args: {
-                          users: [
-                            {
-                              value: +user.id,
-                              label: user.name,
-                              icon: user.avatarUrl ?? undefined,
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                    actionsParsed: [
-                      {
-                        type: "like",
-                      },
-                    ],
-                    logicType: "OR",
-                  },
-                  exclusionRuleSet: {
-                    target: "all",
-                    active: true,
-                    ruleParsed: [],
-                    actionsParsed: [
-                      {
-                        type: "hideQuietly",
-                      },
-                    ],
-                    logicType: "OR",
-                  },
-                }}
-              />
-            )}
 
             <FieldLabel
               label="Manual"

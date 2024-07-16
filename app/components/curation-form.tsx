@@ -128,25 +128,6 @@ export function CurationForm(props: {
     <div className="w-full">
       <FormProvider {...methods}>
         <form id="channel-form" method="post" className="w-full space-y-7" onSubmit={handleSubmit(onSubmit)}>
-          {!props.defaultValues.id && (
-            <>
-              <fieldset disabled={isSubmitting} className="space-y-7">
-                <FieldLabel label="Channel Name" className="flex-col items-start">
-                  <Input
-                    disabled={!!props.defaultValues.id}
-                    placeholder="base"
-                    pattern="^[a-zA-Z0-9\-]+$"
-                    required
-                    {...register("id", { required: true })}
-                  />
-                </FieldLabel>
-              </fieldset>
-
-              <div className="py-6">
-                <hr />
-              </div>
-            </>
-          )}
           <fieldset disabled={isSubmitting} className="space-y-6 w-full">
             <div>
               <p className="font-semibold">Automatic Moderation</p>

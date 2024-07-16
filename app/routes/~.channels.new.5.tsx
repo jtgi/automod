@@ -5,7 +5,7 @@ import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { requireUser } from "~/lib/utils.server";
 import { Button } from "~/components/ui/button";
 import { db } from "~/lib/db.server";
-import { ArrowUpRight, CheckCircle2Icon, CheckIcon, Loader } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { banAction, cooldown24Action, likeAction, unlikeAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
@@ -32,12 +32,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function Screen() {
   const { channel, castActions } = useTypedLoaderData<typeof loader>();
+  const dst =
+    channel.feedType === "custom"
+      ? `/~/channels/${channel.id}/edit?onboarding=true`
+      : `/~/channels/${channel.id}`;
+
   return (
     <div className="space-y-8">
       <Card>
         <CardHeader>
           <ChannelHeader channel={channel} />
-          <CardTitle>Last step, install cast actions to moderate your channel</CardTitle>
+          <CardTitle>Install cast actions to moderate your channel</CardTitle>
           <CardDescription>
             {" "}
             Use cast actions to Curate, Hide, or Ban content directly in your Channel Feed.
@@ -70,7 +75,7 @@ export default function Screen() {
         </CardContent>
         <CardFooter>
           <Button asChild>
-            <Link to={`/~/channels/${channel.id}`} className="no-underline w-full sm:w-auto">
+            <Link to={dst} className="no-underline w-full sm:w-[150px]">
               Done
             </Link>
           </Button>

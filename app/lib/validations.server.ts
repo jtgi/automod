@@ -920,14 +920,14 @@ export const actionDefinitions = {
     friendlyName: "Curate",
     hidden: true,
     castScope: "root",
-    description: "Curate the cast into the Main feed. For root casts only.",
+    description: "Curate a cast into the Main feed.",
     args: {},
   },
   unlike: {
     friendlyName: "Hide",
     hidden: true,
     castScope: "root",
-    description: "Hide the cast from the Main feed. For root casts only.",
+    description: "Hide a cast from the Main feed.",
     args: {},
   },
   warnAndHide: {
