@@ -40,10 +40,10 @@ export default function Screen() {
             return (
               <Card>
                 <CardHeader>
-                  <CardTitle>What channel would you like to setup?</CardTitle>
+                  <CardTitle>No channels found.</CardTitle>
                   <CardDescription>
                     Looks like you don't have any channels left to setup. If you're expecting a channel to be
-                    here, you must be the owner to install automod.
+                    here, you must be the channel owner to install automod.
                   </CardDescription>
                 </CardHeader>
                 <CardFooter>

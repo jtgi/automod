@@ -2,7 +2,7 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useNavigate } from "@remix-run/react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { requireUser } from "~/lib/utils.server";
+import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { getWarpcastChannel } from "~/lib/warpcast.server";
 import { Button } from "~/components/ui/button";
 import { db } from "~/lib/db.server";
@@ -39,17 +39,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     channel,
     wcChannel,
     isAutomodSet,
+    env: getSharedEnv(),
   });
 }
 
 export default function Screen() {
-  const { channel, wcChannel, isAutomodSet } = useTypedLoaderData<typeof loader>();
+  const { channel, isAutomodSet, env } = useTypedLoaderData<typeof loader>();
   const [fidSet, setFidSet] = useState<boolean>(isAutomodSet);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const interval = setInterval(() => {
-      axios.get(`https://api.warpcast.com/v1/channel?channelId=${channel.id}`).then((rsp) => {
+      axios.get(`${env.hostUrl}/api/warpcast/channels/${channel.id}`).then((rsp) => {
         const updatedWcChannel = rsp.data.result.channel;
         if (updatedWcChannel.moderatorFid === automodFid) {
           clearInterval(interval);
@@ -68,9 +68,7 @@ export default function Screen() {
       <Card>
         <CardHeader>
           <ChannelHeader channel={channel} />
-          <CardTitle>
-            <h1>Set the moderator to automod</h1>
-          </CardTitle>
+          <CardTitle>Set the moderator to automod</CardTitle>
         </CardHeader>
         <CardContent>
           {fidSet ? (
@@ -97,7 +95,7 @@ export default function Screen() {
                       </>
                     )}
                   </Button>{" "}
-                  username
+                  username.
                 </li>
                 <li>
                   Open{" "}
@@ -113,14 +111,12 @@ export default function Screen() {
                 </li>
                 <li>Come back here.</li>
               </ol>
-              <p>
-                <Alert>
-                  <AlertTitle>
-                    <Loader className="w-4 h-4 inline animate-spin mr-2" />
-                    Waiting for changes...
-                  </AlertTitle>
-                </Alert>
-              </p>
+              <Alert>
+                <AlertTitle>
+                  <Loader className="w-4 h-4 inline animate-spin mr-2" />
+                  Waiting for changes...
+                </AlertTitle>
+              </Alert>
             </div>
           )}
         </CardContent>

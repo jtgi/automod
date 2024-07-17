@@ -1,18 +1,13 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Form, useNavigate } from "@remix-run/react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { getSharedEnv, requireUser } from "~/lib/utils.server";
+import { requireUser } from "~/lib/utils.server";
 import { getWarpcastChannel } from "~/lib/warpcast.server";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { FieldLabel } from "~/components/ui/fields";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { ChannelHeader } from "./~.channels.new.3";
-import { CurationForm } from "~/components/curation-form";
-import { actionDefinitions, getRuleDefinitions, ruleNames } from "~/lib/validations.server";
-import { useState } from "react";
-import { actionToInstallLink } from "~/lib/utils";
-import { addToBypassAction } from "~/lib/cast-actions.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
