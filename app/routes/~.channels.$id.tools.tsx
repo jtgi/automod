@@ -86,6 +86,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
     }
 
+    console.log(`${user.name} started a sweep in ${moderatedChannel.id}`);
+
     await sweepQueue.add(
       "sweep",
       {
