@@ -25,12 +25,13 @@ import { ModerationLog } from "@prisma/client";
 import { WebhookCast } from "~/lib/types";
 import { Input } from "~/components/ui/input";
 import { FieldLabel } from "~/components/ui/fields";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Alert } from "~/components/ui/alert";
 import { ActionType, actionDefinitions } from "~/lib/validations.server";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 
 const SWEEP_LIMIT = 100;
 
@@ -44,11 +45,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
   const isActive = await isSweepActive(moderatedChannel.id);
 
+  // only channels that have a signer can sweep as far back
+  // as they want, because otherwise you can burn through
+  // reaction storage for @automod
+  const channelsWithSigners = await db.signerAllocation.findMany({
+    select: {
+      channelId: true,
+    },
+  });
+  const allowSweepTimeRange = channelsWithSigners.map((signer) => signer.channelId);
+
   return typedjson({
     user,
     isSweepActive: isActive,
     moderatedChannel,
     actionDefinitions,
+    allowSweepTimeRange,
     env: getSharedEnv(),
   });
 }
@@ -79,6 +91,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (result.data.intent === "sweep") {
+    const result = z
+      .object({
+        untilTimeUtc: z.string().optional(),
+      })
+      .safeParse(rawData);
+
+    if (!result.success) {
+      return errorResponse({
+        request,
+        message: formatZodError(result.error),
+      });
+    }
+
     if (await isSweepActive(moderatedChannel.id)) {
       return successResponse({
         request,
@@ -93,7 +118,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         channelId: moderatedChannel.id,
         moderatedChannel,
-        limit: SWEEP_LIMIT,
+        untilTimeUtc: result.data.untilTimeUtc,
+        limit: result.data.untilTimeUtc ? undefined : SWEEP_LIMIT,
       },
       {
         removeOnComplete: true,
@@ -152,7 +178,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { isSweepActive, actionDefinitions } = useTypedLoaderData<typeof loader>();
+  const { isSweepActive, actionDefinitions, user, moderatedChannel, allowSweepTimeRange } =
+    useTypedLoaderData<typeof loader>();
+
+  const sweepOptions = useMemo(
+    () => [
+      { label: "6 hours ago", value: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() },
+      { label: "12 hours ago", value: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString() },
+      { label: "24 hours ago", value: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() },
+      { label: "36 hours ago", value: new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString() },
+    ],
+    []
+  );
+
+  const showOptions = allowSweepTimeRange.includes(moderatedChannel.id) || user.id === "5179";
 
   return (
     <main className="space-y-6">
@@ -171,7 +210,23 @@ export default function Screen() {
           </p>
         </div>
 
-        <Form method="post">
+        <Form method="post" className="space-y-4">
+          {showOptions && (
+            <FieldLabel label="Until Time" className="items-start flex-col">
+              <Select name="untilTimeUtc" defaultValue={sweepOptions[0].value}>
+                <SelectTrigger className="w-[150px] sm:w-[200px] md:w-[400px] text-left">
+                  <SelectValue placeholder={`Select a time`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sweepOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FieldLabel>
+          )}
           <Button
             className="w-full sm:w-auto min-w-[150px]"
             name="intent"

@@ -128,7 +128,7 @@ export default function Screen() {
                     className="no-underline text-foreground"
                     rel="noreferrer"
                   >
-                    Manage Billing <ArrowUpRight className="w-4 h-4 inline ml-1" />
+                    Manage Billing <ArrowUpRight className="w-3 h-3 inline ml-1" />
                   </Link>
                 </Button>
               ) : (
