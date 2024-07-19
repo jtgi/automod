@@ -27,10 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { FarcasterIcon } from "~/components/FarcasterIcon";
 import { User } from "@prisma/client";
 import { MagicWandIcon } from "@radix-ui/react-icons";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
-import { cn } from "~/lib/utils";
 
-// export meta
 export const meta: MetaFunction<typeof loader> = (data) => {
   return [
     { title: "automod" },
@@ -209,7 +206,6 @@ export default function Home() {
             playsInline
             className="w-full max-w-3xl mx-auto h-full object-cover border-slate-700/80 border-[10px] rounded-[20px] shadow-lg"
             src="/videos/automod-demo-complete.mp4"
-          
           />
         </div>
 

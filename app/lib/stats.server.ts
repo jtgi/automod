@@ -33,7 +33,7 @@ export async function getModerationStats30Days({ channelId }: { channelId: strin
           by: ["action"],
         }),
         db.$queryRaw<{ count: number }[]>`
-        select count("affectedUserFid") as count
+        select count(distinct("affectedUserFid")) as count
         from "ModerationLog"
         where "channelId" = ${channelId}
         and "createdAt" >= ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
