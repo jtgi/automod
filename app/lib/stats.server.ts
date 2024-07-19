@@ -16,22 +16,26 @@ export async function getModerationStats30Days({ channelId }: { channelId: strin
     key: cacheKey,
     ttlSeconds: 60 * 60 * 4,
     get: async () => {
-      const [actionCounts, uniqueCasters] = await Promise.all([
-        db.moderationLog.groupBy({
-          _count: {
-            action: true,
-          },
-          where: {
-            channelId,
-            createdAt: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            },
-            action: {
-              in: ["like", "hideQuietly"],
-            },
-          },
-          by: ["action"],
-        }),
+      const [totalCount, likeCount, hideCount, uniqueCasters] = await Promise.all([
+        db.$queryRaw<{ count: number }[]>`
+        select count(distinct("hash")) as count
+        from "CastLog"
+        where "channelId" = ${channelId}
+        and "createdAt" >= ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}`.then((res: any) =>
+          parseInt(res[0]?.count.toString() || "0")
+        ),
+        db.$queryRaw<{ count: number }[]>`
+        select count(distinct("castHash")) as count
+        from "ModerationLog"
+        where "channelId" = ${channelId}
+        and "createdAt" >= ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+        and action = 'like'`.then((res: any) => parseInt(res[0]?.count.toString() || "0")),
+        db.$queryRaw<{ count: number }[]>`
+        select count(distinct("castHash")) as count
+        from "ModerationLog"
+        where "channelId" = ${channelId}
+        and "createdAt" >= ${new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)}
+        and action = 'hideQuietly'`.then((res: any) => parseInt(res[0]?.count.toString() || "0")),
         db.$queryRaw<{ count: number }[]>`
         select count(distinct("affectedUserFid")) as count
         from "ModerationLog"
@@ -41,14 +45,10 @@ export async function getModerationStats30Days({ channelId }: { channelId: strin
       `.then((res: any) => res[0]?.count.toString() || "0"),
       ]);
 
-      const likes = actionCounts.find((c) => c.action === "like")?._count.action || 0;
-      const hides = actionCounts.find((c) => c.action === "hideQuietly")?._count.action || 0;
-      const approvalRate = likes === 0 && hides === 0 ? 0 : likes / (likes + hides);
-
       return {
-        likes,
-        hides,
-        approvalRate,
+        likes: likeCount,
+        hides: hideCount,
+        approvalRate: totalCount === 0 ? 0 : likeCount / totalCount,
         uniqueCasters: parseInt(uniqueCasters),
       };
     },
