@@ -20,6 +20,7 @@ import { ArrowUpRight, RefreshCwIcon, RocketIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { userPlans, refreshAccountStatus, PlanType, PlanDef } from "~/lib/subscription.server";
 import { abbreviateNumber } from "js-abbreviation-number";
+import { User } from "@prisma/client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -119,7 +120,20 @@ export default function Screen() {
                   </TableRow>
                 </TableBody>
               </Table>
-              <RefreshAccountButton className="w-full sm:w-full" />
+              {isOnStripe(user) ? (
+                <Button asChild size={"xs"} variant={"outline"} className="w-full">
+                  <Link
+                    to="https://billing.stripe.com/p/login/fZeg1Fc0C5BpbJu144"
+                    target="_blank"
+                    className="no-underline text-foreground"
+                    rel="noreferrer"
+                  >
+                    Manage Billing <ArrowUpRight className="w-4 h-4 inline ml-1" />
+                  </Link>
+                </Button>
+              ) : (
+                <RefreshAccountButton className="w-full sm:w-full" />
+              )}
             </CardContent>
           </Card>
 
@@ -161,6 +175,10 @@ export default function Screen() {
       </section>
     </div>
   );
+}
+
+function isOnStripe(user: User) {
+  return ["zaak", "jtgi", "usersteen"].includes(user.name);
 }
 
 function RefreshAccountButton(props: ButtonProps) {
