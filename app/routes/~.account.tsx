@@ -178,7 +178,7 @@ export default function Screen() {
 }
 
 function isOnStripe(user: User) {
-  return ["zaak", "jtgi", "usersteen"].includes(user.name);
+  return ["zaak", "jtgi"].includes(user.name);
 }
 
 function RefreshAccountButton(props: ButtonProps) {
