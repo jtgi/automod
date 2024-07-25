@@ -2,7 +2,7 @@ import { json, LoaderFunctionArgs } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { z } from "zod";
 import { db } from "~/lib/db.server";
-import { requirePartnerApiKey } from "~/lib/utils.server";
+import { getSharedEnv, requirePartnerApiKey } from "~/lib/utils.server";
 
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const next =
     page + 1 > totalPages
       ? null
-      : `/api/channels/${id}/activity?${new URLSearchParams({
+      : `${getSharedEnv().hostUrl}/api/channels/${id}/activity?${new URLSearchParams({
           ...queryParams,
           page: String(Math.min(page + 1, totalPages)),
         })}`;
