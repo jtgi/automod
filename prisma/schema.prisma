@@ -168,6 +168,7 @@ model ModerationLog {
   channel               ModeratedChannel @relation(fields: [channelId], references: [id])
 
   @@index([channelId, createdAt])
+  @@index([action])
 }
 
 model Status {
@@ -250,4 +251,13 @@ model Notification {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([nonce, userId])
+}
+
+model PartnerApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

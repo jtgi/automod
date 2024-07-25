@@ -24,6 +24,25 @@ export async function convertSvgToPngBase64(svgString: string) {
   return `data:image/png;base64,${base64PNG}`;
 }
 
+export async function requirePartnerApiKey({ request }: { request: Request }) {
+  const key = request.headers.get("api-key");
+  if (!key) {
+    throw json({}, { status: 401 });
+  }
+
+  const apiKey = await db.partnerApiKey.findFirst({
+    where: {
+      key,
+    },
+  });
+
+  if (!apiKey) {
+    throw json({}, { status: 401 });
+  }
+
+  return apiKey;
+}
+
 export async function requireUser({ request }: { request: Request }) {
   const user = await authenticator.isAuthenticated(request, {
     failureRedirect: `/login`,

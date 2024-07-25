@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ActionFunctionArgs, LoaderFunctionArgs, defer } from "@remix-run/node";
 import { Await, Form, useFetcher, useLoaderData } from "@remix-run/react";
-import { redirect, typedjson } from "remix-typedjson";
+import { redirect, typeddefer, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
 import { Input } from "~/components/ui/input";
@@ -26,8 +26,10 @@ import { getChannel } from "~/lib/neynar.server";
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });
   const dau = getDau();
-  return defer({
+  const apiKeys = await db.partnerApiKey.findMany({});
+  return typeddefer({
     dau,
+    apiKeys,
   });
 }
 
@@ -37,7 +39,28 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const action = formData.get("action");
 
-  if (action === "createChannelFor") {
+  if (action === "createPartnerApiKey") {
+    const name = formData.get("name") as string;
+    const expiresInDays = parseInt(formData.get("expiresInDays") as string, 10);
+
+    if (!name || isNaN(expiresInDays)) {
+      return errorResponse({ request, message: "Invalid input" });
+    }
+
+    const key = crypto.randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+    await db.partnerApiKey.create({
+      data: {
+        key,
+        name,
+        expiresAt,
+      },
+    });
+
+    return successResponse({ request, message: "API key created successfully" });
+  } else if (action === "createChannelFor") {
     const username = (formData.get("username") as string) ?? "";
     const channelId = (formData.get("channelId") as string)?.toLowerCase() ?? "";
 
@@ -338,12 +361,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function Admin() {
-  const { dau } = useLoaderData<typeof loader>();
+  const { dau, apiKeys } = useTypedLoaderData<typeof loader>();
   const refreshFetcher = useFetcher<typeof loader>();
   const impersonateFetcher = useFetcher<typeof loader>();
   const recoverFetcher = useFetcher<typeof loader>();
   const statusFetcher = useFetcher<typeof loader>();
   const createChannelFetcher = useFetcher<typeof loader>();
+  const apiKeysFetcher = useFetcher<typeof loader>();
 
   return (
     <div className="flex flex-col sm:flex-row gap-8 w-full">
@@ -448,6 +472,35 @@ export default function Admin() {
               Create
             </Button>
           </createChannelFetcher.Form>
+
+          <div>
+            <h3>API Keys</h3>
+            <apiKeysFetcher.Form method="post" className="space-y-4">
+              <FieldLabel label="Label" className="flex-col items-start">
+                <Input name="name" placeholder="API Key Name" required />
+              </FieldLabel>
+              <FieldLabel label="Expires In (days)" className="flex-col items-start">
+                <Input type="number" name="expiresInDays" placeholder="Expires in (days)" required />
+              </FieldLabel>
+              <Button name="action" value="createPartnerApiKey" type="submit">
+                Create
+              </Button>
+            </apiKeysFetcher.Form>
+            {apiKeys.length > 0 && (
+              <ul className="mt-4 text-sm">
+                {apiKeys.map((apiKey) => (
+                  <li key={apiKey.id} className="flex justify-between">
+                    <p>
+                      {apiKey.name} (until {apiKey.expiresAt.toLocaleDateString()})
+                    </p>
+                    <Button size={"xs"} variant={"ghost"} onClick={() => prompt("API Key", apiKey.key)}>
+                      View
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
