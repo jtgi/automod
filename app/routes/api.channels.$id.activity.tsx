@@ -6,7 +6,7 @@ import { getSharedEnv, requirePartnerApiKey } from "~/lib/utils.server";
 
 const querySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(100).default(20),
+  limit: z.coerce.number().int().positive().max(1000).default(50),
   actions: z.array(z.string()).optional(),
   sortBy: z.enum(["createdAt"]).default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
