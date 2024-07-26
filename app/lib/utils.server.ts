@@ -25,22 +25,37 @@ export async function convertSvgToPngBase64(svgString: string) {
 }
 
 export async function requirePartnerApiKey({ request }: { request: Request }) {
+  if (process.env.NODE_ENV === "development") {
+    return;
+  }
+
   const key = request.headers.get("api-key");
   if (!key) {
-    throw json({}, { status: 401 });
+    throw json(
+      {
+        message: "unauthorized",
+      },
+      { status: 401 }
+    );
   }
 
   const apiKey = await db.partnerApiKey.findFirst({
     where: {
       key,
+      expiresAt: {
+        gte: new Date(),
+      },
     },
   });
 
   if (!apiKey) {
-    throw json({}, { status: 401 });
+    throw json(
+      {
+        message: "unauthorized",
+      },
+      { status: 401 }
+    );
   }
-
-  return apiKey;
 }
 
 export async function requireUser({ request }: { request: Request }) {
