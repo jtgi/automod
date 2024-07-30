@@ -35,6 +35,7 @@ import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
+import { base } from "viem/chains";
 
 export type RuleDefinition = {
   name: RuleName;
@@ -109,6 +110,21 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     args: {},
   },
 
+  alwaysInclude: {
+    name: "alwaysInclude",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
+    allowMultiple: true,
+    category: "inclusion",
+    friendlyName: "Always Include",
+    checkType: "cast",
+    description: "Always includes the cast. Useful if you want to default all in except for a few rules.",
+    hidden: false,
+    invertable: false,
+    args: {},
+  },
+
   subscribesOnParagraph: {
     name: "subscribesOnParagraph",
     author: "Paragraph",
@@ -131,16 +147,41 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
-  alwaysInclude: {
-    name: "alwaysInclude",
-    author: "automod",
-    authorUrl: "https://automod.sh",
-    authorIcon: `${hostUrl}/icons/automod.png`,
+  holdsFanToken: {
+    name: "holdsFanToken",
+    author: "Moxie",
+    authorUrl: "https://moxie.xyz",
+    authorIcon: `${hostUrl}/icons/moxie.png`,
     allowMultiple: true,
     category: "inclusion",
-    friendlyName: "Always Include",
+    friendlyName: "Moxie Fan Token",
+    checkType: "user",
+    description: "Check if the cast author holds a Moxie fan token",
+    fidGated: [5179],
+    hidden: false,
+    invertable: false,
+    args: {
+      fanToken: {
+        type: "moxieMemberFanTokenPicker",
+        required: true,
+        friendlyName: "Fan Token",
+        placeholder: "Enter a username...",
+        description: "If you don't see the token you're looking for, it may not be available.",
+      },
+    },
+  },
+
+  holdsChannelFanToken: {
+    name: "holdsChannelFanToken",
+    author: "Moxie",
+    authorUrl: "https://moxie.xyz",
+    authorIcon: `${hostUrl}/icons/moxie.png`,
+    fidGated: [5179],
+    allowMultiple: true,
+    category: "inclusion",
+    friendlyName: "Moxie Channel Token",
     checkType: "cast",
-    description: "Always includes the cast. Useful if you want to default all in except for a few rules.",
+    description: "Check if the cast author holds the fan token for your channel",
     hidden: false,
     invertable: false,
     args: {},
@@ -1001,6 +1042,8 @@ export const ruleNames = [
   "openRankGlobalEngagement",
   "openRankChannel",
   "subscribesOnParagraph",
+  "holdsFanToken",
+  "holdsChannelFanToken",
   "userProfileContainsText",
   "userDisplayNameContainsText",
   "userFollowerCount",
@@ -1258,6 +1301,8 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   castInThread: castInThread,
   castLength: castLength,
   downvote: downvoteRule,
+  holdsChannelFanToken: holdsChannelFanToken,
+  holdsFanToken: holdsFanToken,
   openRankChannel: openRankChannel,
   openRankGlobalEngagement: openRankGlobalEngagement,
   userProfileContainsText: userProfileContainsText,
@@ -1688,6 +1733,62 @@ export function userProfileContainsText(args: CheckFunctionArgs) {
   return {
     result: containsText,
     message: containsText ? `Profile contains "${searchText}"` : `Profile does not contain "${searchText}"`,
+  };
+}
+
+export async function holdsChannelFanToken(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { contractAddress, minBalance } = rule.args;
+
+  const cacheKey = `erc20-balance:${contractAddress}:${minBalance}:${
+    cast.author.custody_address
+  }:${cast.author.verifications.join(`,`)}`;
+
+  const { result: hasEnough } = await getSetCache({
+    key: cacheKey,
+    get: async () =>
+      verifyErc20Balance({
+        wallets: [cast.author.custody_address, ...cast.author.verifications],
+        chainId: String(base.id),
+        contractAddress,
+        minBalanceRequired: minBalance,
+      }),
+    ttlSeconds: 60 * 60 * 2,
+  });
+
+  return {
+    result: hasEnough,
+    message: hasEnough
+      ? `User holds ERC-20 (${formatHash(contractAddress)})`
+      : `User does not hold enough ERC-20 (${formatHash(contractAddress)})`,
+  };
+}
+
+export async function holdsFanToken(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { contractAddress, minBalance } = rule.args;
+
+  const cacheKey = `erc20-balance:${contractAddress}:${minBalance}:${
+    cast.author.custody_address
+  }:${cast.author.verifications.join(`,`)}`;
+
+  const { result: hasEnough } = await getSetCache({
+    key: cacheKey,
+    get: async () =>
+      verifyErc20Balance({
+        wallets: [cast.author.custody_address, ...cast.author.verifications],
+        chainId: String(base.id),
+        contractAddress,
+        minBalanceRequired: minBalance,
+      }),
+    ttlSeconds: 60 * 60 * 2,
+  });
+
+  return {
+    result: hasEnough,
+    message: hasEnough
+      ? `User holds ERC-20 (${formatHash(contractAddress)})`
+      : `User does not hold enough ERC-20 (${formatHash(contractAddress)})`,
   };
 }
 

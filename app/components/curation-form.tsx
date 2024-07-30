@@ -66,6 +66,7 @@ import {
 } from "lucide-react";
 import { UserPicker } from "./user-picker";
 import { Role } from "@prisma/client";
+import { MoxieMemberPicker } from "./moxie-picker";
 
 export type FormValues = {
   id?: string;
@@ -735,6 +736,26 @@ function RuleArgs(props: {
             {...register(`${props.name}.${props.ruleIndex}.args.${argName}`)}
           />
         </FieldLabel>
+      );
+    }
+
+    if (argDef.type === "moxieMemberFanTokenPicker") {
+      return (
+        <ClientOnly key={argName}>
+          {() => (
+            <FieldLabel
+              label={argDef.friendlyName}
+              description={argDef.description}
+              className="flex-col items-start"
+            >
+              <MoxieMemberPicker
+                name={`${props.name}.${props.ruleIndex}.args.${argName}`}
+                isMulti={false}
+                required={argDef.required}
+              />
+            </FieldLabel>
+          )}
+        </ClientOnly>
       );
     }
 
