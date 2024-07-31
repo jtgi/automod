@@ -67,6 +67,7 @@ import {
 import { UserPicker } from "./user-picker";
 import { Role } from "@prisma/client";
 import { MoxieMemberPicker } from "./moxie-picker";
+import { Avatar, AvatarImage } from "./ui/avatar";
 
 export type FormValues = {
   id?: string;
@@ -599,9 +600,17 @@ function RuleSetEditor(props: {
               <Card key={ruleField.id} className="w-full rounded-lg">
                 <CardHeader>
                   <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <p className="font-medium text-md">{props.ruleDefinitions[ruleName].friendlyName}</p>
-                      <p className="text-gray-500 text-xs">{props.ruleDefinitions[ruleName].description}</p>
+                    <div className="flex gap-3 items-start">
+                      {props.ruleDefinitions[ruleName].author !== "automod" &&
+                        props.ruleDefinitions[ruleName].authorIcon && (
+                          <Avatar className="w-[33px] h-[33px] ring-white ring-4 shadow-xl shrink-0 mt-1">
+                            <AvatarImage src={props.ruleDefinitions[ruleName].authorIcon} />
+                          </Avatar>
+                        )}
+                      <div>
+                        <p className="font-medium text-md">{props.ruleDefinitions[ruleName].friendlyName}</p>
+                        <p className="text-gray-500 text-xs">{props.ruleDefinitions[ruleName].description}</p>
+                      </div>
                     </div>
                     <Button
                       type="button"

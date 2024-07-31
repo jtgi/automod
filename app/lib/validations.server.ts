@@ -36,6 +36,7 @@ import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { base } from "viem/chains";
+import { searchChannelFanToken } from "./airstack.server";
 
 export type RuleDefinition = {
   name: RuleName;
@@ -166,7 +167,15 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         required: true,
         friendlyName: "Fan Token",
         placeholder: "Enter a username...",
-        description: "If you don't see the token you're looking for, it may not be available.",
+        description:
+          "If you don't see the token you're looking for, it may not be available yet. Check airstack.xyz",
+      },
+      minBalance: {
+        type: "number",
+        required: false,
+        placeholder: "Any Amount",
+        friendlyName: "Minimum Balance",
+        description: "The minimum amount of fan tokens the user must hold.",
       },
     },
   },
@@ -176,15 +185,22 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     author: "Moxie",
     authorUrl: "https://moxie.xyz",
     authorIcon: `${hostUrl}/icons/moxie.png`,
-    fidGated: [5179],
-    allowMultiple: true,
+    allowMultiple: false,
     category: "inclusion",
-    friendlyName: "Moxie Channel Token",
+    friendlyName: "Moxie Channel Fan Token",
     checkType: "cast",
     description: "Check if the cast author holds the fan token for your channel",
     hidden: false,
     invertable: false,
-    args: {},
+    args: {
+      minBalance: {
+        type: "number",
+        required: false,
+        placeholder: "Any Amount",
+        friendlyName: "Minimum Balance",
+        description: "The minimum amount of fan tokens the user must hold.",
+      },
+    },
   },
 
   containsText: {
@@ -298,7 +314,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
       domain: {
         type: "string",
         friendlyName: "Domain",
-        description: "Check for embeds from a specific domain. Applies to all embeds.",
+        placeholder: "e.g. glass.com",
+        description:
+          "Check for embeds from a specific domain. Example: if you check 'Frames' and add glass.com, this check will trigger for frames from glass.com.",
       },
     },
   },
@@ -1112,6 +1130,32 @@ export type Rule = z.infer<typeof BaseRuleSchema> & {
 export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   conditions: z.lazy(() => RuleSchema.array()).optional(), // z.lazy is used for recursive schemas
 })
+  .transform(async (data) => {
+    if (data.name === "holdsChannelFanToken") {
+      const contractAddress = await searchChannelFanToken({ channelId: data.args.channelId });
+      return {
+        ...data,
+        args: {
+          ...data.args,
+          contractAddress,
+        },
+      };
+    }
+
+    return data;
+  })
+  .refine(
+    (data) => {
+      if (data.name === "holdsChannelFanToken") {
+        return data.args.contractAddress !== null;
+      }
+
+      return true;
+    },
+    {
+      message: "Your channel doesn't have a Fan Token yet. Contact /airstack",
+    }
+  )
   .refine(
     async (data) => {
       if (data.name === "castInThread") {
@@ -1779,14 +1823,17 @@ export async function holdsChannelFanToken(args: CheckFunctionArgs) {
   return {
     result: hasEnough,
     message: hasEnough
-      ? `User holds ERC-20 (${formatHash(contractAddress)})`
-      : `User does not hold enough ERC-20 (${formatHash(contractAddress)})`,
+      ? `Holds channel Fan Token (${formatHash(contractAddress)})`
+      : `Does not own channel Fan Token (${formatHash(contractAddress)})`,
   };
 }
 
 export async function holdsFanToken(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { contractAddress, minBalance } = rule.args;
+  const {
+    minBalance,
+    fanToken: { value: contractAddress },
+  } = rule.args;
 
   const cacheKey = `erc20-balance:${contractAddress}:${minBalance}:${
     cast.author.custody_address
@@ -1807,8 +1854,8 @@ export async function holdsFanToken(args: CheckFunctionArgs) {
   return {
     result: hasEnough,
     message: hasEnough
-      ? `User holds ERC-20 (${formatHash(contractAddress)})`
-      : `User does not hold enough ERC-20 (${formatHash(contractAddress)})`,
+      ? `User holds Fan Token (${formatHash(contractAddress)})`
+      : `User does not Fan Token (${formatHash(contractAddress)})`,
   };
 }
 
