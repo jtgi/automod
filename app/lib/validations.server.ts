@@ -1522,7 +1522,7 @@ export async function downvoteRule(args: CheckFunctionArgs) {
 
 export async function containsEmbeds(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { images, videos, frames, links, casts } = rule.args;
+  const { images, videos, frames, links, casts, domain } = rule.args;
 
   const checkForEmbeds: string[] = [];
   images && checkForEmbeds.push("image");
@@ -1612,13 +1612,19 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     }
   }
 
+  if (domain) {
+    embedsFound = embedsFound.filter((url) => url.includes(domain));
+  }
+
   const violatingEmbeds = checkForEmbeds.filter((embedType) => embedTypesFound.includes(embedType));
   const result = violatingEmbeds.length > 0;
+
+  const domainMessage = domain ? ` from domain ${domain}` : "";
   return {
     result,
     message: result
-      ? `Cast contains ${violatingEmbeds.join(", ")}`
-      : `Cast does not contain any forbidden embeds`,
+      ? `Cast contains ${violatingEmbeds.join(", ")}` + domainMessage
+      : `Cast doesn't contain ${checkForEmbeds.join(", ")}` + domainMessage,
   };
 }
 
