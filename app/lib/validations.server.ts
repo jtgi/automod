@@ -1555,6 +1555,10 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
         return false;
       }
 
+      if (domain && !embed.url.includes(domain)) {
+        return false;
+      }
+
       const mime = mimeType.lookup(embed.url);
       return (mime && mime.startsWith("image")) || knownImageCdnHostnames.includes(url.hostname);
     } else {
@@ -1569,6 +1573,10 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
 
   const foundVideos = cast.embeds.filter((embed): embed is { url: string } => {
     if ("url" in embed) {
+      if (domain && !embed.url.includes(domain)) {
+        return false;
+      }
+
       const mime = mimeType.lookup(embed.url);
       return !!mime && (mime.startsWith("video") || mime.startsWith("application/vnd.apple.mpegurl"));
     } else {
@@ -1594,12 +1602,22 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     }
 
     if (castWithInteractions.frames && castWithInteractions.frames.length > 0) {
-      embedTypesFound.push("frame");
-      embedsFound = embedsFound.concat(castWithInteractions.frames?.map((f) => f.frames_url) || []);
+      let frames = [...castWithInteractions.frames];
+      if (domain) {
+        frames = frames.filter((f) => f.frames_url.includes(domain));
+      }
+
+      if (frames.length > 0) {
+        embedTypesFound.push("frame");
+        embedsFound = embedsFound.concat(frames.map((f) => f.frames_url) || []);
+      }
     }
 
     const remainingUrls = castWithInteractions.embeds.filter((e): e is { url: string } => {
       if ("url" in e) {
+        if (domain && !e.url.includes(domain)) {
+          return false;
+        }
         return !embedsFound.includes(e.url);
       } else {
         return false;
@@ -1612,14 +1630,10 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     }
   }
 
-  if (domain) {
-    embedsFound = embedsFound.filter((url) => url.includes(domain));
-  }
-
   const violatingEmbeds = checkForEmbeds.filter((embedType) => embedTypesFound.includes(embedType));
   const result = violatingEmbeds.length > 0;
 
-  const domainMessage = domain ? ` from domain ${domain}` : "";
+  const domainMessage = domain ? ` from ${domain}` : "";
   return {
     result,
     message: result
