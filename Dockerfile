@@ -34,7 +34,7 @@ ENV PYTHON=/usr/bin/python3
 
 # Install node modules
 COPY --link package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod=false --force
+RUN pnpm install --frozen-lockfile --prod=false
 
 # Copy application code
 COPY --link . .
