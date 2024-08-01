@@ -137,10 +137,15 @@ export async function validateCast({
   }
 
   const isExcluded = moderatedChannel.excludeUsernamesParsed?.some((u) => u.value === cast.author.fid);
-  const isOwner = channel.lead?.fid === cast.author.fid;
+  const isOwner =
+    channel.lead?.fid === cast.author.fid && !(moderatedChannel.id === "tmp" && cast.author.fid === 5179);
 
   if (isExcluded || isOwner) {
-    console.log(`User @${cast.author.username} is in the bypass list.`);
+    const message = isOwner
+      ? `@${cast.author.username} is the channel owner`
+      : `@${cast.author.username} is in the bypass list.`;
+
+    console.log(message);
 
     const [, log] = await Promise.all([
       simulation
@@ -150,13 +155,7 @@ export async function validateCast({
             cast,
             action: { type: "like" },
           }),
-      logModerationAction(
-        moderatedChannel.id,
-        "like",
-        `@${cast.author.username} is in the bypass list.`,
-        cast,
-        simulation
-      ),
+      logModerationAction(moderatedChannel.id, "like", message, cast, simulation),
     ]);
 
     logs.push(log);
