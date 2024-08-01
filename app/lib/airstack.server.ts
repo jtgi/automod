@@ -1,9 +1,35 @@
 import { gql, GraphQLClient } from "graphql-request";
 import { neynar } from "./neynar.server";
 
-const airstack = new GraphQLClient(
+const protocolStats = new GraphQLClient(
   "https://api.studio.thegraph.com/query/23537/moxie_protocol_stats_mainnet/version/latest"
 );
+
+export type TokenLockWallet = {
+  tokenLockWallets: [
+    {
+      beneficiary: string;
+      address: string;
+    }
+  ];
+};
+
+export async function getVestingContractsForAddresses(args: { addresses: string[] }) {
+  const client = new GraphQLClient(
+    "https://api.studio.thegraph.com/query/23537/moxie_vesting_mainnet/version/latest"
+  );
+
+  const query = gql`
+    query MyQuery {
+      tokenLockWallets(where: { id_in: ${JSON.stringify(args.addresses)} }) {
+        id
+        beneficiary
+      }
+    }
+  `;
+
+  return client.request<TokenLockWallet>(query);
+}
 
 export type SubjectTokensResponse = {
   subjectTokens: Array<{
@@ -27,7 +53,7 @@ export async function searchChannelFanToken({ channelId }: { channelId: string }
     }
   `;
 
-  const data = (await airstack.request(query)) as SubjectTokensResponse;
+  const data = await protocolStats.request<SubjectTokensResponse>(query);
   console.log(`searchChannelFanToken`, { data });
   return data.subjectTokens.length ? data.subjectTokens[0] : null;
 }
@@ -44,7 +70,7 @@ export async function searchMemberFanTokens({ username }: { username: string }) 
     }
   `;
 
-  const data = (await airstack.request(query)) as SubjectTokensResponse;
+  const data = (await protocolStats.request(query)) as SubjectTokensResponse;
   console.log(`searchMemberFanTokens`, { data });
 
   const fids = data.subjectTokens

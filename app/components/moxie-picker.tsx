@@ -41,7 +41,7 @@ export function MoxieMemberPicker(props: { name: string; isMulti: boolean; requi
         <AsyncSelect
           {...field}
           instanceId={props.name}
-          noOptionsMessage={(e) => (e.inputValue ? "No Fan Tokens found. Weird." : null)}
+          noOptionsMessage={(e) => (e.inputValue ? "No Fan Tokens found, is it listed yet?" : null)}
           required={props.required}
           cacheOptions
           isMulti={props.isMulti}
