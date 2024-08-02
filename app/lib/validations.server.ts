@@ -1812,7 +1812,7 @@ export async function holdsChannelFanToken(args: CheckFunctionArgs) {
     ttlSeconds: 60 * 60,
   });
 
-  authorAddresses.push(...vestingContracts.tokenLockWallets.map((w) => w.address));
+  authorAddresses.push(...vestingContracts.tokenLockWallets.map((w) => w.id));
 
   const cacheKey = `erc20-balance:${contractAddress}:${minBalance}:${authorAddresses.join(",")}`;
 
@@ -1849,7 +1849,7 @@ export async function holdsFanToken(args: CheckFunctionArgs) {
     ttlSeconds: 60 * 60,
   });
 
-  authorAddresses.push(...vestingContracts.tokenLockWallets.map((w) => w.address));
+  authorAddresses.push(...vestingContracts.tokenLockWallets.map((w) => w.id));
 
   const cacheKey = `erc20-balance:${contractAddress}:${minBalance}:${authorAddresses.join(",")}`;
   const { result: hasEnough } = await getSetCache({

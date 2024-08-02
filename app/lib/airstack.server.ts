@@ -2,26 +2,26 @@ import { gql, GraphQLClient } from "graphql-request";
 import { neynar } from "./neynar.server";
 
 const protocolStats = new GraphQLClient(
-  "https://api.studio.thegraph.com/query/23537/moxie_protocol_stats_mainnet/version/latest"
+  `https://gateway-arbitrum.network.thegraph.com/api/${process.env.GRAPH_API_KEY}/subgraphs/id/7zS29h4BDSujQq8R3TFF37JfpjtPQsRUpoC9p4vo4scx`
 );
 
 export type TokenLockWallet = {
   tokenLockWallets: [
     {
       beneficiary: string;
-      address: string;
+      id: string;
     }
   ];
 };
 
 export async function getVestingContractsForAddresses(args: { addresses: string[] }) {
   const client = new GraphQLClient(
-    "https://api.studio.thegraph.com/query/23537/moxie_vesting_mainnet/version/latest"
+    `https://gateway-arbitrum.network.thegraph.com/api/${process.env.GRAPH_API_KEY}/subgraphs/id/BuR6zAj2GSVZz6smGbJZkgQx8S6GUS881R493ZYZKSk3`
   );
 
   const query = gql`
     query MyQuery {
-      tokenLockWallets(where: { id_in: ${JSON.stringify(args.addresses)} }) {
+      tokenLockWallets(where: { beneficiary_in: ${JSON.stringify(args.addresses)} }) {
         id
         beneficiary
       }
