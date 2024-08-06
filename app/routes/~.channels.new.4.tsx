@@ -14,6 +14,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "~/componen
 import { useClipboard } from "~/lib/utils";
 import { ChannelHeader } from "./~.channels.new.3";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { recoverQueue } from "~/lib/bullish.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -31,6 +32,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isAutomodSet = automodFid === wcChannel.moderatorFid;
 
   if (isAutomodSet) {
+    await recoverQueue.add("recover", {
+      channelId: channel.id,
+      moderatedChannel: channel,
+      limit: 250,
+    });
+
     throw redirect(`/~/channels/new/5?channelId=${channel.id}`);
   }
 
