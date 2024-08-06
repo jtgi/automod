@@ -57,22 +57,9 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const [isLead, neynarChannel] = await Promise.all([
-    isUserChannelLead({
-      channelId: result.data.channelId,
-      userId: user.id,
-    }),
-    getChannel({ name: result.data.channelId }).catch(() => null),
-  ]);
+  const wcChannel = await getWarpcastChannel({ channel: result.data.channelId });
 
-  if (!neynarChannel) {
-    return errorResponse({
-      request,
-      message: `Couldn't find that channel. Spell it right?`,
-    });
-  }
-
-  if (!isLead) {
+  if (wcChannel.leadFid !== +user.id) {
     throw redirect("/403");
   }
 
@@ -145,9 +132,9 @@ export async function action({ request }: ActionFunctionArgs) {
       id: result.data.channelId,
       active: true,
       userId: user.id,
-      url: neynarChannel.url,
+      url: wcChannel.url,
       feedType: result.data.feed,
-      imageUrl: neynarChannel.image_url,
+      imageUrl: wcChannel.imageUrl,
 
       ...ruleSets,
     },
