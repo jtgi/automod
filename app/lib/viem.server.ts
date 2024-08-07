@@ -1,5 +1,5 @@
 import { createPublicClient, fallback, http } from "viem";
-import { arbitrum, base, mainnet, zora, optimism } from "viem/chains";
+import { arbitrum, base, mainnet, zora, optimism, polygon } from "viem/chains";
 
 const mainnetClient = createPublicClient({
   chain: mainnet,
@@ -43,12 +43,18 @@ const zoraClient = createPublicClient({
   transport: http(`https://rpc.zora.energy`),
 });
 
+const polygonClient = createPublicClient({
+  chain: polygon,
+  transport: http(`https://polygon-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`),
+});
+
 export const clientsByChainId = {
   [String(mainnet.id)]: mainnetClient,
   [String(optimism.id)]: optimismClient,
   [String(base.id)]: baseClient,
   [String(arbitrum.id)]: arbitrumClient,
   [String(zora.id)]: zoraClient,
+  [String(polygon.id)]: polygonClient,
 };
 
 export const chainByChainId = {
@@ -57,4 +63,5 @@ export const chainByChainId = {
   [String(base.id)]: base,
   [String(arbitrum.id)]: arbitrum,
   [String(zora.id)]: zora,
+  [String(polygon.id)]: polygon,
 };

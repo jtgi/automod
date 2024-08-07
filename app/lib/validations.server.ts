@@ -35,7 +35,7 @@ import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
-import { base } from "viem/chains";
+import { base, polygon } from "viem/chains";
 import { getVestingContractsForAddresses, searchChannelFanToken } from "./airstack.server";
 
 export type RuleDefinition = {
@@ -536,6 +536,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
           { value: "7777777", label: "Zora" },
+          { value: String(polygon.id), label: "Polygon" },
         ],
       },
       contractAddress: {
@@ -573,6 +574,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
           { value: "7777777", label: "Zora" },
+          { value: String(polygon.id), label: "Polygon" },
         ],
       },
       contractAddress: {
@@ -617,6 +619,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
           { value: "7777777", label: "Zora" },
+          { value: String(polygon.id), label: "Polygon" },
         ],
       },
       contractAddress: {
@@ -662,6 +665,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
           { value: "7777777", label: "Zora" },
+          { value: String(polygon.id), label: "Polygon" },
         ],
       },
       contractAddress: {
