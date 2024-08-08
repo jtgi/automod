@@ -431,6 +431,15 @@ export async function validateErc20({
     return false;
   }
 
+  const alwaysAllow = [
+    // degen throws on allowance() but is a an erc20
+    "0xa8a30E0dafCA4156f28d96cCa5671a0eEcA5E407",
+  ].map((a) => a.toLowerCase());
+
+  if (alwaysAllow.includes(contractAddress.toLowerCase())) {
+    return true;
+  }
+
   const client = clientsByChainId[chainId];
   const contract = getContract({
     address: getAddress(contractAddress),
