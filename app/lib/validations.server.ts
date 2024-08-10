@@ -273,7 +273,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     author: "automod",
     authorUrl: "https://automod.sh",
     authorIcon: `${hostUrl}/icons/automod.png`,
-    allowMultiple: false,
+    allowMultiple: true,
     category: "all",
     friendlyName: "Contains Embedded Content",
     checkType: "cast",
