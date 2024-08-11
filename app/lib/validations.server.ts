@@ -1151,7 +1151,7 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   .refine(
     (data) => {
       if (data.name === "holdsChannelFanToken") {
-        return data.args.contractAddress !== null;
+        return !!data.args.contractAddress;
       }
 
       return true;
