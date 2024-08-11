@@ -1141,7 +1141,7 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
         ...data,
         args: {
           ...data.args,
-          contractAddress,
+          contractAddress: contractAddress?.id,
         },
       };
     }

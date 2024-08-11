@@ -50,6 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     console.log(JSON.stringify(data, null, 2));
   }
 
+  injectChannelIdToAllRules(data);
   const ch = await ModeratedChannelSchema.safeParseAsync(data);
 
   if (!ch.success) {
@@ -230,4 +231,26 @@ export default function Screen() {
       />
     </div>
   );
+}
+
+function injectChannelIdToAllRules(data: any) {
+  for (let i = 0; i < data.inclusionRuleSet.ruleParsed.conditions.length; i++) {
+    data.inclusionRuleSet.ruleParsed.conditions[i] = {
+      ...data.inclusionRuleSet.ruleParsed.conditions[i],
+      args: {
+        ...data.inclusionRuleSet.ruleParsed.conditions[i].args,
+        channelId: data.id,
+      },
+    };
+  }
+
+  for (let i = 0; i < data.exclusionRuleSet.ruleParsed.conditions.length; i++) {
+    data.exclusionRuleSet.ruleParsed.conditions[i] = {
+      ...data.exclusionRuleSet.ruleParsed.conditions[i],
+      args: {
+        ...data.exclusionRuleSet.ruleParsed.conditions[i].args,
+        channelId: data.id,
+      },
+    };
+  }
 }

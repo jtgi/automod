@@ -54,7 +54,7 @@ export async function searchChannelFanToken({ channelId }: { channelId: string }
   `;
 
   const data = await protocolStats.request<SubjectTokensResponse>(query);
-  console.log(`searchChannelFanToken`, { data });
+  console.log(`searchChannelFanToken`, { query, data });
   return data.subjectTokens.length ? data.subjectTokens[0] : null;
 }
 
