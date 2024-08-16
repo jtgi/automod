@@ -49,6 +49,7 @@ model User {
   inviteCodeId      String?
   planExpiry        DateTime?          @db.Timestamptz(6)
   planTokenId       String?
+  planWalletAddress String?
   moderatedChannels ModeratedChannel[]
   notifications     Notification[]
   otps              Otp[]

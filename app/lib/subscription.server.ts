@@ -71,7 +71,7 @@ export type PlanDef = {
   maxCasts: number;
 };
 
-export async function getSubscriptionPlan(args: { fid: string }): Promise<{
+export async function getSubscriptionPlan(args: { fid: string; walletAddress?: string }): Promise<{
   plan: PlanType;
   tokenId: string | null;
   expiresAt: Date | null;
@@ -99,7 +99,10 @@ export async function getSubscriptionPlan(args: { fid: string }): Promise<{
   }
 
   const user = rsp.users[0];
-  for (const address of user.verified_addresses.eth_addresses) {
+  const addresses = [args.walletAddress, ...user.verified_addresses.eth_addresses].filter(
+    Boolean
+  ) as string[];
+  for (const address of addresses) {
     const [primeSecondsRemaining, v2SecondsRemaining] = await Promise.all([
       primeContract.read.balanceOf([getAddress(address)]),
       hypersubV2Contract.read.balanceOf([getAddress(address)]),
@@ -139,7 +142,15 @@ export async function refreshAccountStatus(args: { fid: string }) {
     },
   });
 
-  if (user!.plan === "vip") {
+  if (!user) {
+    return {
+      plan: "basic",
+      expiresAt: null,
+      tokenId: null,
+    };
+  }
+
+  if (user.plan === "vip") {
     return {
       plan: "vip",
       tokenId: null,
@@ -147,7 +158,11 @@ export async function refreshAccountStatus(args: { fid: string }) {
     };
   }
 
-  const plan = await getSubscriptionPlan(args);
+  const plan = await getSubscriptionPlan({
+    fid: args.fid,
+    walletAddress: user.planWalletAddress ?? undefined,
+  });
+
   await db.user.update({
     where: {
       id: args.fid,
