@@ -158,7 +158,6 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     friendlyName: "Moxie Fan Token",
     checkType: "user",
     description: "Check if the cast author holds a Moxie fan token",
-    fidGated: [5179],
     hidden: false,
     invertable: false,
     args: {
