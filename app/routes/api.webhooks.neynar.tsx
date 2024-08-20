@@ -229,6 +229,13 @@ export async function validateCast({
 
   if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
     console.log(`[${channel.id}] No rules for channel.`);
+    await logModerationAction(
+      moderatedChannel.id,
+      "hideQuietly",
+      "No automated curation rules configured.",
+      cast,
+      simulation
+    );
     return logs;
   }
 
