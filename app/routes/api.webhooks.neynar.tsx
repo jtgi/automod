@@ -1,4 +1,4 @@
-import { Cast, Channel } from "@neynar/nodejs-sdk/build/neynar-api/v2";
+import { Cast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import * as Sentry from "@sentry/remix";
 import { ModeratedChannel, ModerationLog, Prisma, RuleSet } from "@prisma/client";
 import { v4 as uuid } from "uuid";
@@ -88,7 +88,6 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export type ValidateCastArgs = {
-  channel: Channel;
   moderatedChannel: FullModeratedChannel;
   cast: WebhookCast;
   executeOnProtocol?: boolean;
@@ -96,7 +95,6 @@ export type ValidateCastArgs = {
 };
 
 export async function validateCast({
-  channel,
   moderatedChannel,
   cast,
   executeOnProtocol = false,
@@ -137,8 +135,7 @@ export async function validateCast({
   }
 
   const isExcluded = moderatedChannel.excludeUsernamesParsed?.some((u) => u.value === cast.author.fid);
-  const isOwner =
-    channel.lead?.fid === cast.author.fid && !(moderatedChannel.id === "tmp" && cast.author.fid === 5179);
+  const isOwner = (await getWarpcastChannelOwner({ channel: moderatedChannel.id })) === cast.author.fid;
 
   if (isExcluded || isOwner) {
     const message = isOwner
@@ -151,7 +148,7 @@ export async function validateCast({
       simulation
         ? Promise.resolve()
         : actionFunctions["like"]({
-            channel: channel.id,
+            channel: moderatedChannel.id,
             cast,
             action: { type: "like" },
           }),
@@ -163,15 +160,15 @@ export async function validateCast({
   }
 
   if (moderatedChannel.excludeCohosts) {
-    const mods = await getModerators({ channel: channel.id });
+    const mods = await getModerators({ channel: moderatedChannel.id });
     if (mods.find((c) => c.fid === String(cast.author.fid))) {
-      console.log(`[${channel.id}] @${cast.author.username} is a moderator. Curating.`);
+      console.log(`[${moderatedChannel.id}] @${cast.author.username} is a moderator. Curating.`);
 
       const [, log] = await Promise.all([
         simulation
           ? Promise.resolve()
           : actionFunctions["like"]({
-              channel: channel.id,
+              channel: moderatedChannel.id,
               cast,
               action: { type: "like" },
             }),
@@ -220,7 +217,7 @@ export async function validateCast({
         )
       );
     } else {
-      console.log(`[${channel.id}] User @${cast.author.username} is banned. Skipping.`);
+      console.log(`[${moderatedChannel.id}] User @${cast.author.username} is banned. Skipping.`);
       // they're banned, logging is noise so skip
     }
 
@@ -228,7 +225,7 @@ export async function validateCast({
   }
 
   if (!moderatedChannel.inclusionRuleSetParsed?.ruleParsed?.conditions?.length) {
-    console.log(`[${channel.id}] No rules for channel.`);
+    console.log(`[${moderatedChannel.id}] No rules for channel.`);
     await logModerationAction(
       moderatedChannel.id,
       "hideQuietly",
@@ -254,7 +251,7 @@ export async function validateCast({
           const actionFn = actionFunctions[action.type];
 
           await actionFn({
-            channel: channel.id,
+            channel: moderatedChannel.id,
             cast,
             action,
             options: {
@@ -299,7 +296,7 @@ export async function validateCast({
         const actionFn = actionFunctions[action.type];
 
         await actionFn({
-          channel: channel.id,
+          channel: moderatedChannel.id,
           cast,
           action,
           options: {
@@ -352,7 +349,7 @@ export async function validateCast({
   } else {
     if (!simulation) {
       await actionFunctions["hideQuietly"]({
-        channel: channel.id,
+        channel: moderatedChannel.id,
         cast,
         action: { type: "hideQuietly" },
         options: {

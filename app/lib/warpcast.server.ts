@@ -28,8 +28,18 @@ export type WarpcastChannel = {
 };
 
 export async function getWarpcastChannel(props: { channel: string }): Promise<WarpcastChannel> {
-  const rsp = await http.get(`https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`);
-  return rsp.data.result.channel;
+  const cacheKey = `warpcast-channel-${props.channel.toLowerCase()}`;
+
+  return getSetCache({
+    key: cacheKey,
+    ttlSeconds: 60 * 5,
+    get: async () => {
+      const rsp = await http.get(
+        `https://api.warpcast.com/v1/channel?channelId=${props.channel.toLowerCase()}`
+      );
+      return rsp.data.result.channel;
+    },
+  });
 }
 
 export async function getWarpcastChannels() {

@@ -363,8 +363,6 @@ export type SweepArgs = {
 };
 
 export async function sweep(args: SweepArgs) {
-  const channel = await getChannel({ name: args.channelId });
-
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
     const modOverrides = await db.moderationLog.findMany({
@@ -388,15 +386,14 @@ export async function sweep(args: SweepArgs) {
     const unprocessedCasts = page.casts.filter((cast) => !modOverrideHashes.has(cast.hash));
 
     for (const cast of unprocessedCasts) {
-      if (isFinished(channel.id, cast, castsChecked, args)) {
+      if (isFinished(args.channelId, cast, castsChecked, args)) {
         return;
       }
 
-      console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
+      console.log(`${args.channelId} sweep: processing cast ${cast.hash}...`);
 
       await validateCast({
         cast: cast as unknown as WebhookCast,
-        channel,
         moderatedChannel: args.moderatedChannel,
         executeOnProtocol: true,
       });
