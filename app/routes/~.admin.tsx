@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ActionFunctionArgs, LoaderFunctionArgs, defer } from "@remix-run/node";
-import { Await, Form, useFetcher, useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Await, useFetcher } from "@remix-run/react";
 import { redirect, typeddefer, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Button } from "~/components/ui/button";
 import { FieldLabel } from "~/components/ui/fields";
@@ -11,7 +11,7 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive, isSweepActive } from "./~.channels.$id.tools";
-import { recoverQueue, delayedSubscriptionQueue, sweepQueue, syncQueue } from "~/lib/bullish.server";
+import { recoverQueue, delayedSubscriptionQueue, sweepQueue } from "~/lib/bullish.server";
 import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";

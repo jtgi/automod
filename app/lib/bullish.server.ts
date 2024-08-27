@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
-import Bottleneck from "bottleneck";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
 import { ValidateCastArgs, getUsage as getTotalUsage, validateCast } from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
-import { getChannel, pageChannelCasts } from "./neynar.server";
+import { pageChannelCasts } from "./neynar.server";
 import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getWarpcastChannel } from "./warpcast.server";
@@ -156,7 +155,7 @@ export const webhookWorker = new Worker(
       return;
     }
 
-    const [usage, channel, totalUsage] = await Promise.all([
+    const [usage, totalUsage] = await Promise.all([
       db.usage.upsert({
         where: {
           channelId_monthYear: {
@@ -176,7 +175,6 @@ export const webhookWorker = new Worker(
           },
         },
       }),
-      getChannel({ name: moderatedChannel.id }).catch(() => null),
       getTotalUsage(moderatedChannel),
     ]);
 
@@ -207,13 +205,6 @@ export const webhookWorker = new Worker(
       throw new UnrecoverableError(`User ${moderatedChannel.userId} is over usage limit`);
     }
 
-    if (!channel) {
-      console.error(
-        `There's a moderated channel configured for ${moderatedChannel.id}, warpcast knows about it, but neynar doesn't. Something is wrong.`
-      );
-      throw new UnrecoverableError(`Channel not found: ${moderatedChannel.id}`);
-    }
-
     await Promise.all([
       db.castLog.upsert({
         where: {
@@ -222,7 +213,7 @@ export const webhookWorker = new Worker(
         create: {
           hash: webhookNotif.data.hash,
           replyCount: webhookNotif.data.replies.count,
-          channelId: channel.id,
+          channelId: moderatedChannel.id,
           status: "waiting",
         },
         update: {
@@ -232,7 +223,6 @@ export const webhookWorker = new Worker(
       castQueue.add(
         "processCast",
         {
-          channel,
           moderatedChannel,
           cast: webhookNotif.data,
         },
@@ -295,7 +285,7 @@ castWorker.on("error", (err: Error) => {
 
 castWorker.on("active", async (job) => {
   if (process.env.NODE_ENV === "development") {
-    console.log(`[${job.data.channel.id}]: ${job.id} is now active`);
+    console.log(`[${job.data.moderatedChannel.id}]: ${job.id} is now active`);
   }
 
   await db.castLog.upsert({
@@ -305,7 +295,7 @@ castWorker.on("active", async (job) => {
     create: {
       hash: job.data.cast.hash,
       replyCount: job.data.cast.replies.count,
-      channelId: job.data.channel.id,
+      channelId: job.data.moderatedChannel.id,
       status: "active",
     },
     update: {
@@ -316,7 +306,7 @@ castWorker.on("active", async (job) => {
 
 castWorker.on("completed", async (job) => {
   if (process.env.NODE_ENV === "development") {
-    console.log(`${job.data.channel.id}: cast ${job.data.cast.hash} completed`);
+    console.log(`${job.data.moderatedChannel.id}: cast ${job.data.cast.hash} completed`);
   }
 
   await db.castLog.upsert({
@@ -326,7 +316,7 @@ castWorker.on("completed", async (job) => {
     create: {
       hash: job.data.cast.hash,
       replyCount: job.data.cast.replies.count,
-      channelId: job.data.channel.id,
+      channelId: job.data.moderatedChannel.id,
       status: "completed",
     },
     update: {
@@ -339,7 +329,7 @@ castWorker.on("failed", async (job, err: any) => {
   const message = err?.response?.data || err?.message || "unknown error";
 
   if (job) {
-    console.error(`[${job.data.channel.id}]: cast ${job.data.cast.hash} failed`, message);
+    console.error(`[${job.data.moderatedChannel.id}]: cast ${job.data.cast.hash} failed`, message);
 
     await db.castLog.upsert({
       where: {
@@ -348,7 +338,7 @@ castWorker.on("failed", async (job, err: any) => {
       create: {
         hash: job.data.cast.hash,
         replyCount: job.data.cast.replies.count,
-        channelId: job.data.channel.id,
+        channelId: job.data.moderatedChannel.id,
         status: "failed",
       },
       update: {
@@ -489,18 +479,15 @@ export const syncQueue = new Queue("syncQueue", {
 export const syncWorker = new Worker(
   "syncQueue",
   async (job: Job<{ channelId: string; rootCastsToProcess: number }>) => {
-    const [channel, moderatedChannel] = await Promise.all([
-      getChannel({ name: job.data.channelId }),
-      db.moderatedChannel.findFirst({
-        where: {
-          id: job.data.channelId,
-          active: true,
-        },
-        include: {
-          ruleSets: true,
-        },
-      }),
-    ]);
+    const moderatedChannel = await db.moderatedChannel.findFirst({
+      where: {
+        id: job.data.channelId,
+        active: true,
+      },
+      include: {
+        ruleSets: true,
+      },
+    });
 
     let rootCastsChecked = 0;
     for await (const page of pageChannelCasts({ id: job.data.channelId })) {
@@ -535,7 +522,6 @@ export const syncWorker = new Worker(
         castQueue.add(
           "processCast",
           {
-            channel,
             moderatedChannel,
             cast: rootCast,
           },

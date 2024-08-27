@@ -158,10 +158,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
     }
 
-    const channel = await getChannel({ name: moderatedChannel.id });
     const logs = await validateCast({
       cast: castResult.cast as WebhookCast,
-      channel,
       moderatedChannel,
       simulation: true,
     });
@@ -506,26 +504,25 @@ export type SimulationResult = Array<{
 }>;
 
 export async function simulate(args: SimulateArgs) {
-  const channel = await getChannel({ name: args.channelId });
-
   const aggregatedResults: SimulationResult = [];
   let castsChecked = 0;
   for await (const page of pageChannelCasts({ id: args.channelId })) {
     if (castsChecked >= args.limit) {
-      console.log(`${channel.id} sweep: reached limit of ${args.limit} casts checked, stopping simulation`);
+      console.log(
+        `${args.channelId} sweep: reached limit of ${args.limit} casts checked, stopping simulation`
+      );
       break;
     }
 
     castsChecked += page.casts.length;
     for (const cast of page.casts) {
-      console.log(`${channel.id} sweep: processing cast ${cast.hash}...`);
+      console.log(`${args.channelId} sweep: processing cast ${cast.hash}...`);
 
       const [existing, proposed] = await Promise.all([
         args.moderatedChannel
           ? validateCast({
               // neynars typings are wrong, casts include root_parent_urls
               cast: cast as unknown as WebhookCast,
-              channel,
               moderatedChannel: args.moderatedChannel,
               simulation: true,
             })
@@ -533,7 +530,6 @@ export async function simulate(args: SimulateArgs) {
         validateCast({
           // neynars typings are wrong
           cast: cast as unknown as WebhookCast,
-          channel,
           moderatedChannel: args.proposedModeratedChannel,
           simulation: true,
         }),
