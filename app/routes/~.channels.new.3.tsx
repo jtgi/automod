@@ -14,6 +14,7 @@ import { db } from "~/lib/db.server";
 import { permissionDefs } from "~/lib/permissions.server";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { getChannel, registerWebhook } from "~/lib/neynar.server";
+import { User } from "@prisma/client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -73,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(`/~/channels/new/4?channelId=${result.data.channelId}`);
   }
 
-  const ruleSets = getRules(result.data.feed);
+  const ruleSets = getRulesForFeedType({ user, feed: result.data.feed });
 
   const moderatedChannel = await db.moderatedChannel.create({
     data: {
@@ -207,7 +208,8 @@ export function ChannelHeader(props: { channel: { imageUrl: string | null; id: s
   );
 }
 
-function getRules(feed: "recommended" | "custom" | "manual") {
+function getRulesForFeedType(args: { user: User; feed: "recommended" | "custom" | "manual" }) {
+  const { user, feed } = args;
   if (feed === "recommended" || feed === "custom") {
     return {
       excludeCohosts: true,
