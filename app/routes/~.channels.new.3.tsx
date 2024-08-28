@@ -13,7 +13,7 @@ import { z } from "zod";
 import { db } from "~/lib/db.server";
 import { permissionDefs } from "~/lib/permissions.server";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { getChannel } from "~/lib/neynar.server";
+import { getChannel, registerWebhook } from "~/lib/neynar.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -73,58 +73,6 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(`/~/channels/new/4?channelId=${result.data.channelId}`);
   }
 
-  function getRules(feed: "recommended" | "custom" | "manual") {
-    if (feed === "recommended" || feed === "custom") {
-      return {
-        excludeCohosts: true,
-        inclusionRuleSet: JSON.stringify({
-          rule: {
-            name: "or",
-            type: "LOGICAL",
-            args: {},
-            operation: "OR",
-            conditions: [
-              {
-                name: "userDoesNotHoldPowerBadge",
-                type: "CONDITION",
-                args: {},
-              },
-              {
-                name: "userIsNotFollowedBy",
-                type: "CONDITION",
-                args: {
-                  users: [
-                    {
-                      value: +user.id,
-                      label: user.name,
-                      icon: user.avatarUrl ?? undefined,
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-          actions: [
-            {
-              type: "like",
-            },
-          ],
-        }),
-        exclusionRuleSet: JSON.stringify({
-          rule: {},
-          actions: [
-            {
-              type: "hideQuietly",
-            },
-          ],
-        }),
-      };
-    } else {
-      return {
-        excludeCohosts: true,
-      };
-    }
-  }
   const ruleSets = getRules(result.data.feed);
 
   const moderatedChannel = await db.moderatedChannel.create({
@@ -140,23 +88,28 @@ export async function action({ request }: ActionFunctionArgs) {
     },
   });
 
-  await db.role.create({
-    data: {
-      channelId: moderatedChannel.id,
-      name: "Cohost",
-      isCohostRole: true,
-      description: "Primary moderators for your channel.",
-      permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
-      delegates: {
-        create: result.data.comods.map((comod) => ({
-          fid: String(comod.value),
-          username: comod.label,
-          avatarUrl: comod.icon,
-          channelId: moderatedChannel.id,
-        })),
+  await Promise.all([
+    db.role.create({
+      data: {
+        channelId: moderatedChannel.id,
+        name: "Cohost",
+        isCohostRole: true,
+        description: "Primary moderators for your channel.",
+        permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
+        delegates: {
+          create: result.data.comods.map((comod) => ({
+            fid: String(comod.value),
+            username: comod.label,
+            avatarUrl: comod.icon,
+            channelId: moderatedChannel.id,
+          })),
+        },
       },
-    },
-  });
+    }),
+    await registerWebhook({
+      rootParentUrl: wcChannel.url,
+    }),
+  ]);
 
   return redirect(`/~/channels/new/4?channelId=${moderatedChannel.id}`);
 }
@@ -252,4 +205,57 @@ export function ChannelHeader(props: { channel: { imageUrl: string | null; id: s
       /{channel.id}
     </div>
   );
+}
+
+function getRules(feed: "recommended" | "custom" | "manual") {
+  if (feed === "recommended" || feed === "custom") {
+    return {
+      excludeCohosts: true,
+      inclusionRuleSet: JSON.stringify({
+        rule: {
+          name: "or",
+          type: "LOGICAL",
+          args: {},
+          operation: "OR",
+          conditions: [
+            {
+              name: "userDoesNotHoldPowerBadge",
+              type: "CONDITION",
+              args: {},
+            },
+            {
+              name: "userIsNotFollowedBy",
+              type: "CONDITION",
+              args: {
+                users: [
+                  {
+                    value: +user.id,
+                    label: user.name,
+                    icon: user.avatarUrl ?? undefined,
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        actions: [
+          {
+            type: "like",
+          },
+        ],
+      }),
+      exclusionRuleSet: JSON.stringify({
+        rule: {},
+        actions: [
+          {
+            type: "hideQuietly",
+          },
+        ],
+      }),
+    };
+  } else {
+    return {
+      excludeCohosts: true,
+    };
+  }
 }

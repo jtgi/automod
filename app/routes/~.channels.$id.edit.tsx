@@ -28,10 +28,6 @@ import { actionToInstallLink } from "~/lib/utils";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 import { recoverQueue, sweepQueue } from "~/lib/bullish.server";
 import { useSearchParams } from "@remix-run/react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { ArrowUpRight } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import { useState } from "react";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");

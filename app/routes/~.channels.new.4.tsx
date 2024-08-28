@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Link, useNavigate } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { getWarpcastChannel } from "~/lib/warpcast.server";
@@ -16,7 +16,7 @@ import { ChannelHeader } from "./~.channels.new.3";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { recoverQueue } from "~/lib/bullish.server";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
   const url = new URL(request.url);
   const channelId = url.searchParams.get("channelId")!;

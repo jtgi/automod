@@ -489,6 +489,11 @@ export const syncWorker = new Worker(
       },
     });
 
+    if (!moderatedChannel) {
+      console.error(`[${job.data.channelId}] sync: moderated channel not found`);
+      return;
+    }
+
     let rootCastsChecked = 0;
     for await (const page of pageChannelCasts({ id: job.data.channelId })) {
       if (process.env.NODE_ENV === "development") {

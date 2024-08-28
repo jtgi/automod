@@ -168,24 +168,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
           },
         },
       });
-      const [neynarChannel] = await Promise.all([
-        getChannel({ name: moderatedChannel.id }).catch(() => null),
-        await logModerationAction(
-          moderatedChannel.id,
-          validation.data.action,
-          `Applied by @${message.action.interactor.username}`,
-          cast.result.casts[0],
-          false,
-          {
-            actor: `@${message.action.interactor.username}`,
-          }
-        ),
-      ]);
+
+      await logModerationAction(
+        moderatedChannel.id,
+        validation.data.action,
+        `Applied by @${message.action.interactor.username}`,
+        cast.result.casts[0],
+        false,
+        {
+          actor: `@${message.action.interactor.username}`,
+        }
+      );
 
       castQueue.add(
         "processCast",
         {
-          channel: neynarChannel,
           moderatedChannel,
           cast: cast.result.casts[0],
           executeOnProtocol: true,
