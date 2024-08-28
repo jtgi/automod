@@ -329,7 +329,7 @@ castWorker.on("failed", async (job, err: any) => {
   const message = err?.response?.data || err?.message || "unknown error";
 
   if (job) {
-    console.error(`[${job.data.moderatedChannel.id}]: cast ${job.data.cast.hash} failed`, message);
+    console.error(`[${job.data.moderatedChannel?.id}]: cast ${job.data.cast?.hash} failed`, message);
 
     await db.castLog.upsert({
       where: {
