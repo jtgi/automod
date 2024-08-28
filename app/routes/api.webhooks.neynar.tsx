@@ -135,7 +135,8 @@ export async function validateCast({
   }
 
   const isExcluded = moderatedChannel.excludeUsernamesParsed?.some((u) => u.value === cast.author.fid);
-  const isOwner = (await getWarpcastChannelOwner({ channel: moderatedChannel.id })) === cast.author.fid;
+  const channelOwner = await getWarpcastChannelOwner({ channel: moderatedChannel.id });
+  const isOwner = channelOwner === cast.author.fid;
 
   if (isExcluded || isOwner) {
     const message = isOwner

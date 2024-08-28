@@ -1,17 +1,14 @@
 import { Cooldown } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { Form, Link, useFetcher } from "@remix-run/react";
-import { ArrowUpRight, BirdIcon, Loader, Rainbow } from "lucide-react";
+import { Link, useFetcher } from "@remix-run/react";
+import { ArrowUpRight, Loader } from "lucide-react";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
-import invariant from "tiny-invariant";
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { banAction, cooldown24Action } from "~/lib/cast-actions.server";
 import { db } from "~/lib/db.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { requireUser, requireUserCanModerateChannel, successResponse } from "~/lib/utils.server";
-import { ban } from "~/lib/validations.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -66,8 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { user, moderatedChannel, cooldowns, cooldownInstallLink, banInstallLink } =
-    useTypedLoaderData<typeof loader>();
+  const { cooldowns, cooldownInstallLink, banInstallLink } = useTypedLoaderData<typeof loader>();
 
   const banned = cooldowns.filter((c) => !c.expiresAt);
   const cooldown = cooldowns.filter((c) => !!c.expiresAt);

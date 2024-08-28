@@ -5,16 +5,7 @@ import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
 import RE2 from "re2";
 import { z } from "zod";
-import {
-  addToBypass,
-  cooldown,
-  downvote,
-  getWarpcastChannelOwner,
-  grantRole,
-  hideQuietly,
-  mute,
-  warnAndHide,
-} from "./warpcast.server";
+import { getWarpcastChannelOwner } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
@@ -37,6 +28,7 @@ import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { base, polygon } from "viem/chains";
 import { getVestingContractsForAddresses, searchChannelFanToken } from "./airstack.server";
+import { hideQuietly, mute, addToBypass, downvote, cooldown, grantRole, ban, unlike } from "./automod.server";
 
 export type RuleDefinition = {
   name: RuleName;
@@ -170,9 +162,10 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           "If you don't see the token you're looking for, it may not be available yet. Check airstack.xyz",
       },
       minBalance: {
-        type: "number",
+        type: "string",
         required: false,
         placeholder: "Any Amount",
+        pattern: "^[0-9]+(\\.[0-9]+)?$",
         friendlyName: "Minimum Balance",
         description: "The minimum amount of fan tokens the user must hold.",
       },
@@ -193,10 +186,11 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     invertable: false,
     args: {
       minBalance: {
-        type: "number",
+        type: "string",
         required: false,
         placeholder: "Any Amount",
         friendlyName: "Minimum Balance",
+        pattern: "^[0-9]+(\\.[0-9]+)?$",
         description: "The minimum amount of fan tokens the user must hold.",
       },
     },
@@ -589,6 +583,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         required: false,
         placeholder: "Any Amount",
         friendlyName: "Minimum Balance (optional)",
+        pattern: "^[0-9]+(\\.[0-9]+)?$",
         description: "",
       },
     },
@@ -1379,7 +1374,7 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   ban: ban,
   like: like,
   unlike: unlike,
-  warnAndHide: warnAndHide,
+  warnAndHide: () => Promise.resolve(),
   cooldown: cooldown,
   grantRole: grantRole,
 } as const;
@@ -1397,46 +1392,6 @@ export async function like(props: { cast: Cast; channel: string }) {
   const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
   console.log(`Liking with @${signerAlloc ? signerAlloc.signer.username : "automod"}, ${uuid}`);
   await neynar.publishReactionToCast(uuid, "like", props.cast.hash);
-}
-
-export async function unlike(props: { cast: Cast; channel: string }) {
-  const signerAlloc = await db.signerAllocation.findFirst({
-    where: {
-      channelId: props.channel,
-    },
-    include: {
-      signer: true,
-    },
-  });
-
-  const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
-
-  console.log(
-    `Unliking with @${signerAlloc ? signerAlloc.signer.username : "automod"}, cast: ${props.cast.hash}`
-  );
-
-  await neynar.deleteReactionFromCast(uuid, "like", props.cast.hash);
-}
-
-export async function ban({ channel, cast }: { channel: string; cast: Cast; action: Action }) {
-  // indefinite cooldown
-  return db.cooldown.upsert({
-    where: {
-      affectedUserId_channelId: {
-        affectedUserId: String(cast.author.fid),
-        channelId: channel,
-      },
-    },
-    update: {
-      active: true,
-      expiresAt: null,
-    },
-    create: {
-      affectedUserId: String(cast.author.fid),
-      channelId: channel,
-      expiresAt: null,
-    },
-  });
 }
 
 // Rule: contains text, option to ignore case

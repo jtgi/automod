@@ -19,7 +19,7 @@ import {
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
 import { Form, NavLink } from "@remix-run/react";
-import { actionDefinitions, like, unlike } from "~/lib/validations.server";
+import { actionDefinitions, like } from "~/lib/validations.server";
 import { Alert } from "~/components/ui/alert";
 import {
   ArrowUpRight,
@@ -32,6 +32,7 @@ import { z } from "zod";
 import { useLocalStorage } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { getModerationStats30Days } from "~/lib/stats.server";
+import { unlike } from "~/lib/automod.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(params.id, "id is required");
