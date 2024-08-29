@@ -2,7 +2,7 @@
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { useFetcher } from "@remix-run/react";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { errorResponse, formatZodError, isUserChannelLead, requireUser } from "~/lib/utils.server";
+import { errorResponse, formatZodError, requireUser } from "~/lib/utils.server";
 import { getWarpcastChannel } from "~/lib/warpcast.server";
 import { FieldLabel } from "~/components/ui/fields";
 import { ClientOnly } from "remix-utils/client-only";
@@ -13,8 +13,7 @@ import { z } from "zod";
 import { db } from "~/lib/db.server";
 import { permissionDefs } from "~/lib/permissions.server";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
-import { getChannel, registerWebhook } from "~/lib/neynar.server";
-import { User } from "@prisma/client";
+import { registerWebhook } from "~/lib/neynar.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -72,6 +71,60 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (existingChannel) {
     throw redirect(`/~/channels/new/4?channelId=${result.data.channelId}`);
+  }
+
+  function getRulesForFeedType(args: { user: User; feed: "recommended" | "custom" | "manual" }) {
+    const { user, feed } = args;
+    if (feed === "recommended" || feed === "custom") {
+      return {
+        excludeCohosts: true,
+        inclusionRuleSet: JSON.stringify({
+          rule: {
+            name: "or",
+            type: "LOGICAL",
+            args: {},
+            operation: "OR",
+            conditions: [
+              {
+                name: "userDoesNotHoldPowerBadge",
+                type: "CONDITION",
+                args: {},
+              },
+              {
+                name: "userIsNotFollowedBy",
+                type: "CONDITION",
+                args: {
+                  users: [
+                    {
+                      value: +user.id,
+                      label: user.name,
+                      icon: user.avatarUrl ?? undefined,
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          actions: [
+            {
+              type: "like",
+            },
+          ],
+        }),
+        exclusionRuleSet: JSON.stringify({
+          rule: {},
+          actions: [
+            {
+              type: "hideQuietly",
+            },
+          ],
+        }),
+      };
+    } else {
+      return {
+        excludeCohosts: true,
+      };
+    }
   }
 
   const ruleSets = getRulesForFeedType({ user, feed: result.data.feed });
@@ -206,58 +259,4 @@ export function ChannelHeader(props: { channel: { imageUrl: string | null; id: s
       /{channel.id}
     </div>
   );
-}
-
-function getRulesForFeedType(args: { user: User; feed: "recommended" | "custom" | "manual" }) {
-  const { user, feed } = args;
-  if (feed === "recommended" || feed === "custom") {
-    return {
-      excludeCohosts: true,
-      inclusionRuleSet: JSON.stringify({
-        rule: {
-          name: "or",
-          type: "LOGICAL",
-          args: {},
-          operation: "OR",
-          conditions: [
-            {
-              name: "userDoesNotHoldPowerBadge",
-              type: "CONDITION",
-              args: {},
-            },
-            {
-              name: "userIsNotFollowedBy",
-              type: "CONDITION",
-              args: {
-                users: [
-                  {
-                    value: +user.id,
-                    label: user.name,
-                    icon: user.avatarUrl ?? undefined,
-                  },
-                ],
-              },
-            },
-          ],
-        },
-        actions: [
-          {
-            type: "like",
-          },
-        ],
-      }),
-      exclusionRuleSet: JSON.stringify({
-        rule: {},
-        actions: [
-          {
-            type: "hideQuietly",
-          },
-        ],
-      }),
-    };
-  } else {
-    return {
-      excludeCohosts: true,
-    };
-  }
 }
