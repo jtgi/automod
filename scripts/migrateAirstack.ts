@@ -1,3 +1,4 @@
+import fs from "node:fs";
 /**
  * 
  * 
@@ -75,23 +76,24 @@ import { getWarpcastChannels } from "~/lib/warpcast.server";
 import { gql, GraphQLClient } from "graphql-request";
 
 async function main() {
-  const allChannels = await getWarpcastChannels();
-  const channels = allChannels.filter((channel) => channel.moderatorFid === 440220);
+  // const allChannels = await getWarpcastChannels();
+  // const channels = allChannels.filter((channel) => channel.moderatorFid === 440220);
 
-  console.log(
-    "airstack channels",
-    channels.length,
-    channels.map((channel) => channel.id)
-  );
+  // console.log(
+  //   "airstack channels",
+  //   channels.length,
+  //   channels.map((channel) => channel.id)
+  // );
 
-  const client = new GraphQLClient(`https://bff-prod.airstack.xyz/`);
+  const channels = [{ id: "automod" }, { id: "tmp" }, { id: "pysop" }];
+  const client = new GraphQLClient(`https://bff-prod.airstack.xyz/graphql`);
   const configs = [];
   for (const channel of channels) {
     console.log(`fetching ${channel.id}`);
 
     const res = await client.request<ChannelModerationDetails>(gql`
       query {
-        GetChannelModerationDetailsPublic(input: { channelId: "airstack" }) {
+        GetChannelModerationDetailsPublic(input: { channelId: "${channel.id}" }) {
           channelId
           shouldEnforceAllRules
           channelModerationRules {
@@ -156,8 +158,11 @@ async function main() {
       }
     `);
 
+    console.log(res);
     configs.push(res);
   }
+
+  // fs.writeFileSync("airstack.json", JSON.stringify(configs, null, 2));
 }
 
 main()
@@ -179,7 +184,7 @@ interface GetChannelModerationDetailsInput {
   channelId: string;
 }
 
-interface ChannelModerationDetails {
+export interface ChannelModerationDetails {
   channelId: string;
   shouldEnforceAllRules: boolean;
   createdAt?: Date;
@@ -206,22 +211,21 @@ interface ChannelModerationRule {
   rawRuleStructure?: Record<string, any>;
 }
 
-enum ChannelModerationRuleType {
-  SOCIAL_CAPITAL_RANK,
-  HAS_POWER_BADGE,
-  FOLLOWER_COUNT,
-  FOLLOWED_BY_OWNER,
-  FOLLOWS_OWNER,
-  FOLLOWS_CHANNEL,
-  OWNS_TOKENS,
-  POAP_IN_PERSON_COUNT,
-  POAP_TOTAL_COUNT,
-  POAP_SPECIFIC,
-  FID_RANGE,
-  WHITELIST_FIDS,
-  BANNED_FIDS,
-  CO_MODERATOR_FIDS,
-}
+type ChannelModerationRuleType =
+  | "SOCIAL_CAPITAL_RANK"
+  | "HAS_POWER_BADGE"
+  | "FOLLOWER_COUNT"
+  | "FOLLOWED_BY_OWNER"
+  | "FOLLOWS_OWNER"
+  | "FOLLOWS_CHANNEL"
+  | "OWNS_TOKENS"
+  | "POAP_IN_PERSON_COUNT"
+  | "POAP_TOTAL_COUNT"
+  | "POAP_SPECIFIC"
+  | "FID_RANGE"
+  | "WHITELIST_FIDS"
+  | "BANNED_FIDS"
+  | "CO_MODERATOR_FIDS";
 
 interface SocialCapitalRule {
   operatorType: SocialCapitalOperatorType;
@@ -294,49 +298,19 @@ interface CoModeratorFidsRule {
   fids: string[];
 }
 
-enum SocialCapitalOperatorType {
-  GREATER_THAN,
-  LESS_THAN,
-  EQUAL,
-}
+type SocialCapitalOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
 
-enum FollowerCountOperatorType {
-  GREATER_THAN,
-  LESS_THAN,
-  EQUAL,
-}
+type FollowerCountOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
 
-enum TokenOperatorType {
-  GREATER_THAN,
-  LESS_THAN,
-  EQUAL,
-}
+type TokenOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
 
-enum PoapCountOperatorType {
-  GREATER_THAN,
-  LESS_THAN,
-  EQUAL,
-}
+type PoapCountOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
 
-enum PoapSpecificOperatorType {
-  IN,
-}
+type PoapSpecificOperatorType = "IN";
 
-enum FidRangeOperatorType {
-  GREATER_THAN,
-  LESS_THAN,
-  EQUAL,
-}
+type FidRangeOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
 
-enum ChannelBlockchain {
-  ETHEREUM,
-  BASE,
-  DEGEN,
-  ZORA,
-  GOLD,
-  HAM,
-}
+type ChannelBlockchain = "ETHEREUM" | "BASE" | "DEGEN" | "ZORA" | "GOLD" | "HAM";
 
-// Note: TokenType is not defined in the original schema, so you might need to add it
-enum TokenType {}
-// Add token types here
+// Note: TokenType was not defined in the original schema, so we'll leave it as a placeholder
+type TokenType = string; // You may want to define specific token types here if known
