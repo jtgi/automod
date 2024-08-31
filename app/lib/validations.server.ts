@@ -1926,7 +1926,7 @@ export async function userFollowsChannel(args: CheckFunctionArgs) {
 
   return {
     result: follows,
-    message: follows ? `User follows /${channelId}` : `User does not follow /${channelId}`,
+    message: follows ? `User follows /${channelSlug}` : `User does not follow /${channelSlug}`,
   };
 }
 
