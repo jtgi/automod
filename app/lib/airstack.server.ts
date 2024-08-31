@@ -10,6 +10,7 @@ import { db } from "./db.server";
 import { permissionDefs } from "./permissions.server";
 
 import { fetchQuery, init } from "@airstack/node";
+import { recoverQueue } from "./bullish.server";
 
 init(process.env.AIRSTACK_API_KEY!);
 
@@ -221,8 +222,10 @@ export async function getChannelModerationConfig(props: { channelId: string }) {
   }
 `;
 
-  const data = await client.request<ChannelModerationDetails>(query);
-  return data.channelModerationRules.length ? data : null;
+  const data = await client.request<{ GetChannelModerationDetailsPublic: ChannelModerationDetails }>(query);
+  return data.GetChannelModerationDetailsPublic.channelModerationRules.length
+    ? data.GetChannelModerationDetailsPublic
+    : null;
 }
 
 export async function migrateModerationConfig(props: { userId: string; config: ChannelModerationDetails }) {
@@ -283,12 +286,18 @@ export async function migrateModerationConfig(props: { userId: string; config: C
       }
 
       case "FOLLOWS_CHANNEL": {
-        //TODO
+        inclusionConditions.push({
+          name: "userFollowsChannel",
+          type: "CONDITION",
+          args: {
+            channelSlug: config.channelId,
+          },
+        });
         break;
       }
 
       case "OWNS_TOKENS": {
-        //TODO
+        //miraculously nobody used tokens
         break;
       }
 
@@ -319,7 +328,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
       case "WHITELIST_FIDS": {
         invariant(rule.whitelistFidsRule?.fids, "WHITELIST_FIDS rule is missing fids");
 
-        const rsp = await neynar.fetchBulkUsers(rule.whitelistFidsRule.fids.map(parseInt));
+        const rsp = await neynar.fetchBulkUsers(rule.whitelistFidsRule.fids.map((num) => parseInt(num)));
         automodConfig.excludeUsernames = JSON.stringify(
           rsp.users.map((user) => ({
             label: user.username,
@@ -448,4 +457,15 @@ export async function migrateModerationConfig(props: { userId: string; config: C
   await registerWebhook({
     rootParentUrl: wcChannel.url,
   });
+
+  if (process.env.NODE_ENV === "production") {
+    await recoverQueue.add("recover", {
+      channelId: moderatedChannel.id,
+      moderatedChannel,
+      limit: 1_000,
+      untilTimeUtc: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    });
+  }
+
+  return notices;
 }

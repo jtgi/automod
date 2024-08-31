@@ -187,8 +187,6 @@ interface GetChannelModerationDetailsInput {
 export interface ChannelModerationDetails {
   channelId: string;
   shouldEnforceAllRules: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
   channelModerationRules: ChannelModerationRule[];
 }
 
