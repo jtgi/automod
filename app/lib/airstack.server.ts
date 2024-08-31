@@ -70,7 +70,6 @@ export async function searchChannelFanToken({ channelId }: { channelId: string }
 }
 
 export async function userFollowsChannel(props: { fid: number; channelId: string }) {
-  const client = new GraphQLClient(`https://api.airstack.xyz/gql`);
   const query = gql`
     query MyQuery {
       FarcasterChannelParticipants(

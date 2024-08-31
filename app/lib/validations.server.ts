@@ -31,6 +31,7 @@ import {
   getVestingContractsForAddresses,
   searchChannelFanToken,
   userSocialCapitalRank,
+  userFollowsChannel as airstackUserFollowsChannel,
 } from "./airstack.server";
 import { hideQuietly, mute, addToBypass, downvote, cooldown, grantRole, ban, unlike } from "./automod.server";
 
@@ -604,12 +605,12 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     checkType: "user",
     description: "Check if a user's Airstack Social Capital Rank is less than a certain value.",
     hidden: false,
-    fidGated: [5179],
     invertable: false,
     args: {
       minRank: {
         type: "number",
         friendlyName: "Minimum Rank",
+        required: true,
         placeholder: "e.g. 100",
         description:
           "Example: if you enter 100, the rule will check the user's social capital score is 1 to 100.",
@@ -790,6 +791,30 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         type: "boolean",
         friendlyName: "Case Sensitive",
         description: "If checked 'abc' is different from 'ABC'",
+      },
+    },
+  },
+
+  userFollowsChannel: {
+    name: "userFollowsChannel",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
+    allowMultiple: true,
+    category: "all",
+    friendlyName: "Follows Channel",
+    checkType: "user",
+    hidden: false,
+    invertable: false,
+    description: "Check if the user follows a channel",
+    args: {
+      channelId: {
+        type: "string",
+        friendlyName: "Channel ID",
+        placeholder: "dont-do-this",
+        required: true,
+        pattern: "/^[a-zA-Z0-9-]+$/",
+        description: "The id of the channel to check",
       },
     },
   },
@@ -1091,6 +1116,7 @@ export const ruleNames = [
   "holdsChannelFanToken",
   "userProfileContainsText",
   "userDisplayNameContainsText",
+  "userFollowsChannel",
   "userFollowerCount",
   "userDoesNotFollow",
   "userIsNotFollowedBy",
@@ -1382,6 +1408,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   userIsNotFollowedBy: userFollowedBy,
   userIsCohost: userIsCohostOrOwner,
   userDisplayNameContainsText: userDisplayNameContainsText,
+  userFollowsChannel: userFollowsChannel,
   userFollowerCount: userFollowerCount,
   userDoesNotHoldPowerBadge: userHoldsPowerBadge,
   userFidInList: userFidInList,
@@ -1884,6 +1911,22 @@ export async function holdsFanToken(args: CheckFunctionArgs) {
     message: hasEnough
       ? `User holds @${label}'s Fan Token`
       : `User does not hold enough of @${label}'s Fan Token`,
+  };
+}
+
+export async function userFollowsChannel(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { channelId } = rule.args;
+
+  const follows = await getSetCache({
+    key: `follows:${channelId}:${cast.author.fid}`,
+    ttlSeconds: 60 * 5,
+    get: () => airstackUserFollowsChannel({ fid: cast.author.fid, channelId }),
+  });
+
+  return {
+    result: follows,
+    message: follows ? `User follows /${channelId}` : `User does not follow /${channelId}`,
   };
 }
 

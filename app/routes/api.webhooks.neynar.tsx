@@ -19,7 +19,6 @@ import { webhookQueue } from "~/lib/bullish.server";
 import { WebhookCast } from "~/lib/types";
 import { PlanType, userPlans } from "~/lib/subscription.server";
 import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
-import { UnrecoverableError } from "bullmq";
 
 const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
   include: {
@@ -109,7 +108,7 @@ export async function validateCast({
         cast,
       },
     });
-    throw new UnrecoverableError("Moderated channel not found");
+    throw new Error("Moderated channel not found");
   }
 
   moderatedChannel = await db.moderatedChannel.findFirstOrThrow({
