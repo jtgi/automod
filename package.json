@@ -15,6 +15,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@airstack/node": "^0.0.7",
     "@bull-board/api": "^5.15.1",
     "@bull-board/express": "^5.15.1",
     "@bull-board/ui": "^5.15.1",

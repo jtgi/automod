@@ -73,8 +73,8 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(`/~/channels/new/4?channelId=${result.data.channelId}`);
   }
 
-  function getRulesForFeedType(args: { user: User; feed: "recommended" | "custom" | "manual" }) {
-    const { user, feed } = args;
+  function getRulesForFeedType(args: { feed: "recommended" | "custom" | "manual" }) {
+    const { feed } = args;
     if (feed === "recommended" || feed === "custom") {
       return {
         excludeCohosts: true,
@@ -127,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const ruleSets = getRulesForFeedType({ user, feed: result.data.feed });
+  const ruleSets = getRulesForFeedType({ feed: result.data.feed });
 
   const moderatedChannel = await db.moderatedChannel.create({
     data: {

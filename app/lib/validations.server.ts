@@ -27,7 +27,11 @@ import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import axios from "axios";
 import { base, polygon } from "viem/chains";
-import { getVestingContractsForAddresses, searchChannelFanToken } from "./airstack.server";
+import {
+  getVestingContractsForAddresses,
+  searchChannelFanToken,
+  userSocialCapitalRank,
+} from "./airstack.server";
 import { hideQuietly, mute, addToBypass, downvote, cooldown, grantRole, ban, unlike } from "./automod.server";
 
 export type RuleDefinition = {
@@ -589,6 +593,30 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     },
   },
 
+  airstackSocialCapitalRank: {
+    name: "airstackSocialCapitalRank",
+    author: "airstack",
+    authorUrl: "https://airstack.xyz",
+    authorIcon: `${hostUrl}/icons/airstack.png`,
+    allowMultiple: false,
+    category: "all",
+    friendlyName: "Social Capital Rank",
+    checkType: "user",
+    description: "Check if a user's Airstack Social Capital Rank is less than a certain value.",
+    hidden: false,
+    fidGated: [5179],
+    invertable: false,
+    args: {
+      minRank: {
+        type: "number",
+        friendlyName: "Minimum Rank",
+        placeholder: "e.g. 100",
+        description:
+          "Example: if you enter 100, the rule will check the user's social capital score is 1 to 100.",
+      },
+    },
+  },
+
   requiresErc1155: {
     name: "requiresErc1155",
     author: "automod",
@@ -1046,6 +1074,7 @@ export const ruleNames = [
   "or",
   "isHuman",
   "alwaysInclude",
+  "airstackSocialCapitalRank",
   "containsText",
   "containsEmbeds",
   "downvote",
@@ -1332,6 +1361,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   and: () => ({ result: true, message: "And rule always passes" }),
   or: () => ({ result: true, message: "Or rule always passes" }),
   alwaysInclude: () => ({ result: true, message: "Everything included by default" }),
+  airstackSocialCapitalRank: airstackSocialCapitalRank,
   subscribesOnParagraph: subscribesOnParagraph,
   textMatchesPattern: textMatchesPattern,
   textMatchesLanguage: textMatchesLanguage,
@@ -1641,6 +1671,33 @@ export async function containsEmbeds(args: CheckFunctionArgs) {
     message: result
       ? `Cast contains ${violatingEmbeds.join(", ")}` + domainMessage
       : `Cast doesn't contain ${checkForEmbeds.join(", ")}` + domainMessage,
+  };
+}
+
+export async function airstackSocialCapitalRank(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { minRank } = rule.args as { minRank: number };
+
+  const rank = await getSetCache({
+    key: `airstack-social-capital-rank:${cast.author.fid}`,
+    ttlSeconds: 60 * 60 * 24,
+    get: () => userSocialCapitalRank({ fid: cast.author.fid }).then((res) => (res === null ? Infinity : res)),
+  });
+
+  if (rank === Infinity) {
+    console.error(`User's social capital rank is not available: ${cast.author.fid}`);
+    return {
+      result: false,
+      message: "User's social capital rank is not available",
+    };
+  }
+
+  return {
+    result: rank <= minRank,
+    message:
+      rank < minRank
+        ? `User social capital rank is #${rank.toLocaleString()}, higher than #${minRank.toLocaleString()}`
+        : `User's social capital rank is #${rank.toLocaleString()}, lower than #${minRank.toLocaleString()}`,
   };
 }
 

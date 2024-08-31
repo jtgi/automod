@@ -2,12 +2,16 @@
 import { gql, GraphQLClient } from "graphql-request";
 import { neynar, registerWebhook } from "./neynar.server";
 import { ChannelModerationDetails } from "scripts/migrateAirstack";
-import { Rule, SelectOption } from "./validations.server";
+import { Rule } from "./validations.server";
 import { getWarpcastChannel, getWarpcastChannelOwner } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import invariant from "tiny-invariant";
 import { db } from "./db.server";
 import { permissionDefs } from "./permissions.server";
+
+import { fetchQuery, init } from "@airstack/node";
+
+init(process.env.AIRSTACK_API_KEY!);
 
 const protocolStats = new GraphQLClient(
   `https://gateway-arbitrum.network.thegraph.com/api/${process.env.GRAPH_API_KEY}/subgraphs/id/7zS29h4BDSujQq8R3TFF37JfpjtPQsRUpoC9p4vo4scx`
@@ -63,6 +67,59 @@ export async function searchChannelFanToken({ channelId }: { channelId: string }
 
   const data = await protocolStats.request<SubjectTokensResponse>(query);
   return data.subjectTokens.length ? data.subjectTokens[0] : null;
+}
+
+export async function userFollowsChannel(props: { fid: number; channelId: string }) {
+  const client = new GraphQLClient(`https://api.airstack.xyz/gql`);
+  const query = gql`
+    query MyQuery {
+      FarcasterChannelParticipants(
+        input: {
+          filter: {
+            participant: { _eq: "fc_fid:${props.fid}" }
+            channelId: { _eq: "${props.channelId}" }
+            channelActions: { _eq: follow }
+          }
+          blockchain: ALL
+        }
+      ) {
+        FarcasterChannelParticipant {
+          lastActionTimestamp
+        }
+      }
+    }
+  `;
+
+  const { data, error } = await fetchQuery(query);
+  return data.FarcasterChannelParticipants.FarcasterChannelParticipant !== null;
+}
+
+export async function userSocialCapitalRank(props: { fid: number }) {
+  const query = gql`
+    query MyQuery {
+      Socials(
+        input: {
+          filter: { dappName: { _eq: farcaster }, identity: { _eq: "fc_fid:${props.fid}" } }
+          blockchain: ethereum
+        }
+      ) {
+        Social {
+          farcasterScore {
+            farScore
+          }
+        }
+      }
+    }
+  `;
+
+  const { data, error } = await fetchQuery(query);
+
+  if (error) {
+    console.error(error);
+    return null;
+  }
+
+  return Math.round(data.Socials.Social.farcasterScore.farScore);
 }
 
 export async function searchMemberFanTokens({ username }: { username: string }) {
@@ -343,9 +400,16 @@ export async function migrateModerationConfig(props: { userId: string; config: C
 
         break;
       }
-      case "SOCIAL_CAPITAL_RANK":
-        //TODO
+      case "SOCIAL_CAPITAL_RANK": {
+        inclusionConditions.push({
+          name: "airstackSocialCapitalRank",
+          type: "CONDITION",
+          args: {
+            minRank: rule.socialCapitalRule!.value,
+          },
+        });
         break;
+      }
       default:
         console.error(`Unknown rule type: ${rule.ruleType}`);
     }

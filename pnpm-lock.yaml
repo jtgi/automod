@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@airstack/node':
+        specifier: ^0.0.7
+        version: 0.0.7
       '@bull-board/api':
         specifier: ^5.15.1
         version: 5.15.1(@bull-board/ui@5.15.1)
@@ -336,6 +339,10 @@ packages:
 
   '@adraffy/ens-normalize@1.10.1':
     resolution: {integrity: sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==}
+
+  '@airstack/node@0.0.7':
+    resolution: {integrity: sha512-BATIO8FbSlJz8pkTW/Iwp6vty7l/DPYcvAce8TjZbBX8R3iAsIN9V+ffY7R2duGrrRlQJRg9zIr+G6JKG0HPow==}
+    engines: {node: '>=14.17.0'}
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -2378,6 +2385,9 @@ packages:
   '@types/ms@0.7.34':
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
 
+  '@types/node@14.14.30':
+    resolution: {integrity: sha512-gUWhy8s45fQp4PqqKecsnOkdW0kt1IaKjgOIR3HPokkzTmQj9ji2wWFID5THu1MKrtO+d4s2lVrlEhXUsPXSvg==}
+
   '@types/node@18.15.13':
     resolution: {integrity: sha512-N+0kuo9KgrUQ1Sn/ifDXsvg0TTleP7rIy4zOBGECxAljqvqfqpTfzx0Q1NUedOixRMBfe2Whhb056a42cWs26Q==}
 
@@ -3880,6 +3890,10 @@ packages:
         optional: true
       dprint:
         optional: true
+
+  graphql@16.7.1:
+    resolution: {integrity: sha512-DRYR9tf+UGU0KOsMcKAlXeFfX89UiiIZ0dRU3mR0yJfu6OjZqUcp68NnFLnqQU5RexygFoDy1EW+ccOYcPfmHg==}
+    engines: {node: ^12.22.0 || ^14.16.0 || ^16.0.0 || >=17.0.0}
 
   graphql@16.9.0:
     resolution: {integrity: sha512-GGTKBX4SD7Wdb8mqeDLni2oaRGYQWjWHGKPQ24ZMnUtKfcsVoiv4uX8+LJr1K6U5VW2Lu1BwJnj7uiori0YtRw==}
@@ -6608,6 +6622,11 @@ snapshots:
 
   '@adraffy/ens-normalize@1.10.1': {}
 
+  '@airstack/node@0.0.7':
+    dependencies:
+      '@types/node': 14.14.30
+      graphql: 16.7.1
+
   '@alloc/quick-lru@5.2.0': {}
 
   '@ampproject/remapping@2.2.1':
@@ -8919,6 +8938,8 @@ snapshots:
 
   '@types/ms@0.7.34': {}
 
+  '@types/node@14.14.30': {}
+
   '@types/node@18.15.13': {}
 
   '@types/node@20.11.0':
@@ -10841,6 +10862,8 @@ snapshots:
       '@molt/command': 0.9.0
       graphql: 16.9.0
       zod: 3.23.8
+
+  graphql@16.7.1: {}
 
   graphql@16.9.0: {}
 
