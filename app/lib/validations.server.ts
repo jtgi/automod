@@ -601,7 +601,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     authorIcon: `${hostUrl}/icons/airstack.png`,
     allowMultiple: false,
     category: "all",
-    friendlyName: "Social Capital Rank",
+    friendlyName: "Social Capital Rank by Airstack",
     checkType: "user",
     description: "Check if a user's Airstack Social Capital Rank is less than a certain value.",
     hidden: false,
@@ -808,7 +808,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     invertable: false,
     description: "Check if the user follows a channel",
     args: {
-      channelId: {
+      channelSlug: {
         type: "string",
         friendlyName: "Channel ID",
         placeholder: "dont-do-this",
@@ -1916,12 +1916,12 @@ export async function holdsFanToken(args: CheckFunctionArgs) {
 
 export async function userFollowsChannel(args: CheckFunctionArgs) {
   const { cast, rule } = args;
-  const { channelId } = rule.args;
+  const { channelSlug } = rule.args;
 
   const follows = await getSetCache({
-    key: `follows:${channelId}:${cast.author.fid}`,
+    key: `follows:${channelSlug}:${cast.author.fid}`,
     ttlSeconds: 60 * 5,
-    get: () => airstackUserFollowsChannel({ fid: cast.author.fid, channelId }),
+    get: () => airstackUserFollowsChannel({ fid: cast.author.fid, channelId: channelSlug }),
   });
 
   return {
