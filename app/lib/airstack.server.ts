@@ -357,7 +357,10 @@ export async function migrateModerationConfig(props: { userId: string; config: C
         }
         break;
       case "CO_MODERATOR_FIDS": {
-        const rsp = await neynar.fetchBulkUsers(rule.coModeratorFidsRule!.fids.map(parseInt));
+        const fids = rule.coModeratorFidsRule!.fids.map((n) => parseInt(n));
+        const rsp = await neynar.fetchBulkUsers(fids);
+
+        console.log({ fids, users: rsp.users });
 
         await db.role.create({
           data: {

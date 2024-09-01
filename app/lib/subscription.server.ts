@@ -40,7 +40,7 @@ export const userPlans = {
     displayName: "Prime",
     price: "$14.99/mo",
     link: "https://hypersub.withfabric.xyz/s/automod/2",
-    maxChannels: 5,
+    maxChannels: 6,
     maxCasts: 25_000,
   },
   ultra: {

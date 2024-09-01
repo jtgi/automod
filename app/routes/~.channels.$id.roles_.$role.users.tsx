@@ -191,7 +191,7 @@ export default function Screen() {
           {delegates.map((member) => (
             <Form key={member.fid} method="post" className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
-                <Avatar className="w-9 h-9">
+                <Avatar className="w-9 h-9 shrink-0">
                   <AvatarImage src={member.avatarUrl ?? undefined} alt={"@" + member.username} />
                   <AvatarFallback>{member.username.slice(0, 2).toLocaleUpperCase()}</AvatarFallback>
                 </Avatar>

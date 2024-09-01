@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
-import { Form, useSubmit, Link, useNavigation } from "@remix-run/react";
+import { Form, Link, useNavigation } from "@remix-run/react";
 import { v4 as uuid } from "uuid";
 import { db } from "~/lib/db.server";
-import { errorResponse, requireUser, successResponse } from "~/lib/utils.server";
+import { errorResponse, requireUser } from "~/lib/utils.server";
 import { getWarpcastChannels } from "~/lib/warpcast.server";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "~/components/ui/card";
@@ -11,9 +12,12 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { FieldLabel } from "~/components/ui/fields";
 import { getChannelModerationConfig, migrateModerationConfig } from "~/lib/airstack.server";
 import { commitSession, getSession } from "~/lib/auth.server";
+import { castsByChannelUrl } from "~/lib/castVolumeSnapshot";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
+  const fidOverride = new URL(request.url).searchParams.get("fid");
   const [moderatedChannels, allChannels] = await Promise.all([
     db.moderatedChannel.findMany({
       where: {
@@ -23,13 +27,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getWarpcastChannels(),
   ]);
 
-  const airstackChannels = allChannels.filter(
-    (channel) => channel.moderatorFid === 440220 && channel.leadFid === 234616 //+user.id
-  );
+  const airstackChannels = allChannels.filter((channel) => {
+    if (fidOverride) {
+      return channel.moderatorFid === 440220 && channel.leadFid === +fidOverride;
+    } else {
+      return channel.moderatorFid === 440220 && channel.leadFid === +user.id;
+    }
+  });
+
+  async function projectUsage({ channels }: { channels: string[] }) {
+    let sum = 0;
+
+    for (const c of channels) {
+      const channel = castsByChannelUrl.find((stat: any) => stat.url === c);
+      sum += Number(channel?.count || 0);
+    }
+
+    return sum;
+  }
+
+  const projectedUsage = await projectUsage({
+    channels: [...airstackChannels.map((c) => c.url), ...moderatedChannels.map((mc) => mc.url)].filter(
+      Boolean
+    ) as string[],
+  });
 
   return typedjson({
     airstackChannels,
     moderatedChannels,
+    projectedUsage,
   });
 }
 
@@ -72,7 +98,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function ImportAirstack() {
-  const { airstackChannels, moderatedChannels } = useTypedLoaderData<typeof loader>();
+  const { airstackChannels, moderatedChannels, projectedUsage } = useTypedLoaderData<typeof loader>();
   const navigation = useNavigation();
 
   if (airstackChannels.length === 0) {
@@ -85,7 +111,7 @@ export default function ImportAirstack() {
         <CardFooter>
           <Button asChild>
             <Link to="/~" className="no-underline">
-              Back to Dashboard
+              Okay
             </Link>
           </Button>
         </CardFooter>
@@ -119,6 +145,16 @@ export default function ImportAirstack() {
             })}
           </CardContent>
         </fieldset>
+
+        {projectedUsage > 3_000 && (
+          <Alert className="my-6">
+            <AlertTitle>Your projected usage is above Automod's free tier</AlertTitle>
+            <AlertDescription>
+              As a welcome, you'll be granted 3 months of Automod Prime for free.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <CardFooter>
           <Button disabled={navigation.state !== "idle"} type="submit">
             {navigation.state !== "idle" ? "Importing..." : "Import"}
