@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
@@ -14,6 +15,7 @@ import { getChannelModerationConfig, migrateModerationConfig } from "~/lib/airst
 import { commitSession, getSession } from "~/lib/auth.server";
 import { castsByChannelUrl } from "~/lib/castVolumeSnapshot";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
+import { GemIcon, MessageCircleWarningIcon } from "lucide-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -100,6 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function ImportAirstack() {
   const { airstackChannels, moderatedChannels, projectedUsage } = useTypedLoaderData<typeof loader>();
   const navigation = useNavigation();
+  const aboveFreeTier = projectedUsage > 3_000 || moderatedChannels.length + airstackChannels.length > 3;
 
   if (airstackChannels.length === 0) {
     return (
@@ -109,7 +112,7 @@ export default function ImportAirstack() {
           <CardDescription>There are no Airstack channels available for import.</CardDescription>
         </CardHeader>
         <CardFooter>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link to="/~" className="no-underline">
               Okay
             </Link>
@@ -131,32 +134,56 @@ export default function ImportAirstack() {
             {airstackChannels.map((channel) => {
               const isExisting = moderatedChannels.some((mc) => mc.id === channel.id);
               return (
-                <FieldLabel
-                  key={channel.id}
-                  label={`${channel.id} ${isExisting ? "(Overwrite existing Automod settings)" : ""}`}
-                  position="right"
-                  labelProps={{
-                    className: "ml-1 text-sm",
-                  }}
-                >
-                  <Checkbox name="channelIds" value={channel.id} defaultChecked={!isExisting} />
-                </FieldLabel>
+                <div key={channel.id} className="flex gap-2">
+                  <Checkbox
+                    name="channelIds"
+                    id={channel.id}
+                    value={channel.id}
+                    defaultChecked={!isExisting}
+                  />
+                  <label htmlFor={channel.id}>
+                    <div className="flex gap-2">
+                      <img
+                        src={channel.imageUrl}
+                        className="w-5 h-5 rounded-full shrink-0 outline-white outline-5 shadow-md"
+                      />
+                      <div>
+                        <p className="font-mono" style={{ fontFamily: "Kode Mono" }}>
+                          /{channel.id}
+                        </p>
+                        {isExisting && (
+                          <p className="text-muted-foreground text-xs">
+                            This channel already has a configuration in Automod, importing it will overwrite
+                            existing settings.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                </div>
               );
             })}
           </CardContent>
         </fieldset>
 
-        {projectedUsage > 3_000 && (
+        {aboveFreeTier && (
           <Alert className="my-6">
-            <AlertTitle>Your projected usage is above Automod's free tier</AlertTitle>
+            <AlertTitle>
+              <GemIcon className="w-4 h-4 mr-1" /> Your usage is above Automod's free tier
+            </AlertTitle>
             <AlertDescription>
-              As a welcome, you'll be granted 3 months of Automod Prime for free.
+              To ease the transition from Airstack, you'll be granted 3 months of{" "}
+              <Link to="https://www.hypersub.xyz/s/automod" target="_blank" rel="noreferrer">
+                Automod Prime
+              </Link>{" "}
+              for free. For more about usage and thresholds, visit{" "}
+              <Link to="/~/account">your account page</Link>
             </AlertDescription>
           </Alert>
         )}
 
         <CardFooter>
-          <Button disabled={navigation.state !== "idle"} type="submit">
+          <Button disabled={navigation.state !== "idle"} type="submit" className="w-full sm:w-auto">
             {navigation.state !== "idle" ? "Importing..." : "Import"}
           </Button>
         </CardFooter>
