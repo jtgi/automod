@@ -91,7 +91,7 @@ export async function userFollowsChannel(props: { fid: number; channelId: string
   `;
 
   const { data, error } = await fetchQuery(query);
-  return data.FarcasterChannelParticipants.FarcasterChannelParticipant !== null;
+  return !!data.FarcasterChannelParticipants?.FarcasterChannelParticipant;
 }
 
 export async function userSocialCapitalRank(props: { fid: number }) {
