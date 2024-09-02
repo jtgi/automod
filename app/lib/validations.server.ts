@@ -596,7 +596,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
 
   airstackSocialCapitalRank: {
     name: "airstackSocialCapitalRank",
-    author: "airstack",
+    author: "Airstack",
     authorUrl: "https://airstack.xyz",
     authorIcon: `${hostUrl}/icons/airstack.png`,
     allowMultiple: false,

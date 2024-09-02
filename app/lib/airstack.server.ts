@@ -360,25 +360,49 @@ export async function migrateModerationConfig(props: { userId: string; config: C
         const fids = rule.coModeratorFidsRule!.fids.map((n) => parseInt(n));
         const rsp = await neynar.fetchBulkUsers(fids);
 
-        console.log({ fids, users: rsp.users });
-
-        await db.role.create({
-          data: {
-            channelId: moderatedChannel.id,
-            name: "Cohost",
+        const cohostRole = await db.role.findFirst({
+          where: {
             isCohostRole: true,
-            description: "Primary moderators for your channel.",
-            permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
-            delegates: {
-              create: rsp.users.map((comod) => ({
-                fid: String(comod.fid),
-                username: comod.username,
-                avatarUrl: comod.pfp_url,
-                channelId: moderatedChannel.id,
-              })),
-            },
           },
         });
+
+        if (!cohostRole) {
+          await db.role.create({
+            data: {
+              channelId: moderatedChannel.id,
+              name: "Cohost",
+              isCohostRole: true,
+              description: "Primary moderators for your channel.",
+              permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
+              delegates: {
+                create: rsp.users.map((comod) => ({
+                  fid: String(comod.fid),
+                  username: comod.username,
+                  avatarUrl: comod.pfp_url,
+                  channelId: moderatedChannel.id,
+                })),
+              },
+            },
+          });
+        } else {
+          await db.role.create({
+            data: {
+              channelId: moderatedChannel.id,
+              name: "Cohost",
+              isCohostRole: true,
+              description: "Primary moderators for your channel.",
+              permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
+              delegates: {
+                create: rsp.users.map((comod) => ({
+                  fid: String(comod.fid),
+                  username: comod.username,
+                  avatarUrl: comod.pfp_url,
+                  channelId: moderatedChannel.id,
+                })),
+              },
+            },
+          });
+        }
         break;
       }
       case "FOLLOWER_COUNT":
@@ -466,6 +490,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
       channelId: moderatedChannel.id,
       moderatedChannel,
       limit: 1_000,
+      skipSignerCheck: true,
       untilTimeUtc: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     });
   }

@@ -30,6 +30,7 @@ export type ValidateCastArgsV2 = {
     data: WebhookCast;
   };
   channelName: string;
+  skipSignerCheck?: boolean;
 };
 
 export const delayedSubscriptionQueue = new Queue("subscriptionQueue", {
@@ -63,7 +64,7 @@ subscriptionWorker.on("failed", (job, err) => {
 export const webhookWorker = new Worker(
   "webhookQueue",
   async (job: Job<ValidateCastArgsV2>) => {
-    const { webhookNotif, channelName } = job.data;
+    const { webhookNotif, channelName, skipSignerCheck } = job.data;
 
     console.log(`[${webhookNotif.data.root_parent_url}]: cast ${webhookNotif.data.hash}`);
 
@@ -118,26 +119,28 @@ export const webhookWorker = new Worker(
       throw new Error(`Channel ${moderatedChannel.id} is not known by warpcast`);
     }
 
-    if (!signerAllocation && warpcastChannel.moderatorFid !== automodFid) {
-      console.error(`Moderator fid for ${moderatedChannel.id} is not set to automod.`);
-      // await toggleWebhook({ channelId: moderatedChannel.id, active: false });
-      throw new UnrecoverableError(`Moderator fid for ${moderatedChannel.id} is not set to automod`);
-    }
+    if (!skipSignerCheck) {
+      if (!signerAllocation && warpcastChannel.moderatorFid !== automodFid) {
+        console.error(`Moderator fid for ${moderatedChannel.id} is not set to automod.`);
+        // await toggleWebhook({ channelId: moderatedChannel.id, active: false });
+        throw new UnrecoverableError(`Moderator fid for ${moderatedChannel.id} is not set to automod`);
+      }
 
-    if (signerAllocation) {
-      if (signerAllocation.signer.fid !== String(warpcastChannel.moderatorFid)) {
+      if (signerAllocation) {
+        if (signerAllocation.signer.fid !== String(warpcastChannel.moderatorFid)) {
+          console.error(
+            `Signer allocation mismatch for ${moderatedChannel.id}. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}. Exiting.`
+          );
+
+          throw new UnrecoverableError(
+            `Signer allocation mismatch for ${moderatedChannel.id}, Expected: ${signerAllocation.signer.fid}, got: ${warpcastChannel.moderatorFid}. Exiting.`
+          );
+        }
+      } else if (warpcastChannel.moderatorFid !== automodFid) {
         console.error(
-          `Signer allocation mismatch for ${moderatedChannel.id}. Expected ${signerAllocation.signer.fid}, got ${warpcastChannel.moderatorFid}. Exiting.`
-        );
-
-        throw new UnrecoverableError(
-          `Signer allocation mismatch for ${moderatedChannel.id}, Expected: ${signerAllocation.signer.fid}, got: ${warpcastChannel.moderatorFid}. Exiting.`
+          `Moderator fid for ${moderatedChannel.id} is not set to automod default fid (${automodFid}).`
         );
       }
-    } else if (warpcastChannel.moderatorFid !== automodFid) {
-      console.error(
-        `Moderator fid for ${moderatedChannel.id} is not set to automod default fid (${automodFid}).`
-      );
     }
 
     if (moderatedChannel.user.plan === "expired") {
@@ -369,6 +372,7 @@ export const recoverWorker = new Worker(
         untilTimeUtc: job.data.untilTimeUtc,
         untilCastHash: job.data.untilCastHash,
         moderatedChannel: job.data.moderatedChannel,
+        skipSignerCheck: job.data.skipSignerCheck,
       });
     } catch (e) {
       Sentry.captureException(e);

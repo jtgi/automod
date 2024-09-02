@@ -357,6 +357,7 @@ export type SweepArgs = {
   limit: number;
   untilTimeUtc?: string;
   untilCastHash?: string;
+  skipSignerCheck?: boolean;
   onProcessed?: () => void;
 };
 
@@ -410,6 +411,7 @@ export async function sweep(args: SweepArgs) {
 export async function recover(
   args: SweepArgs & {
     reprocessModeratedCasts?: boolean;
+    skipSignerCheck?: boolean;
   }
 ) {
   const channel = await getChannel({ name: args.channelId });
@@ -453,6 +455,7 @@ export async function recover(
             channel,
             moderatedChannel: args.moderatedChannel,
             cast,
+            skipSignerCheck: args.skipSignerCheck,
           },
           defaultProcessCastJobArgs(cast.hash)
         );

@@ -276,6 +276,31 @@ export async function parseMessage(payload: any) {
   return message;
 }
 
+export async function redirectWithMessage({
+  request,
+  message,
+  session,
+  to,
+}: {
+  request: Request;
+  message: string;
+  session?: Session;
+  to: string;
+}) {
+  const _session = session || (await getSession(request.headers.get("Cookie")));
+  _session.flash("message", {
+    id: uuid(),
+    type: "success",
+    message,
+  });
+
+  return redirect(to, {
+    headers: {
+      "Set-Cookie": await commitSession(_session),
+    },
+  });
+}
+
 export async function successResponse<T>({
   request,
   message,
