@@ -3,7 +3,7 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { typedjson, useTypedLoaderData } from "remix-typedjson";
 import { Link } from "@remix-run/react";
-import { getSharedEnv, redirectWithMessage, requireUser } from "~/lib/utils.server";
+import { getSharedEnv, requireUser } from "~/lib/utils.server";
 import { getWarpcastChannels } from "~/lib/warpcast.server";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "~/components/ui/card";

@@ -9,7 +9,6 @@ import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { banAction, cooldown24Action, likeAction, unlikeAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
-import { ChannelHeader } from "./~.channels.new.3";
 import { cache } from "~/lib/cache.server";
 import { warpcastChannelCacheKey } from "~/lib/warpcast.server";
 

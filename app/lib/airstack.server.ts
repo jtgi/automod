@@ -316,21 +316,22 @@ export async function migrateModerationConfig(props: { userId: string; config: C
 
       case "FID_RANGE":
         // operator is always less than
-
+        console.log({ rule });
         inclusionConditions.push({
           name: "userFidInRange",
           type: "CONDITION",
           args: {
-            min: rule.fidRangeRule!.value,
+            minFid: rule.fidRangeRule!.value,
           },
         });
         break;
       case "WHITELIST_FIDS": {
         invariant(rule.whitelistFidsRule?.fids, "WHITELIST_FIDS rule is missing fids");
 
-        const rsp = await neynar.fetchBulkUsers(rule.whitelistFidsRule.fids.map((num) => parseInt(num)));
+        const fids = rule.whitelistFidsRule.fids.map((num) => parseInt(num));
+        const users = fids.length ? await neynar.fetchBulkUsers(fids).then((res) => res.users) : [];
         automodConfig.excludeUsernames = JSON.stringify(
-          rsp.users.map((user) => ({
+          users.map((user) => ({
             label: user.username,
             value: user.fid,
             icon: user.pfp_url,
@@ -358,7 +359,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
         break;
       case "CO_MODERATOR_FIDS": {
         const fids = rule.coModeratorFidsRule!.fids.map((n) => parseInt(n));
-        const rsp = await neynar.fetchBulkUsers(fids);
+        const hosts = fids.length ? await neynar.fetchBulkUsers(fids).then((res) => res.users) : [];
 
         const cohostRole = await db.role.findFirst({
           where: {
@@ -375,7 +376,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
               description: "Primary moderators for your channel.",
               permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
               delegates: {
-                create: rsp.users.map((comod) => ({
+                create: hosts.map((comod) => ({
                   fid: String(comod.fid),
                   username: comod.username,
                   avatarUrl: comod.pfp_url,
@@ -393,7 +394,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
               description: "Primary moderators for your channel.",
               permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
               delegates: {
-                create: rsp.users.map((comod) => ({
+                create: hosts.map((comod) => ({
                   fid: String(comod.fid),
                   username: comod.username,
                   avatarUrl: comod.pfp_url,
