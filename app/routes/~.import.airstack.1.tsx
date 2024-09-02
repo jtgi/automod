@@ -13,6 +13,7 @@ import { getChannelModerationConfig, migrateModerationConfig } from "~/lib/airst
 import { castsByChannelUrl } from "~/lib/castVolumeSnapshot";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { MessageCircleWarningIcon } from "lucide-react";
+import { airstackFid } from "./~.import.airstack.2";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
@@ -28,22 +29,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const airstackChannels = allChannels.filter((channel) => {
     if (fidOverride) {
-      return channel.moderatorFid === 440220 && channel.leadFid === +fidOverride;
+      return channel.moderatorFid === airstackFid && channel.leadFid === +fidOverride;
     } else {
-      return channel.moderatorFid === 440220 && channel.leadFid === +user.id;
+      return channel.moderatorFid === airstackFid && channel.leadFid === +user.id;
     }
   });
-
-  async function projectUsage({ channels }: { channels: string[] }) {
-    let sum = 0;
-
-    for (const c of channels) {
-      const channel = castsByChannelUrl.find((stat: any) => stat.url === c);
-      sum += Number(channel?.count || 0);
-    }
-
-    return sum;
-  }
 
   const projectedUsage = await projectUsage({
     channels: [...airstackChannels.map((c) => c.url), ...moderatedChannels.map((mc) => mc.url)].filter(
@@ -55,6 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     airstackChannels,
     moderatedChannels,
     projectedUsage,
+    user,
   });
 }
 
@@ -62,6 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await requireUser({ request });
   const formData = await request.formData();
   const channelIds = formData.getAll("channelIds") as string[];
+  const freeUpgrade = Boolean(formData.get("freeUpgrade"));
 
   const failed = [];
   for (const channelId of channelIds) {
@@ -72,6 +64,16 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     await migrateModerationConfig({ config, userId: user.id });
+  }
+
+  if (freeUpgrade) {
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        plan: "prime",
+        planExpiry: new Date(Date.now() + 3 * 30 * 24 * 60 * 60 * 1000),
+      },
+    });
   }
 
   if (failed.length) {
@@ -93,9 +95,11 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function ImportAirstack() {
-  const { airstackChannels, moderatedChannels, projectedUsage } = useTypedLoaderData<typeof loader>();
+  const { user, airstackChannels, moderatedChannels, projectedUsage } = useTypedLoaderData<typeof loader>();
   const navigation = useNavigation();
-  const aboveFreeTier = projectedUsage > 3_000 || moderatedChannels.length + airstackChannels.length > 3;
+  const aboveFreeTier =
+    user.plan === "basic" &&
+    (projectedUsage > 3_000 || moderatedChannels.length + airstackChannels.length > 3);
 
   if (airstackChannels.length === 0) {
     return (
@@ -161,6 +165,7 @@ export default function ImportAirstack() {
 
             {aboveFreeTier && (
               <>
+                <input type="hidden" name="freeUpgrade" value="true" />
                 <div className="py-8">
                   <hr />
                 </div>
@@ -188,4 +193,15 @@ export default function ImportAirstack() {
       </Form>
     </Card>
   );
+}
+
+async function projectUsage({ channels }: { channels: string[] }) {
+  let sum = 0;
+
+  for (const c of channels) {
+    const channel = castsByChannelUrl.find((stat: any) => stat.url === c);
+    sum += Number(channel?.count || 0);
+  }
+
+  return sum;
 }

@@ -11,12 +11,12 @@ async function seed() {
       id: "5179",
       name: "jtgi",
       role: "superadmin",
-      plan: "vip",
+      plan: "basic",
     },
     update: {
       id: "5179",
       role: "superadmin",
-      plan: "vip",
+      plan: "basic",
     },
   });
 

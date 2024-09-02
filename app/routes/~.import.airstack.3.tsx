@@ -10,10 +10,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { banAction, cooldown24Action, likeAction, unlikeAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { ChannelHeader } from "./~.channels.new.3";
+import { cache } from "~/lib/cache.server";
+import { warpcastChannelCacheKey } from "~/lib/warpcast.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
-  const url = new URL(request.url);
+  const channels = await db.moderatedChannel.findMany({
+    where: {
+      userId: user.id,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  channels
+    .map((c) => c.id)
+    .forEach((cid) => {
+      cache.del(warpcastChannelCacheKey(cid));
+    });
 
   const castActions = [banAction, likeAction, unlikeAction, cooldown24Action];
 

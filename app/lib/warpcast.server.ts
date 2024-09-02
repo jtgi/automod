@@ -21,11 +21,11 @@ export type WarpcastChannel = {
   followerCount: number;
 };
 
-export async function getWarpcastChannel(props: { channel: string }): Promise<WarpcastChannel> {
-  const cacheKey = `warpcast-channel-${props.channel.toLowerCase()}`;
+export const warpcastChannelCacheKey = (channel: string) => `warpcast-channel-${channel.toLowerCase()}`;
 
+export async function getWarpcastChannel(props: { channel: string }): Promise<WarpcastChannel> {
   return getSetCache({
-    key: cacheKey,
+    key: warpcastChannelCacheKey(props.channel),
     ttlSeconds: 60 * 5,
     get: async () => {
       const rsp = await http.get(
