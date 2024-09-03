@@ -1,4 +1,4 @@
-import { createPublicClient, fallback, http } from "viem";
+import { createPublicClient, defineChain, fallback, http } from "viem";
 import { arbitrum, base, mainnet, zora, optimism, polygon } from "viem/chains";
 
 const mainnetClient = createPublicClient({
@@ -18,6 +18,29 @@ const mainnetClient = createPublicClient({
 const optimismClient = createPublicClient({
   chain: optimism,
   transport: http(`https://optimism-mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`),
+});
+
+export const hamChain = defineChain({
+  id: 5112,
+  name: "Ham",
+  nativeCurrency: {
+    decimals: 18,
+    name: "Ether",
+    symbol: "ETH",
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://rpc.ham.fun/"],
+    },
+  },
+  blockExplorers: {
+    default: { name: "Explorer", url: "https://explorer.ham.fun" },
+  },
+});
+
+const hamClient = createPublicClient({
+  chain: hamChain,
+  transport: http(hamChain.rpcUrls.default.http[0]),
 });
 
 const baseClient = createPublicClient({
@@ -55,6 +78,7 @@ export const clientsByChainId = {
   [String(arbitrum.id)]: arbitrumClient,
   [String(zora.id)]: zoraClient,
   [String(polygon.id)]: polygonClient,
+  [String(hamChain.id)]: hamClient,
 };
 
 export const chainByChainId = {
@@ -64,4 +88,5 @@ export const chainByChainId = {
   [String(arbitrum.id)]: arbitrum,
   [String(zora.id)]: zora,
   [String(polygon.id)]: polygon,
+  [String(hamChain.id)]: hamChain,
 };

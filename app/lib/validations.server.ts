@@ -9,7 +9,7 @@ import { getWarpcastChannel, getWarpcastChannelOwner } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
-import { clientsByChainId } from "./viem.server";
+import { clientsByChainId, hamChain } from "./viem.server";
 import { erc20Abi, erc721Abi, getAddress, getContract, parseUnits } from "viem";
 import {
   formatHash,
@@ -572,6 +572,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
           { value: "10", label: "Optimism" },
           { value: "8453", label: "Base" },
           { value: "7777777", label: "Zora" },
+          { value: String(hamChain.id), label: "Ham" },
           { value: String(polygon.id), label: "Polygon" },
         ],
       },
