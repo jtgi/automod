@@ -94,7 +94,7 @@ export async function userFollowsChannel(props: { fid: number; channelId: string
   return !!data.FarcasterChannelParticipants?.FarcasterChannelParticipant;
 }
 
-export async function userSocialCapitalRank(props: { fid: number }) {
+export async function farRank(props: { fid: number }) {
   const query = gql`
     query MyQuery {
       Socials(
@@ -105,7 +105,7 @@ export async function userSocialCapitalRank(props: { fid: number }) {
       ) {
         Social {
           farcasterScore {
-            farScore
+            farRank
           }
         }
       }
@@ -119,7 +119,13 @@ export async function userSocialCapitalRank(props: { fid: number }) {
     return null;
   }
 
-  return Math.round(data.Socials.Social[0].farcasterScore.farScore);
+  const rank = data.Socials.Social[0]?.farcasterScore?.farRank;
+
+  if (!rank) {
+    return null;
+  }
+
+  return data.Socials.Social[0].farcasterScore.farRank;
 }
 
 export async function searchMemberFanTokens({ username }: { username: string }) {

@@ -30,7 +30,7 @@ import { base, polygon } from "viem/chains";
 import {
   getVestingContractsForAddresses,
   searchChannelFanToken,
-  userSocialCapitalRank,
+  farRank,
   userFollowsChannel as airstackUserFollowsChannel,
 } from "./airstack.server";
 import { hideQuietly, mute, addToBypass, downvote, cooldown, grantRole, ban, unlike } from "./automod.server";
@@ -603,9 +603,9 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     allowMultiple: false,
     hidden: false,
     category: "all",
-    friendlyName: "Social Capital Rank by Airstack",
+    friendlyName: " FarRank by Airstack",
     checkType: "user",
-    description: "Check if a user's Airstack Social Capital Rank is less than a certain value.",
+    description: "Check if a user's Airstack FarRank is high enough.",
     invertable: false,
     args: {
       minRank: {
@@ -613,8 +613,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         friendlyName: "Minimum Rank",
         required: true,
         placeholder: "e.g. 100",
-        description:
-          "Example: if you enter 100, the rule will check the user's social capital score is 1 to 100.",
+        description: "Example: if you enter 100, the rule will check that the user's FarRank is 1 to 100.",
       },
     },
   },
@@ -1725,7 +1724,7 @@ export async function airstackSocialCapitalRank(args: CheckFunctionArgs) {
   const rank = await getSetCache({
     key: `airstack-social-capital-rank:${cast.author.fid}`,
     ttlSeconds: 60 * 60 * 24,
-    get: () => userSocialCapitalRank({ fid: cast.author.fid }).then((res) => (res === null ? Infinity : res)),
+    get: () => farRank({ fid: cast.author.fid }).then((res) => (res === null ? Infinity : res)),
   });
 
   if (rank === Infinity) {
