@@ -54,6 +54,17 @@ export async function getOwnedChannels(props: { fid: number }) {
   return channels.filter((c) => c.leadFid === props.fid);
 }
 
+export async function getCast(props: { hash: string; username: string }) {
+  return http
+    .get<{ result: { casts: Array<{ text: string; timestamp: number }> } }>(
+      `https://client.warpcast.com/v2/user-thread-casts?castHashPrefix=${props.hash.substring(
+        0,
+        10
+      )}&username=${props.username}`
+    )
+    .then((rsp) => rsp.data.result?.casts[0]);
+}
+
 function headers() {
   return {
     Authorization: `Bearer ${token}`,
