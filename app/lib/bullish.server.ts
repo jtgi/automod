@@ -5,13 +5,14 @@ import IORedis from "ioredis";
 import { ValidateCastArgs, getUsage as getTotalUsage, validateCast } from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
-import { pageChannelCasts } from "./neynar.server";
+import { neynar, pageChannelCasts } from "./neynar.server";
 import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
-import { getWarpcastChannel } from "./warpcast.server";
+import { getCast, getWarpcastChannel, publishCast } from "./warpcast.server";
 import { automodFid } from "~/routes/~.channels.$id";
 import { syncSubscriptions, userPlans } from "./subscription.server";
 import { sendNotification } from "./notifications.server";
+import axios from "axios";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -40,6 +41,114 @@ export const delayedSubscriptionQueue = new Queue("subscriptionQueue", {
 if (process.env.NODE_ENV === "production") {
   delayedSubscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
 }
+
+export const propagationDelayQueue = new Queue("propagationDelayQueue", {
+  connection,
+});
+
+if (process.env.NODE_ENV === "production") {
+  propagationDelayQueue.add("propagationDelayCheck", {}, { repeat: { pattern: "*/10 * * * *" } });
+}
+
+export const propagationDelayWorker = new Worker(
+  "propagationDelayQueue",
+  async () => {
+    console.log("Checking propagation delay");
+
+    const uuid = process.env.AUTOMOD_FACTORY_UUID!;
+    const username = "automod-factory";
+    const delayThreshold = 15 * 60 * 1000;
+
+    const checks = await db.propagationDelayCheck.findMany({
+      where: {
+        arrivedAt: null,
+        createdAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1_000),
+        },
+      },
+    });
+
+    if (!checks.length) {
+      const neynarToWarpcast = await neynar.publishCast(
+        uuid,
+        `neynar -> warpcast\n${new Date().toISOString()}`
+      );
+      const warpcastToNeynar = await publishCast({
+        text: `warpcast -> neynar\n${new Date().toISOString()}`,
+        token: process.env.AUTOMOD_FACTORY_WARPCAST_TOKEN!,
+      });
+
+      await db.propagationDelayCheck.create({
+        data: {
+          hash: neynarToWarpcast.hash,
+          arrivedAt: null,
+          src: "neynar",
+          dst: "warpcast",
+        },
+      });
+
+      await db.propagationDelayCheck.create({
+        data: {
+          hash: warpcastToNeynar.result.cast.hash,
+          arrivedAt: null,
+          src: "warpcast",
+          dst: "neynar",
+        },
+      });
+
+      return;
+    }
+
+    for (const check of checks) {
+      const delay = new Date().getTime() - new Date(check.createdAt).getTime();
+      const delaySeconds = Math.floor(delay / 1_000);
+
+      if (delay > delayThreshold) {
+        await axios.post("https://webhook-relay.fly.dev/automod", {
+          text: `Warning: Cast propagation delay from ${check.src} to ${
+            check.dst
+          } exceeded ${delaySeconds.toLocaleString()} seconds.\nhttps://explorer.neynar.com/${check.hash}`,
+        });
+      }
+
+      if (check.dst === "neynar") {
+        const rsp = await neynar.fetchBulkCasts([check.hash]);
+        if (rsp.result.casts.length !== 0) {
+          const cast = rsp.result.casts[0];
+          await db.propagationDelayCheck.update({
+            where: {
+              id: check.id,
+            },
+            data: {
+              arrivedAt: cast.timestamp,
+            },
+          });
+        }
+      } else if (check.dst === "warpcast") {
+        const cast = await getCast({ hash: check.hash, username });
+        if (cast) {
+          const delaySeconds = Math.floor(
+            (new Date(cast.timestamp).getTime() - check.createdAt.getTime()) / 1_000
+          );
+          console.log(
+            `[propagation-delay] ${check.hash} arrived after ${delaySeconds.toLocaleString()} seconds`
+          );
+          await db.propagationDelayCheck.update({
+            where: {
+              id: check.id,
+            },
+            data: {
+              arrivedAt: new Date(cast.timestamp),
+            },
+          });
+        }
+      }
+    }
+  },
+  {
+    connection,
+  }
+);
 
 export const subscriptionWorker = new Worker(
   "subscriptionQueue",
