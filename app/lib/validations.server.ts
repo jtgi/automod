@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/remix";
 import mimeType from "mime-types";
 import RE2 from "re2";
 import { z } from "zod";
-import { getWarpcastChannelOwner } from "./warpcast.server";
+import { getWarpcastChannel, getWarpcastChannelOwner } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
 import { neynar } from "./neynar.server";
 import emojiRegex from "emoji-regex";
@@ -1207,6 +1207,23 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
     },
     {
       message: "Your channel doesn't have a Fan Token yet. Contact /airstack",
+    }
+  )
+  .refine(
+    async (data) => {
+      if (data.name === "userFollowsChannel") {
+        console.log("userFollowsChannel", data.args.channelSlug);
+        const channel = await getWarpcastChannel({ channel: data.args.channelSlug }).catch(() => null);
+
+        if (!channel) {
+          return false;
+        }
+      }
+
+      return true;
+    },
+    {
+      message: `Couldn't find that channel. Sure you got it right?`,
     }
   )
   .refine(
