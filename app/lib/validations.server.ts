@@ -1212,7 +1212,6 @@ export const RuleSchema: z.ZodType<Rule> = BaseRuleSchema.extend({
   .refine(
     async (data) => {
       if (data.name === "userFollowsChannel") {
-        console.log("userFollowsChannel", data.args.channelSlug);
         const channel = await getWarpcastChannel({ channel: data.args.channelSlug }).catch(() => null);
 
         if (!channel) {

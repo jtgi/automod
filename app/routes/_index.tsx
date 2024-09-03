@@ -30,23 +30,27 @@ import { MagicWandIcon } from "@radix-ui/react-icons";
 
 export const meta: MetaFunction<typeof loader> = (data) => {
   return [
-    { title: "automod" },
-    {
-      property: "og:title",
-      content: "automod",
-    },
+    { title: "Automod - Put your channel on autopilot" },
+    { property: "og:title", content: "automod - Put your channel on autopilot" },
     {
       name: "description",
-      content: "Automate channel spam with bots",
+      content: "Automate channel moderation with customizable rules and team-based moderation.",
     },
     {
-      name: "fc:frame",
-      content: "vNext",
+      property: "og:description",
+      content: "Automate channel moderation with customizable rules and team-based moderation.",
     },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: "automod - Put your channel on autopilot" },
     {
-      name: "og:image",
-      content: `${data.data.env.hostUrl}/preview.png`,
+      name: "twitter:description",
+      content: "Automate channel moderation with customizable rules and team-based moderation.",
     },
+    { property: "og:image", content: `${data.data.env.hostUrl}/teaser.png` },
+    { name: "twitter:image", content: `${data.data.env.hostUrl}/teaser.png` },
+    { property: "og:url", content: data.data.env.hostUrl },
+    { property: "og:type", content: "website" },
+    { name: "fc:frame", content: "vNext" },
   ];
 };
 
