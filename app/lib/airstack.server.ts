@@ -119,7 +119,7 @@ export async function userSocialCapitalRank(props: { fid: number }) {
     return null;
   }
 
-  return Math.round(data.Socials.Social.farcasterScore.farScore);
+  return Math.round(data.Socials.Social[0].farcasterScore.farScore);
 }
 
 export async function searchMemberFanTokens({ username }: { username: string }) {

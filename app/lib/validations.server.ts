@@ -600,7 +600,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     authorUrl: "https://airstack.xyz",
     authorIcon: `${hostUrl}/icons/airstack.png`,
     allowMultiple: false,
-    hidden: true,
+    hidden: false,
     category: "all",
     friendlyName: "Social Capital Rank by Airstack",
     checkType: "user",
@@ -804,7 +804,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     category: "all",
     friendlyName: "Follows Channel",
     checkType: "user",
-    hidden: true,
+    hidden: false,
     invertable: false,
     description: "Check if the user follows a channel",
     args: {
