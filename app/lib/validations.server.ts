@@ -1728,10 +1728,10 @@ export async function airstackSocialCapitalRank(args: CheckFunctionArgs) {
   });
 
   if (rank === Infinity) {
-    console.error(`User's social capital rank is not available: ${cast.author.fid}`);
+    console.error(`User's FarRank is not available: ${cast.author.fid}`);
     return {
       result: false,
-      message: "User's social capital rank is not available",
+      message: "User's social FarRank is not available",
     };
   }
 
@@ -1739,8 +1739,8 @@ export async function airstackSocialCapitalRank(args: CheckFunctionArgs) {
     result: rank <= minRank,
     message:
       rank <= minRank
-        ? `User social capital rank is #${rank.toLocaleString()}, higher than #${minRank.toLocaleString()}`
-        : `User's social capital rank is #${rank.toLocaleString()}, lower than #${minRank.toLocaleString()}`,
+        ? `User FarRank is #${rank.toLocaleString()}, higher than #${minRank.toLocaleString()}`
+        : `User's FarRank is #${rank.toLocaleString()}, lower than #${minRank.toLocaleString()}`,
   };
 }
 
