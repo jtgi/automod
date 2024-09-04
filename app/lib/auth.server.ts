@@ -2,7 +2,7 @@ import type { User } from "@prisma/client";
 import * as Sentry from "@sentry/remix";
 import { Authenticator } from "remix-auth";
 import { db } from "~/lib/db.server";
-import { createCookieSessionStorage } from "@remix-run/node";
+import { createCookie, createCookieSessionStorage } from "@remix-run/node";
 import { FarcasterStrategy } from "./farcaster-strategy";
 import { OtpStrategy } from "./otp-strategy";
 import { GodStrategy } from "./god-strategy";
@@ -18,6 +18,14 @@ export const sessionStorage = createCookieSessionStorage({
     secrets: [process.env.SESSION_SECRET || "STRONG_SECRET"],
     secure: process.env.NODE_ENV === "production",
   },
+});
+
+export const redirectCookie = createCookie("redirectTo", {
+  path: "/",
+  httpOnly: true,
+  sameSite: "lax",
+  maxAge: 60,
+  secure: process.env.NODE_ENV === "production",
 });
 
 export const { getSession, commitSession, destroySession } = sessionStorage;

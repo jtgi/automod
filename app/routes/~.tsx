@@ -2,7 +2,7 @@ import { AuthKitProvider } from "@farcaster/auth-kit";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, Outlet } from "@remix-run/react";
 import { useEffect } from "react";
-import { typedjson, useTypedLoaderData } from "remix-typedjson";
+import { redirect, typedjson, useTypedLoaderData } from "remix-typedjson";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { commitSession, getSession } from "~/lib/auth.server";
+import { commitSession, getSession, redirectCookie } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { cn } from "~/lib/utils";
 import { getSharedEnv, requireUser } from "~/lib/utils.server";
@@ -22,6 +22,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });
 
   const session = await getSession(request.headers.get("Cookie"));
+  const redirectTo = await redirectCookie.parse(request.headers.get("Cookie"));
+
+  if (redirectTo) {
+    throw redirect(redirectTo, {
+      headers: {
+        "Set-Cookie": await redirectCookie.serialize(null, {
+          expires: new Date(0),
+        }),
+      },
+    });
+  }
+
   const message =
     (session.get("message") as { id: string; type: string; message: string } | null) ?? undefined;
   const impersonateAs = (session.get("impersonateAs") as string) ?? undefined;

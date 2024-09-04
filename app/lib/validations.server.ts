@@ -1738,7 +1738,7 @@ export async function airstackSocialCapitalRank(args: CheckFunctionArgs) {
   return {
     result: rank <= minRank,
     message:
-      rank < minRank
+      rank <= minRank
         ? `User social capital rank is #${rank.toLocaleString()}, higher than #${minRank.toLocaleString()}`
         : `User's social capital rank is #${rank.toLocaleString()}, lower than #${minRank.toLocaleString()}`,
   };

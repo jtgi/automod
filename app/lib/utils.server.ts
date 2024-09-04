@@ -59,8 +59,9 @@ export async function requirePartnerApiKey({ request }: { request: Request }) {
 }
 
 export async function requireUser({ request }: { request: Request }) {
+  const url = new URL(request.url);
   const user = await authenticator.isAuthenticated(request, {
-    failureRedirect: `/login`,
+    failureRedirect: `/login?redirectTo=${url.pathname}`,
   });
 
   const refreshedUser = await db.user.findFirstOrThrow({

@@ -319,7 +319,7 @@ function FeatureCard(props: {
   );
 }
 
-function LoginButton(props: {
+export function LoginButton(props: {
   user: User | null;
   error: string | null;
   env: ReturnType<typeof getSharedEnv>;
