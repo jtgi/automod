@@ -4,7 +4,7 @@ import { db } from "~/lib/db.server";
 
 export async function loader() {
   const checks = await db.propagationDelayCheck.findMany({
-    take: 5,
+    take: 20,
     orderBy: {
       createdAt: "desc",
     },
