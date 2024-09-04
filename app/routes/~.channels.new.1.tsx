@@ -61,6 +61,14 @@ export default function Screen() {
             <Card>
               <CardHeader>
                 <CardTitle>What channel would you like to setup?</CardTitle>
+                {Date.now() < new Date("2024-12-01").getTime() && (
+                  <CardDescription>
+                    <p className="text-muted-foreground text-sm">
+                      Coming from Airstack Channel Moderation?{" "}
+                      <Link to={"/~/import/airstack"}>Import your settings.</Link>
+                    </p>
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 w-full">

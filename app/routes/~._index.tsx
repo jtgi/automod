@@ -7,7 +7,7 @@ import { Button, ButtonProps } from "~/components/ui/button";
 import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
 import { RefreshCwIcon } from "lucide-react";
 import { Link, useFetcher } from "@remix-run/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import {
   Dialog,
@@ -96,15 +96,22 @@ export default function FrameConfig() {
       {channels.length === 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Welcome</CardTitle>
+            <CardTitle>Welcome to Automod</CardTitle>
             <CardDescription>Creating a bot for your channel just takes a few seconds.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Button asChild>
+          <CardContent className="flex flex-col sm:flex-row gap-2">
+            <Button variant={"secondary"} asChild>
               <Link className="no-underline" to="/~/channels/new/1">
                 + New Bot
               </Link>
             </Button>
+            {Date.now() < new Date("2024-12-01").getTime() && (
+              <Button variant={"ghost"} asChild>
+                <Link to="/~/import/airstack" className="no-underline text-muted-foreground">
+                  Import from Airstack
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
