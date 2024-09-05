@@ -146,7 +146,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         placeholder: "https://example.com/webhook",
         required: true,
         description:
-          "A post request will be made with cast and user data. If the webhook returns a 200, the rule will be triggered, if it returns a 400, it will not. Return a json response in either case with a message key (max 75 characters) to include a reason in the activity logs. A response must return within 5 seconds. Example: HTTP 200 {'message': 'User is on the no-fly list'}",
+          "A post request will be made with { cast, user } data. If the webhook returns a 200, the rule will be triggered, if it returns a 400, it will not. Return a json response in either case with a message to include a reason in the activity logs. Maximum of 75 characters. A response must return within 5 seconds. Example: HTTP POST example.com/webhook { user, cast } -> 200 {'message': 'User belongs to mickey mouse club'}",
       },
       failureMode: {
         type: "select",
