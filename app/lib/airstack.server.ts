@@ -335,7 +335,14 @@ export async function migrateModerationConfig(props: { userId: string; config: C
         invariant(rule.whitelistFidsRule?.fids, "WHITELIST_FIDS rule is missing fids");
 
         const fids = rule.whitelistFidsRule.fids.map((num) => parseInt(num));
-        const users = fids.length ? await neynar.fetchBulkUsers(fids).then((res) => res.users) : [];
+        const users = [];
+
+        for (let i = 0; i < fids.length; i += 100) {
+          const batch = fids.slice(i, i + 100);
+          const batchUsers = await neynar.fetchBulkUsers(batch).then((res) => res.users);
+          users.push(...batchUsers);
+        }
+
         automodConfig.excludeUsernames = JSON.stringify(
           users.map((user) => ({
             label: user.username,
@@ -365,7 +372,13 @@ export async function migrateModerationConfig(props: { userId: string; config: C
         break;
       case "CO_MODERATOR_FIDS": {
         const fids = rule.coModeratorFidsRule!.fids.map((n) => parseInt(n));
-        const hosts = fids.length ? await neynar.fetchBulkUsers(fids).then((res) => res.users) : [];
+        const users = [];
+
+        for (let i = 0; i < fids.length; i += 100) {
+          const batch = fids.slice(i, i + 100);
+          const batchUsers = await neynar.fetchBulkUsers(batch).then((res) => res.users);
+          users.push(...batchUsers);
+        }
 
         const cohostRole = await db.role.findFirst({
           where: {
@@ -382,7 +395,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
               description: "Primary moderators for your channel.",
               permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
               delegates: {
-                create: hosts.map((comod) => ({
+                create: users.map((comod) => ({
                   fid: String(comod.fid),
                   username: comod.username,
                   avatarUrl: comod.pfp_url,
@@ -400,7 +413,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
               description: "Primary moderators for your channel.",
               permissions: JSON.stringify(permissionDefs.map((p) => p.id)),
               delegates: {
-                create: hosts.map((comod) => ({
+                create: users.map((comod) => ({
                   fid: String(comod.fid),
                   username: comod.username,
                   avatarUrl: comod.pfp_url,
