@@ -34,7 +34,7 @@ import {
   userFollowsChannel as airstackUserFollowsChannel,
 } from "./airstack.server";
 import { hideQuietly, mute, addToBypass, downvote, cooldown, grantRole, ban, unlike } from "./automod.server";
-import { PlanType } from "./subscription.server";
+import { PlanType } from "~/lib/utils";
 
 export type RuleDefinition = {
   name: RuleName;
