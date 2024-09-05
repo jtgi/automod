@@ -29,6 +29,7 @@ import { FieldLabel, SliderField } from "~/components/ui/fields";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Link, useFetcher } from "@remix-run/react";
+import { userPlans, cn, meetsMinimumPlan, PlanType } from "~/lib/utils";
 import { Switch } from "~/components/ui/switch";
 import {
   Control,
@@ -52,22 +53,23 @@ import { SimulationResult } from "~/routes/~.channels.$id.tools";
 import { ClientOnly } from "remix-utils/client-only";
 import { Alert } from "./ui/alert";
 import { DialogTrigger } from "@radix-ui/react-dialog";
-import { cn } from "~/lib/utils";
 import {
   ArrowDownToLine,
   ArrowUpRight,
   Bot,
   CheckCircle2,
   Loader,
+  Gem,
   PlusIcon,
   ServerCrash,
   X,
   XCircleIcon,
 } from "lucide-react";
 import { UserPicker } from "./user-picker";
-import { Role } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { MoxieMemberPicker } from "./moxie-picker";
 import { Avatar, AvatarImage } from "./ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 export type FormValues = {
   id?: string;
@@ -95,6 +97,7 @@ export type FormValues = {
 };
 
 export function CurationForm(props: {
+  user: User;
   actionDefinitions: typeof actionDefinitions;
   ruleDefinitions: typeof ruleDefinitions;
   ruleNames: readonly RuleName[];
@@ -149,6 +152,7 @@ export function CurationForm(props: {
 
             <div>
               <RuleSetEditor
+                user={props.user}
                 actionDefinitions={props.actionDefinitions}
                 ruleDefinitions={ruleCategory(props.ruleDefinitions, "inclusion")}
                 rulesNames={props.ruleNames}
@@ -179,6 +183,7 @@ export function CurationForm(props: {
 
             <div>
               <RuleSetEditor
+                user={props.user}
                 actionDefinitions={props.actionDefinitions}
                 ruleDefinitions={ruleCategory(props.ruleDefinitions, "exclusion")}
                 rulesNames={props.ruleNames}
@@ -568,6 +573,7 @@ function prepareFormValues(data: FormValues) {
 }
 
 function RuleSetEditor(props: {
+  user: User;
   actionDefinitions: typeof actionDefinitions;
   ruleDefinitions: typeof ruleDefinitions;
   rulesNames: readonly RuleName[];
@@ -654,6 +660,56 @@ function RuleSetEditor(props: {
                 .sort(([_a, adef], [_b, bdef]) => adef.friendlyName.localeCompare(bdef.friendlyName))
                 .filter((args) => !args[1].hidden)
                 .map(([name, ruleDef]) => {
+                  const isRuleAvailable = ruleDef.minimumPlan
+                    ? meetsMinimumPlan({
+                        userPlan: props.user.plan as PlanType,
+                        minimumPlan: ruleDef.minimumPlan,
+                      })
+                    : true;
+
+                  if (!isRuleAvailable) {
+                    // return a teaser disabled rule
+                    return (
+                      <Popover key={name}>
+                        <PopoverTrigger>
+                          <div
+                            key={name}
+                            id={name}
+                            className={cn(
+                              "p-4 rounded-md border border-orange-100 shadow-md shadow-orange-300 hover:cursor:not-allowed flex text-left"
+                            )}
+                          >
+                            <div>
+                              <p className="text-sm font-semibold">
+                                {ruleDef.friendlyName} <Gem className="w-3 h-3 inline -mt-1" />
+                              </p>
+                              <p className="text-sm text-gray-500">{ruleDef.description}</p>
+                              <div className="flex gap-1 items-center mt-4">
+                                {ruleDef.authorIcon && (
+                                  <img src={ruleDef.authorIcon} className="w-4 h-4 rounded-full" />
+                                )}
+                                {ruleDef.author && <p className="text-xs text-gray-500">{ruleDef.author}</p>}
+                              </div>
+                            </div>
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent>
+                          <p className="text-sm">
+                            <Gem className="w-3 h-3 inline -mt-1" /> Upgrade to{" "}
+                            <Link
+                              target="_blank"
+                              to={userPlans[ruleDef.minimumPlan as PlanType]!.link}
+                              rel="noreferrer"
+                            >
+                              {userPlans[ruleDef.minimumPlan as PlanType]!.displayName}
+                            </Link>{" "}
+                            to use this rule.
+                          </p>
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  }
+
                   //@ts-ignore
                   if (ruleFields.find((rf) => rf.name === name) && !ruleDef.allowMultiple) {
                     return (

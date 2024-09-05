@@ -4,6 +4,7 @@ import { base } from "viem/chains";
 import { hypersubAbi721, hypersubAbiV2 } from "./abis";
 import { neynar } from "./neynar.server";
 import { clientsByChainId } from "./viem.server";
+import { PlanType } from "./utils";
 
 export async function syncSubscriptions() {
   const activeUsers = await db.user.findMany({
@@ -23,53 +24,6 @@ export async function syncSubscriptions() {
     );
   }
 }
-
-export const planTypes = ["basic", "prime", "ultra", "vip"] as const;
-export type PlanType = (typeof planTypes)[number];
-
-export const userPlans = {
-  basic: {
-    id: "basic",
-    displayName: "Basic",
-    price: "free",
-    maxChannels: 3,
-    maxCasts: 3_000,
-  },
-  prime: {
-    id: "prime",
-    displayName: "Prime",
-    price: "$14.99/mo",
-    link: "https://hypersub.withfabric.xyz/s/automod/2",
-    maxChannels: 6,
-    maxCasts: 25_000,
-  },
-  ultra: {
-    id: "ultra",
-    displayName: "Ultra",
-    price: "$39.99/mo",
-    link: "https://hypersub.withfabric.xyz/s/automod",
-    maxChannels: Infinity,
-    maxCasts: 250_000,
-  },
-  vip: {
-    id: "vip",
-    price: Infinity.toLocaleString(),
-    displayName: "VIP",
-    maxChannels: Infinity,
-    maxCasts: Infinity,
-  },
-} as const satisfies {
-  [key in PlanType]: PlanDef;
-};
-
-export type PlanDef = {
-  id: PlanType;
-  link?: string;
-  price: string;
-  displayName: string;
-  maxChannels: number;
-  maxCasts: number;
-};
 
 export async function getSubscriptionPlan(args: { fid: string; walletAddress?: string }): Promise<{
   plan: PlanType;

@@ -18,9 +18,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { ArrowUpRight, RefreshCwIcon, RocketIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { userPlans, refreshAccountStatus, PlanType, PlanDef } from "~/lib/subscription.server";
+import { refreshAccountStatus } from "~/lib/subscription.server";
 import { abbreviateNumber } from "js-abbreviation-number";
 import { User } from "@prisma/client";
+import { userPlans, PlanType, PlanDef } from "~/lib/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await requireUser({ request });

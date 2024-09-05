@@ -1,6 +1,6 @@
 import { useMatches } from "@remix-run/react";
 import { type ClassValue, clsx } from "clsx";
-import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import satori from "satori";
 import { twMerge } from "tailwind-merge";
 import { CastAction } from "./types";
@@ -146,3 +146,61 @@ export function grantRoleAction(role: {
     automodAction: "grantRole",
   };
 }
+
+export const planTypes = ["basic", "prime", "ultra", "vip"] as const;
+export type PlanType = (typeof planTypes)[number];
+
+export function meetsMinimumPlan(args: { userPlan: PlanType; minimumPlan: PlanType }) {
+  return userPlans[args.userPlan].level >= userPlans[args.minimumPlan].level;
+}
+
+export const userPlans = {
+  basic: {
+    id: "basic",
+    level: 0,
+    displayName: "Basic",
+    price: "free",
+    link: "",
+    maxChannels: 3,
+    maxCasts: 3_000,
+  },
+  prime: {
+    id: "prime",
+    level: 1,
+    displayName: "Prime",
+    price: "$14.99/mo",
+    link: "https://hypersub.withfabric.xyz/s/automod/2",
+    maxChannels: 6,
+    maxCasts: 25_000,
+  },
+  ultra: {
+    id: "ultra",
+    level: 2,
+    displayName: "Ultra",
+    price: "$39.99/mo",
+    link: "https://hypersub.withfabric.xyz/s/automod",
+    maxChannels: Infinity,
+    maxCasts: 250_000,
+  },
+  vip: {
+    id: "vip",
+    level: 3,
+    price: Infinity.toLocaleString(),
+    displayName: "VIP",
+    link: "",
+    maxChannels: Infinity,
+    maxCasts: Infinity,
+  },
+} as const satisfies {
+  [key in PlanType]: PlanDef;
+};
+
+export type PlanDef = {
+  id: PlanType;
+  level: number;
+  link?: string;
+  price: string;
+  displayName: string;
+  maxChannels: number;
+  maxCasts: number;
+};

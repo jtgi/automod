@@ -18,8 +18,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "~/components/ui/dialog";
-import { cn } from "~/lib/utils";
-import { PlanType, refreshAccountStatus, userPlans } from "~/lib/subscription.server";
+import { cn, PlanType, userPlans } from "~/lib/utils";
+import { refreshAccountStatus } from "~/lib/subscription.server";
 import { ModeratedChannel } from "@prisma/client";
 
 export async function loader({ request }: LoaderFunctionArgs) {

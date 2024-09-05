@@ -10,9 +10,10 @@ import { WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import { getCast, getWarpcastChannel, publishCast } from "./warpcast.server";
 import { automodFid } from "~/routes/~.channels.$id";
-import { syncSubscriptions, userPlans } from "./subscription.server";
+import { syncSubscriptions } from "./subscription.server";
 import { sendNotification } from "./notifications.server";
 import axios from "axios";
+import { userPlans } from "./utils";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,

@@ -175,10 +175,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function Screen() {
-  const { channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole, bypassInstallLink } =
+  const { user, channel, ruleNames, ruleDefinitions, actionDefinitions, cohostRole, bypassInstallLink } =
     useTypedLoaderData<typeof loader>();
-
-  const [searchParams] = useSearchParams();
 
   function patchNewRuleSet(
     inclusion: boolean,
@@ -213,6 +211,7 @@ export default function Screen() {
       </div>
 
       <CurationForm
+        user={user}
         bypassInstallLink={bypassInstallLink}
         actionDefinitions={actionDefinitions}
         ruleDefinitions={ruleDefinitions}

@@ -25,7 +25,7 @@ import { languages } from "./languages";
 import { chainIdToChainName, nftsByWallets } from "./simplehash.server";
 import { db } from "./db.server";
 import { Cast, CastId } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { base, polygon } from "viem/chains";
 import {
   getVestingContractsForAddresses,
@@ -34,12 +34,14 @@ import {
   userFollowsChannel as airstackUserFollowsChannel,
 } from "./airstack.server";
 import { hideQuietly, mute, addToBypass, downvote, cooldown, grantRole, ban, unlike } from "./automod.server";
+import { PlanType } from "./subscription.server";
 
 export type RuleDefinition = {
   name: RuleName;
   author: string;
   authorUrl?: string;
   authorIcon?: string;
+  minimumPlan?: PlanType;
   icon?: string;
   friendlyName: string;
 
@@ -69,6 +71,7 @@ export type RuleDefinition = {
       friendlyName: string;
       description: string;
       pattern?: string;
+      tooltip?: string;
       required?: boolean;
       options?: Array<{ value: string; label: string; hint?: string }>;
     }
@@ -121,6 +124,42 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     hidden: false,
     invertable: false,
     args: {},
+  },
+
+  webhook: {
+    name: "webhook",
+    author: "automod",
+    authorUrl: "https://automod.sh",
+    authorIcon: `${hostUrl}/icons/automod.png`,
+    allowMultiple: false,
+    category: "all",
+    friendlyName: "Webhook",
+    checkType: "user",
+    description: "Use an external service to determine if the cast should be included",
+    hidden: false,
+    invertable: false,
+    minimumPlan: "prime",
+    args: {
+      url: {
+        type: "string",
+        friendlyName: "URL",
+        placeholder: "https://example.com/webhook",
+        required: true,
+        description:
+          "A post request will be made with cast and user data. If the webhook returns a 200, the rule will be triggered, if it returns a 400, it will not. Return a json response in either case with a message key (max 50 characters) to include a reason in the activity logs. A response must return within 5 seconds. Example: HTTP 200 {'message': 'User is on the no-fly list'}",
+      },
+      failureMode: {
+        type: "select",
+        required: true,
+        friendlyName: "If the webhook fails or times out...",
+        description:
+          "Example: 'Trigger this rule' will allow the cast if this is an inclusion rule or block the cast if this is an exclusion rule.",
+        options: [
+          { value: "trigger", label: "Trigger this rule" },
+          { value: "doNotTrigger", label: "Do not trigger this rule" },
+        ],
+      },
+    },
   },
 
   subscribesOnParagraph: {
@@ -1128,6 +1167,7 @@ export const ruleNames = [
   "requiresErc1155",
   "requiresErc721",
   "requiresErc20",
+  "webhook",
 ] as const;
 
 export const actionTypes = [
@@ -1433,6 +1473,7 @@ export const ruleFunctions: Record<RuleName, CheckFunction> = {
   requiresErc721: holdsErc721,
   requiresErc20: holdsErc20,
   requiresErc1155: holdsErc1155,
+  webhook: webhook,
 };
 
 export const actionFunctions: Record<ActionType, ActionFunction> = {
@@ -2207,6 +2248,66 @@ export async function holdsActiveHypersub(args: CheckFunctionArgs) {
       ? `User holds an active hypersub (${formatHash(contractAddress)})`
       : `User does not hold an active hypersub (${formatHash(contractAddress)})`,
   };
+}
+
+export async function webhook(args: CheckFunctionArgs) {
+  const { cast, rule } = args;
+  const { url, failureMode } = rule.args;
+
+  const maxTimeout = 5_000;
+
+  // dont throw on 400
+  return axios
+    .post(
+      url,
+      {
+        cast,
+        user: cast.author,
+      },
+      {
+        timeout: maxTimeout,
+        validateStatus: (status) => (status >= 200 && status < 300) || status === 400,
+      }
+    )
+    .then((response) => {
+      let message = response.data.message;
+      if (!message) {
+        message = response.status === 200 ? "Webhook rule triggered" : "Webhook rule did not trigger";
+      }
+
+      return {
+        result: response.status === 200,
+        message,
+      };
+    })
+    .catch((err: AxiosError) => {
+      console.error(
+        `[${args.channel.id}] webhook to ${url} failed`,
+        err.response?.status,
+        err.response?.statusText,
+        err.response?.data
+      );
+
+      if (err.code === "ECONNABORTED") {
+        return {
+          result: failureMode === "trigger" ? true : false,
+          message:
+            failureMode === "trigger"
+              ? `Webhook didn't respond within ${maxTimeout / 1000}s, rule is set to trigger on failure`
+              : `Webhook did not respond within ${
+                  maxTimeout / 1000
+                }s, rule is set to not trigger on failure. `,
+        };
+      } else {
+        return {
+          result: failureMode === "trigger" ? true : false,
+          message:
+            failureMode === "trigger"
+              ? "Webhook failed but rule is set to trigger on failure"
+              : "Webhook failed and rule is set to not trigger on failure",
+        };
+      }
+    });
 }
 
 export async function holdsErc1155(args: CheckFunctionArgs) {
