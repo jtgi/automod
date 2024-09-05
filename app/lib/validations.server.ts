@@ -135,7 +135,7 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
     category: "all",
     friendlyName: "Webhook",
     checkType: "user",
-    description: "Use an external service to determine if the cast should be included",
+    description: "Use an external service to determine if the rule shoulud be triggered.",
     hidden: false,
     invertable: false,
     minimumPlan: "prime",
