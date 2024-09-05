@@ -146,14 +146,15 @@ export const ruleDefinitions: Record<RuleName, RuleDefinition> = {
         placeholder: "https://example.com/webhook",
         required: true,
         description:
-          "A post request will be made with cast and user data. If the webhook returns a 200, the rule will be triggered, if it returns a 400, it will not. Return a json response in either case with a message key (max 50 characters) to include a reason in the activity logs. A response must return within 5 seconds. Example: HTTP 200 {'message': 'User is on the no-fly list'}",
+          "A post request will be made with cast and user data. If the webhook returns a 200, the rule will be triggered, if it returns a 400, it will not. Return a json response in either case with a message key (max 75 characters) to include a reason in the activity logs. A response must return within 5 seconds. Example: HTTP 200 {'message': 'User is on the no-fly list'}",
       },
       failureMode: {
         type: "select",
         required: true,
         friendlyName: "If the webhook fails or times out...",
         description:
-          "Example: 'Trigger this rule' will allow the cast if this is an inclusion rule or block the cast if this is an exclusion rule.",
+          "Example: Let's say you have only this rule in the section \"When any of the following rules are met, include the cast in Main\". If you choose 'Trigger this rule' and the webhook fails, the cast will be included in Main. If you choose 'Do not trigger this rule', the cast will not be included in Main.",
+        defaultValue: "doNotTrigger",
         options: [
           { value: "trigger", label: "Trigger this rule" },
           { value: "doNotTrigger", label: "Do not trigger this rule" },
@@ -2270,7 +2271,7 @@ export async function webhook(args: CheckFunctionArgs) {
       }
     )
     .then((response) => {
-      let message = response.data.message;
+      let message = response.data.message?.substring(0, 75);
       if (!message) {
         message = response.status === 200 ? "Webhook rule triggered" : "Webhook rule did not trigger";
       }
