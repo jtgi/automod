@@ -12,7 +12,6 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 ENV PORT="3000"
-ENV DATABASE_URL=file:/data/sqlite.db
 
 # Install pnpm
 ARG PNPM_VERSION=9.6.0
