@@ -22,8 +22,6 @@ const connection = new IORedis({
   maxRetriesPerRequest: null,
 });
 
-scheduleDelayedJobs();
-
 export const subscriptionQueue = new Queue("subscriptionQueue", {
   connection,
 });
@@ -666,9 +664,11 @@ export function defaultProcessCastJobArgs(hash: string): JobsOptions {
   };
 }
 
-function scheduleDelayedJobs() {
+function init() {
   if (process.env.NODE_ENV === "production") {
     subscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
     propagationDelayQueue.add("propagationDelayCheck", {}, { repeat: { pattern: "*/10 * * * *" } });
   }
 }
+
+init();
