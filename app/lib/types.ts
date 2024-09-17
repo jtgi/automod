@@ -29,11 +29,6 @@ export type ValidateCastArgsV2 = {
   skipSignerCheck?: boolean;
 };
 
-export type MemberRequirements = {
-  logicType: "OR" | "AND";
-  rules: Rule[];
-};
-
 export type CastAction = {
   action: {
     type: "post";
