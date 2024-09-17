@@ -14,6 +14,7 @@ const db = singleton("prisma", () =>
           needs: {
             inclusionRuleSet: true,
           },
+
           compute(data): (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined {
             if (data.inclusionRuleSet) {
               const ruleSet = JSON.parse(data.inclusionRuleSet);
