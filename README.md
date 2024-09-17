@@ -29,6 +29,10 @@ Automod favors less directories, less files and generally avoids DRYing things u
 - **/prisma:** Standard prisma migrations
 - **/bullboard:** A local server to monitor queues and tasks. See package.json to run.
 
+### Data Model
+
+See the [Prisma Schema](./prisma/schema.prisma) for an overview.
+
 ### Key Flows
 
 **How a cast is moderated**
@@ -92,12 +96,16 @@ This will allow you to:
 - Kick off recovery flows for channels in case there is downtime.
 - Show an incident banner
 
-### Recovery from downtime
+### Dealing with downtime and misconfigurations
+
+Login to [/admin](https://automod.sh/~/admin) console.
+
+Run a sweep or recovery
 
 - **Recovery:** Moderate historical casts not yet seen.
 - **Sweep:** Moderate historical casts, even if they've already been seen.
 
-Recover is useful when you have downtime, sweep is useful if you or a customer ships bad logic.
+Recover is useful when you have downtime and missed things, sweep is useful if you or a customer ships bad logic and everything must be reprocessed.
 
 ### Managing Queues
 
