@@ -5,7 +5,7 @@ import { PassThrough } from "node:stream";
 import type { AppLoadContext, EntryContext } from "@remix-run/node";
 import { createReadableStreamFromReadable } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
-import * as isbotModule from "isbot";
+import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 
 export function handleError(error: unknown, { request }: { request: Request }) {
@@ -40,17 +40,7 @@ function isBotRequest(userAgent: string | null) {
     return false;
   }
 
-  // isbot >= 3.8.0, >4
-  if ("isbot" in isbotModule && typeof isbotModule.isbot === "function") {
-    return isbotModule.isbot(userAgent);
-  }
-
-  // isbot < 3.8.0
-  if ("default" in isbotModule && typeof isbotModule.default === "function") {
-    return isbotModule.default(userAgent);
-  }
-
-  return false;
+  return isbot(userAgent);
 }
 
 function handleBotRequest(

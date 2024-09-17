@@ -174,7 +174,7 @@ importers:
         specifier: ^5.3.2
         version: 5.3.2
       isbot:
-        specifier: ^5.1.0
+        specifier: ^5.1.17
         version: 5.1.17
       js-abbreviation-number:
         specifier: ^1.4.0
