@@ -1,3 +1,5 @@
+![CleanShot 2024-09-17 at 13 25 56@2x](https://github.com/user-attachments/assets/449a14a6-69c1-4d82-9678-21bb2585d3bb)
+
 ## Overview
 
 Automod is a Farcaster channel moderation service. It allows channel hosts to configure rules to automatically filter casts and manage their channel in teams.
