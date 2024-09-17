@@ -10,18 +10,6 @@ const db = singleton("prisma", () =>
   new PrismaClient().$extends({
     result: {
       moderatedChannel: {
-        memberRequirementsParsed: {
-          needs: {
-            memberRequirements: true,
-          },
-          compute(data): MemberRequirements | null {
-            if (data.memberRequirements) {
-              return JSON.parse(data.memberRequirements);
-            }
-
-            return null;
-          },
-        },
         inclusionRuleSetParsed: {
           needs: {
             inclusionRuleSet: true,
