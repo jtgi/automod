@@ -17,7 +17,7 @@ All of automod is contained in a single repository and service. It contains the 
 
 ### Project Structure
 
-Automod favors less directories, less files and generally avoids DRYing things up unless its specifically required. Most code is colocated together if it can be which mean you will sometimes find components, route handlers and typings in the same file. Embrace it :P
+Automod favors less directories, less files and generally avoids DRYing things up unless its specifically required. Most code is colocated together if it can be which mean you will sometimes find components, route handlers and typings in the same file.
 
 - **/app/routes:** Standard remix routes. Most routes include business logic directly only sharing code where strictly necessary.
 - **/app/components:** UI Components.
