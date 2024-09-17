@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { singleton } from "./singleton.server";
 import { Action, Rule, SelectOption } from "./validations.server";
 import { Permission } from "./permissions.server";
-import { RuleSet } from "./types";
+import { RuleSet, MemberRequirements } from "./types";
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
 const db = singleton("prisma", () =>
