@@ -1,5 +1,38 @@
 import { Cast as NeynarCast } from "@neynar/nodejs-sdk/build/neynar-api/v2";
-import { ActionType } from "./validations.server";
+import { Prisma, RuleSet } from "@prisma/client";
+
+import { Action, ActionType, Rule, SelectOption } from "./validations.server";
+
+const FullModeratedChannel = Prisma.validator<Prisma.ModeratedChannelDefaultArgs>()({
+  include: {
+    user: true,
+    ruleSets: {
+      where: {
+        active: true,
+      },
+    },
+  },
+});
+
+export type FullModeratedChannel = Prisma.ModeratedChannelGetPayload<typeof FullModeratedChannel> & {
+  inclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
+  exclusionRuleSetParsed: (RuleSet & { ruleParsed: Rule; actionsParsed: Array<Action> }) | undefined;
+  excludeUsernamesParsed: Array<SelectOption> | undefined;
+};
+
+export type ValidateCastArgsV2 = {
+  webhookNotif: {
+    type: string;
+    data: WebhookCast;
+  };
+  channelName: string;
+  skipSignerCheck?: boolean;
+};
+
+export type MemberRequirements = {
+  logicType: "OR" | "AND";
+  rules: Rule[];
+};
 
 export type CastAction = {
   action: {

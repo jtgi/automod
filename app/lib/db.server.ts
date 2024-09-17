@@ -1,14 +1,27 @@
 import { PrismaClient, RuleSet } from "@prisma/client";
 
 import { singleton } from "./singleton.server";
-import { Action, Rule, RuleSetSchema, RuleSetSchemaType, SelectOption } from "./validations.server";
+import { Action, Rule, SelectOption } from "./validations.server";
 import { Permission } from "./permissions.server";
+import { MemberRequirements } from "./types";
 
 // Hard-code a unique key, so we can look up the client when this module gets re-imported
 const db = singleton("prisma", () =>
   new PrismaClient().$extends({
     result: {
       moderatedChannel: {
+        memberRequirementsParsed: {
+          needs: {
+            memberRequirements: true,
+          },
+          compute(data): MemberRequirements | null {
+            if (data.memberRequirements) {
+              return JSON.parse(data.memberRequirements);
+            }
+
+            return null;
+          },
+        },
         inclusionRuleSetParsed: {
           needs: {
             inclusionRuleSet: true,

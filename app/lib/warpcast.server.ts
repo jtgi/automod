@@ -1,5 +1,6 @@
 import { getSetCache } from "./utils.server";
 import { http } from "./http.server";
+import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 
 const token = process.env.WARPCAST_TOKEN!;
 
@@ -104,4 +105,14 @@ export async function publishCast(props: { text: string; token: string }) {
       }
     )
     .then((rsp) => rsp.data);
+}
+
+export async function getMembersForChannel(props: { channelId: string }): Promise<Array<{ fid: number }>> {
+  console.log(`Fetching members for channel ${props.channelId}`);
+  return [{ fid: 5179 }];
+}
+
+export async function removeUserFromChannel(props: { channelId: string; fid: number }) {
+  console.log(`Removing user ${props.fid} from channel ${props.channelId}`);
+  return;
 }

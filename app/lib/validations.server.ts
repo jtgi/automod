@@ -1214,7 +1214,6 @@ const BaseRuleSchema = z.object({
   type: z.union([z.literal("CONDITION"), z.literal("LOGICAL")]),
   args: z.record(z.any()),
   operation: z.union([z.literal("AND"), z.literal("OR")]).optional(),
-  invert: z.boolean().optional(),
 });
 
 export type Rule = z.infer<typeof BaseRuleSchema> & {
@@ -1523,7 +1522,9 @@ export function containsText(props: CheckFunctionArgs) {
     message: result ? `Cast contains "${searchText}"` : `Cast does not contain "${searchText}"`,
   };
 }
+
 type BotOrNotResponse = { fid: number; result: { bot?: boolean; status: "complete" | "analyzing" } };
+
 export async function isHuman(args: CheckFunctionArgs) {
   const { cast } = args;
   const rsp = await axios.get<BotOrNotResponse>(

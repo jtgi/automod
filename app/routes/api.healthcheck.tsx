@@ -3,6 +3,7 @@ import axios from "axios";
 import { db } from "~/lib/db.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // lazy man's cron – fly will call healthcheck every min or so.
   checkEvents().catch(console.error);
 
   return json({ status: "ok" });

@@ -16,13 +16,12 @@ import { Form } from "@remix-run/react";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { getChannel, neynar, pageChannelCasts } from "~/lib/neynar.server";
-import { FullModeratedChannel, validateCast } from "./api.webhooks.neynar";
 import { db } from "~/lib/db.server";
 import { getSession } from "~/lib/auth.server";
 import { Loader2 } from "lucide-react";
 import { castQueue, defaultProcessCastJobArgs, recoverQueue, sweepQueue } from "~/lib/bullish.server";
 import { ModerationLog } from "@prisma/client";
-import { WebhookCast } from "~/lib/types";
+import { FullModeratedChannel, WebhookCast } from "~/lib/types";
 import { Input } from "~/components/ui/input";
 import { FieldLabel } from "~/components/ui/fields";
 import { useMemo, useState } from "react";
@@ -32,6 +31,7 @@ import { ActionType, actionDefinitions } from "~/lib/validations.server";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { CastWithInteractions } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import { validateCast } from "~/lib/automod.server";
 
 const SWEEP_LIMIT = 100;
 
@@ -260,6 +260,7 @@ export default function Screen() {
 }
 
 function SimulateCast(props: { actionDefs: typeof actionDefinitions }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [open, setIsOpen] = useState(false);
   const [fetcherKey, setFetcherKey] = useState(new Date().toString());
   const fetcher = useTypedFetcher<typeof action>({

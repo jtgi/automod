@@ -27,7 +27,6 @@ import { addToBypassAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 import { recoverQueue, sweepQueue } from "~/lib/bullish.server";
-import { useSearchParams } from "@remix-run/react";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");

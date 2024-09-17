@@ -214,10 +214,6 @@ function RefreshAccountButton(props: ButtonProps) {
 function UpgradePlanButton(props: { currentPlan: PlanDef; plans: typeof userPlans }) {
   const { currentPlan, plans } = props;
 
-  if (currentPlan.id === "vip" || currentPlan.id === "ultra") {
-    return null;
-  }
-
   function button(plan: PlanType) {
     if (!("link" in plans[plan])) {
       return null;
@@ -241,5 +237,7 @@ function UpgradePlanButton(props: { currentPlan: PlanDef; plans: typeof userPlan
     return button("ultra");
   } else if (currentPlan.id === "basic") {
     return button("prime");
+  } else {
+    return null;
   }
 }

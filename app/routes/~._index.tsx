@@ -7,7 +7,7 @@ import { Button, ButtonProps } from "~/components/ui/button";
 import { getSharedEnv, requireUser, successResponse } from "~/lib/utils.server";
 import { RefreshCwIcon } from "lucide-react";
 import { Link, useFetcher } from "@remix-run/react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import {
   Dialog,

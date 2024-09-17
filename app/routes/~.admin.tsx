@@ -11,7 +11,7 @@ import { commitSession, getSession } from "~/lib/auth.server";
 import { db } from "~/lib/db.server";
 import { errorResponse, requireSuperAdmin, successResponse } from "~/lib/utils.server";
 import { isRecoverActive, isSweepActive } from "./~.channels.$id.tools";
-import { recoverQueue, delayedSubscriptionQueue, sweepQueue } from "~/lib/bullish.server";
+import { recoverQueue, subscriptionQueue, sweepQueue } from "~/lib/bullish.server";
 import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
@@ -135,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
         message: `Refreshed. Plan is ${plan.plan}, expiring ${plan.expiresAt?.toISOString()}`,
       });
     } else {
-      await delayedSubscriptionQueue.add(
+      await subscriptionQueue.add(
         "subscriptionSyncAdmin",
         {},
         { removeOnComplete: true, removeOnFail: true }

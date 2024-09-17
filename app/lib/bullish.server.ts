@@ -2,18 +2,25 @@
 import { Job, JobsOptions, Queue, UnrecoverableError, Worker } from "bullmq";
 import * as Sentry from "@sentry/remix";
 import IORedis from "ioredis";
-import { ValidateCastArgs, getUsage as getTotalUsage, validateCast } from "~/routes/api.webhooks.neynar";
 import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
 import { neynar, pageChannelCasts } from "./neynar.server";
-import { WebhookCast } from "./types";
+import { ValidateCastArgsV2, WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
-import { getCast, getWarpcastChannel, publishCast } from "./warpcast.server";
+import {
+  getCast,
+  getMembersForChannel,
+  getWarpcastChannel,
+  publishCast,
+  removeUserFromChannel,
+} from "./warpcast.server";
 import { automodFid } from "~/routes/~.channels.$id";
 import { syncSubscriptions } from "./subscription.server";
 import { sendNotification } from "./notifications.server";
 import axios from "axios";
 import { userPlans } from "./utils";
+import { ruleFunctions } from "./validations.server";
+import { getUsage, validateCast, ValidateCastArgs } from "./automod.server";
 
 const connection = new IORedis({
   host: process.env.REDIS_HOST,
@@ -22,34 +29,15 @@ const connection = new IORedis({
   maxRetriesPerRequest: null,
 });
 
-export const webhookQueue = new Queue("webhookQueue", {
+scheduleDelayedJobs();
+
+export const subscriptionQueue = new Queue("subscriptionQueue", {
   connection,
 });
-
-export type ValidateCastArgsV2 = {
-  webhookNotif: {
-    type: string;
-    data: WebhookCast;
-  };
-  channelName: string;
-  skipSignerCheck?: boolean;
-};
-
-export const delayedSubscriptionQueue = new Queue("subscriptionQueue", {
-  connection,
-});
-
-if (process.env.NODE_ENV === "production") {
-  delayedSubscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
-}
 
 export const propagationDelayQueue = new Queue("propagationDelayQueue", {
   connection,
 });
-
-if (process.env.NODE_ENV === "production") {
-  propagationDelayQueue.add("propagationDelayCheck", {}, { repeat: { pattern: "*/10 * * * *" } });
-}
 
 export const propagationDelayWorker = new Worker(
   "propagationDelayQueue",
@@ -148,6 +136,7 @@ export const propagationDelayWorker = new Worker(
   },
   {
     connection,
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 
@@ -159,6 +148,7 @@ export const subscriptionWorker = new Worker(
   },
   {
     connection,
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
   }
 );
 
@@ -169,6 +159,10 @@ subscriptionWorker.on("error", (err: Error) => {
 
 subscriptionWorker.on("failed", (job, err) => {
   console.error("Subscription worker failed", err);
+});
+
+export const webhookQueue = new Queue("webhookQueue", {
+  connection,
 });
 
 export const webhookWorker = new Worker(
@@ -288,7 +282,7 @@ export const webhookWorker = new Worker(
           },
         },
       }),
-      getTotalUsage(moderatedChannel),
+      getUsage(moderatedChannel),
     ]);
 
     const plan = userPlans[moderatedChannel.user.plan as keyof typeof userPlans];
@@ -677,4 +671,117 @@ export function defaultProcessCastJobArgs(hash: string): JobsOptions {
     },
     attempts: 4,
   };
+}
+
+export const membershipQueue = new Queue("membershipQueue", {
+  connection,
+});
+
+export const membershipWorker = new Worker(
+  "membershipQueue",
+  async () => {
+    const channels = await db.moderatedChannel.findMany({
+      where: {
+        memberRequirements: {
+          not: null,
+        },
+        active: true,
+      },
+    });
+
+    membershipQueue.addBulk(
+      channels.map((channel) => ({
+        name: "checkMembership",
+        data: { channelId: channel.id },
+      }))
+    );
+  },
+  {
+    connection,
+  }
+);
+
+export const checkMembershipQueue = new Queue("checkMembershipQueue", {
+  connection,
+});
+
+export const checkMembershipWorker = new Worker(
+  "checkMembershipQueue",
+  async (job: Job) => {
+    const { channelId } = job.data;
+    const moderatedChannel = await db.moderatedChannel.findUnique({
+      where: {
+        id: channelId,
+      },
+    });
+
+    if (!moderatedChannel || !moderatedChannel.memberRequirementsParsed) {
+      return;
+    }
+
+    const { rules, logicType } = moderatedChannel.memberRequirementsParsed;
+
+    // this probably needs to be asyncly deeply paged
+    const members = await getMembersForChannel({ channelId: moderatedChannel.id });
+
+    // process 100 members at a time
+    for (let i = 0; i < members.length; i += 100) {
+      const membersChunk = members.slice(i, i + 100);
+      const users = await neynar.fetchBulkUsers(membersChunk.map((m) => m.fid)).then((rsp) => rsp.users);
+
+      for (const user of users) {
+        // TODO: batch these
+
+        let removeUser = false;
+        for (const rule of rules) {
+          const ruleFn = ruleFunctions[rule.name as keyof typeof ruleFunctions];
+          if (!ruleFn) {
+            console.error(`Unknown rule used as requirement, skipping: ${rule.name}`);
+            continue;
+          }
+
+          const result = await ruleFn({
+            // tmp hack: update rules to accept users
+            cast: {
+              author: user,
+            } as unknown as WebhookCast,
+            channel: moderatedChannel,
+            rule,
+          });
+
+          if (logicType === "AND" && !result.result) {
+            removeUser = true;
+            break;
+          } else if (logicType === "OR") {
+            removeUser = removeUser || result.result;
+          }
+        }
+
+        if (removeUser) {
+          await removeUserFromChannel({ channelId: moderatedChannel.id, fid: user.fid }).catch((e) => {
+            console.error(
+              `Failed to remove user ${user.fid} from channel ${moderatedChannel.id}. Continuing...`,
+              e
+            );
+          });
+
+          // consider user facing log somewhere.
+        }
+      }
+    }
+  },
+  {
+    connection,
+    autorun: process.env.NODE_ENV === "production" || !!process.env.ENABLE_QUEUES,
+  }
+);
+
+function scheduleDelayedJobs() {
+  if (process.env.NODE_ENV === "production") {
+    subscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
+    propagationDelayQueue.add("propagationDelayCheck", {}, { repeat: { pattern: "*/10 * * * *" } });
+
+    // untested
+    // membershipQueue.add("checkMembership", {}, { repeat: { pattern: "0 0 * * *" } });
+  }
 }

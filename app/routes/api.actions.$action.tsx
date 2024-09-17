@@ -2,20 +2,14 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { z } from "zod";
 import { db } from "~/lib/db.server";
-import { getChannel, neynar } from "~/lib/neynar.server";
+import { neynar } from "~/lib/neynar.server";
 import { CastAction, MessageResponse } from "~/lib/types";
-import {
-  canUserExecuteAction,
-  formatZodError,
-  getModerators,
-  getSharedEnv,
-  parseMessage,
-} from "~/lib/utils.server";
+import { canUserExecuteAction, formatZodError, getSharedEnv, parseMessage } from "~/lib/utils.server";
 import { actionFunctions, actionTypes } from "~/lib/validations.server";
-import { isRuleTargetApplicable, logModerationAction } from "./api.webhooks.neynar";
 import { actions, deprecatedActions } from "~/lib/cast-actions.server";
 import { grantRoleAction } from "~/lib/utils";
 import { castQueue } from "~/lib/bullish.server";
+import { isRuleTargetApplicable, logModerationAction } from "~/lib/automod.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   try {

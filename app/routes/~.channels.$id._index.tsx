@@ -11,9 +11,9 @@ import {
   requireUser,
   requireUserCanModerateChannel as requireUserCanModerateChannel,
 } from "~/lib/utils.server";
-import { Await, ClientLoaderFunctionArgs } from "@remix-run/react";
+import { Await } from "@remix-run/react";
 import { actionDefinitions } from "~/lib/validations.server";
-import { HeartIcon, MessageCircle, RefreshCcw, User } from "lucide-react";
+import { HeartIcon, MessageCircle, RefreshCcw } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { CastSenseResponse, getChannelStats, getTopEngagers } from "~/lib/castsense.server";
 import { Suspense } from "react";

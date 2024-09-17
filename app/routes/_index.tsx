@@ -7,7 +7,6 @@ import {
   BadgeDollarSign,
   BarChart,
   Bot,
-  Check,
   DollarSign,
   HeartHandshake,
   Loader2,

@@ -15,7 +15,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     );
   }
 
-  // Need to make this server side because of CORS
+  // Need to proxy this due to CORS if fetched from browser
   const rsp = await axios.get(`https://api.warpcast.com/v1/channel?channelId=${channelId}`);
 
   return typedjson(rsp.data);
