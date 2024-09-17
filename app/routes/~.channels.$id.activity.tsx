@@ -226,8 +226,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Screen() {
-  const { page, pageSize, total, moderationLogs, actionDefinitions, stats } =
-    useTypedLoaderData<typeof loader>();
+  const { page, pageSize, total, moderationLogs, actionDefinitions } = useTypedLoaderData<typeof loader>();
   const [showCastText, setShowCastText] = useLocalStorage("showCastText", true);
 
   const prevPage = Math.max(page - 1, 0);
