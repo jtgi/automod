@@ -163,12 +163,6 @@ export async function canUserExecuteAction(props: { userId: string; channelId: s
 
   const actionPermission = actionToPermission(props.action);
 
-  // this is dangerous
-  // const everyoneRole = moderatedChannel.roles.find((role) => role.isEveryoneRole);
-  // if (everyoneRole?.permissions.includes(actionPermission)) {
-  //   return true;
-  // }
-
   const isDelegate = await db.delegate.findFirst({
     where: {
       channelId: props.channelId,
@@ -180,8 +174,6 @@ export async function canUserExecuteAction(props: { userId: string; channelId: s
       },
     },
   });
-
-  console.log({ isDelegate, actionPermission, userId: props.userId, channelId: props.channelId });
 
   return isDelegate !== null;
 }
@@ -238,7 +230,7 @@ export async function generateSystemFrame(message: string) {
 export function getSharedEnv() {
   return {
     infuraProjectId: process.env.INFURA_PROJECT_ID!,
-    postHogApiKey: process.env.POSTHOG_API_KEY!,
+    postHogApiKey: process.env.POSTHOST_PUBLIC_ID!,
     neynarClientId: process.env.NEYNAR_CLIENT_ID!,
     nodeEnv: process.env.NODE_ENV!,
     hostUrl: process.env.NODE_ENV === "production" ? process.env.PROD_URL! : process.env.DEV_URL!,

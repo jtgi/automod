@@ -2,9 +2,9 @@ import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import invariant from "tiny-invariant";
 import { simulationQueue } from "~/lib/bullish.server";
 import { formatZodError, requireUser } from "~/lib/utils.server";
-import { FullModeratedChannel } from "./api.webhooks.neynar";
 import { ModeratedChannelSchema } from "~/lib/validations.server";
 import { db } from "~/lib/db.server";
+import { FullModeratedChannel } from "~/lib/types";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");

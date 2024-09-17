@@ -15,13 +15,13 @@ import { recoverQueue, subscriptionQueue, sweepQueue } from "~/lib/bullish.serve
 import { Suspense } from "react";
 import axios from "axios";
 import { automodFid } from "./~.channels.$id";
-import { FullModeratedChannel } from "./api.webhooks.neynar";
 import { Checkbox } from "~/components/ui/checkbox";
 import { refreshAccountStatus } from "~/lib/subscription.server";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { Loader } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { getChannel } from "~/lib/neynar.server";
+import { FullModeratedChannel } from "~/lib/types";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireSuperAdmin({ request });

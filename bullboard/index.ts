@@ -4,8 +4,6 @@ import { ExpressAdapter } from "@bull-board/express";
 import express from "express";
 import {
   castQueue,
-  checkMembershipQueue,
-  membershipQueue,
   recoverQueue,
   simulationQueue,
   subscriptionQueue,
@@ -26,8 +24,6 @@ createBullBoard({
     new BullMQAdapter(webhookQueue),
     new BullMQAdapter(recoverQueue),
     new BullMQAdapter(subscriptionQueue),
-    new BullMQAdapter(checkMembershipQueue),
-    new BullMQAdapter(membershipQueue),
   ],
   serverAdapter: serverAdapter,
 });

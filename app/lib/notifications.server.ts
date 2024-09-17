@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FullModeratedChannel } from "~/routes/api.webhooks.neynar";
+import { FullModeratedChannel } from "~/lib/types";
 import { db } from "./db.server";
 import axios, { AxiosError } from "axios";
 

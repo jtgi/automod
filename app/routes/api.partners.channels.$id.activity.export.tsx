@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { z } from "zod";
@@ -115,7 +116,8 @@ async function exportModerationLogs(channelId: string, start: Date, end: Date, o
     ],
   });
 
-  stringifier.pipe(outputStream);
+  // reasons
+  stringifier.pipe(outputStream as any);
 
   for await (const batch of fetchModerationLogs(channelId, start, end)) {
     for (const log of batch) {

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql, GraphQLClient } from "graphql-request";
 import { neynar, registerWebhook } from "./neynar.server";
-import { ChannelModerationDetails } from "scripts/migrateAirstack";
 import { Rule } from "./validations.server";
 import { getWarpcastChannel, getWarpcastChannelOwner } from "./warpcast.server";
 import { ModeratedChannel } from "@prisma/client";
@@ -90,7 +89,7 @@ export async function userFollowsChannel(props: { fid: number; channelId: string
     }
   `;
 
-  const { data, error } = await fetchQuery(query);
+  const { data } = await fetchQuery(query);
   return !!data.FarcasterChannelParticipants?.FarcasterChannelParticipant;
 }
 
@@ -334,7 +333,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
       case "WHITELIST_FIDS": {
         invariant(rule.whitelistFidsRule?.fids, "WHITELIST_FIDS rule is missing fids");
 
-        const fids = rule.whitelistFidsRule.fids.map((num) => parseInt(num));
+        const fids = rule.whitelistFidsRule.fids.map((num: string) => parseInt(num));
         const users = [];
 
         for (let i = 0; i < fids.length; i += 100) {
@@ -371,7 +370,7 @@ export async function migrateModerationConfig(props: { userId: string; config: C
         }
         break;
       case "CO_MODERATOR_FIDS": {
-        const fids = rule.coModeratorFidsRule!.fids.map((n) => parseInt(n));
+        const fids = rule.coModeratorFidsRule!.fids.map((n: string) => parseInt(n));
         const users = [];
 
         for (let i = 0; i < fids.length; i += 100) {
@@ -517,3 +516,132 @@ export async function migrateModerationConfig(props: { userId: string; config: C
 
   return notices;
 }
+
+export interface ChannelModerationDetails {
+  channelId: string;
+  shouldEnforceAllRules: boolean;
+  channelModerationRules: ChannelModerationRule[];
+}
+
+interface ChannelModerationRule {
+  ruleType: ChannelModerationRuleType;
+  socialCapitalRule?: SocialCapitalRule;
+  hasPowerBadgeRule?: HasPowerBadgeRule;
+  followerCountRule?: FollowerCountRule;
+  followedByOwnerRule?: FollowedByOwnerRule;
+  followsOwnerRule?: FollowsOwnerRule;
+  followsChannelRule?: FollowsChannelRule;
+  ownsTokensRule?: OwnsTokensRule;
+  poapInPersonCountRule?: PoapInPersonCountRule;
+  poapTotalCountRule?: PoapTotalCountRule;
+  poapSpecificRule?: PoapSpecificRule;
+  fidRangeRule?: FidRangeRule;
+  whitelistFidsRule?: WhitelistFidsRule;
+  bannedFidsRule?: BannedFidsRule;
+  coModeratorFidsRule?: CoModeratorFidsRule;
+  rawRuleStructure?: Record<string, any>;
+}
+
+type ChannelModerationRuleType =
+  | "SOCIAL_CAPITAL_RANK"
+  | "HAS_POWER_BADGE"
+  | "FOLLOWER_COUNT"
+  | "FOLLOWED_BY_OWNER"
+  | "FOLLOWS_OWNER"
+  | "FOLLOWS_CHANNEL"
+  | "OWNS_TOKENS"
+  | "POAP_IN_PERSON_COUNT"
+  | "POAP_TOTAL_COUNT"
+  | "POAP_SPECIFIC"
+  | "FID_RANGE"
+  | "WHITELIST_FIDS"
+  | "BANNED_FIDS"
+  | "CO_MODERATOR_FIDS";
+
+interface SocialCapitalRule {
+  operatorType: SocialCapitalOperatorType;
+  value: number;
+}
+
+interface HasPowerBadgeRule {
+  hasPowerBadge: boolean;
+}
+
+interface FollowerCountRule {
+  operatorType: FollowerCountOperatorType;
+  value: number;
+}
+
+interface FollowedByOwnerRule {
+  followedByOwner: boolean;
+}
+
+interface FollowsOwnerRule {
+  followsOwner: boolean;
+}
+
+interface FollowsChannelRule {
+  followsChannel: boolean;
+}
+
+interface OwnsTokensRule {
+  token: ChannelToken[];
+}
+
+interface ChannelToken {
+  operatorType: TokenOperatorType;
+  tokenAddress: string;
+  tokenId: string;
+  tokenType: TokenType;
+  blockchain: ChannelBlockchain;
+  value?: number;
+}
+
+interface PoapInPersonCountRule {
+  operatorType: PoapCountOperatorType;
+  value: number;
+}
+
+interface PoapTotalCountRule {
+  operatorType: PoapCountOperatorType;
+  value: number;
+}
+
+interface PoapSpecificRule {
+  operatorType: PoapSpecificOperatorType;
+  value: string[]; // EventId
+}
+
+interface FidRangeRule {
+  operatorType: FidRangeOperatorType;
+  value: number;
+}
+
+interface WhitelistFidsRule {
+  fids: string[];
+}
+
+interface BannedFidsRule {
+  fids: string[];
+}
+
+interface CoModeratorFidsRule {
+  fids: string[];
+}
+
+type SocialCapitalOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
+
+type FollowerCountOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
+
+type TokenOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
+
+type PoapCountOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
+
+type PoapSpecificOperatorType = "IN";
+
+type FidRangeOperatorType = "GREATER_THAN" | "LESS_THAN" | "EQUAL";
+
+type ChannelBlockchain = "ETHEREUM" | "BASE" | "DEGEN" | "ZORA" | "GOLD" | "HAM";
+
+// Note: TokenType was not defined in the original schema, so we'll leave it as a placeholder
+type TokenType = string; // You may want to define specific token types here if known
