@@ -22,7 +22,6 @@ afterAll(async () => {
 
 async function clearDatabase() {
   await prisma.moderationLog.deleteMany();
-  await prisma.ruleSet.deleteMany();
   await prisma.moderatedChannel.deleteMany();
   await prisma.user.deleteMany();
   await prisma.inviteCode.deleteMany();

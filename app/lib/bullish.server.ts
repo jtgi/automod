@@ -171,11 +171,6 @@ export const webhookWorker = new Worker(
         },
         include: {
           user: true,
-          ruleSets: {
-            where: {
-              active: true,
-            },
-          },
         },
       }),
       db.castLog.findFirst({
@@ -582,9 +577,6 @@ export const syncWorker = new Worker(
       where: {
         id: job.data.channelId,
         active: true,
-      },
-      include: {
-        ruleSets: true,
       },
     });
 

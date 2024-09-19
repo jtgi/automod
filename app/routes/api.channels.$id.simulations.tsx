@@ -14,7 +14,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       id: params.id,
     },
     include: {
-      ruleSets: true,
       user: true,
     },
   });

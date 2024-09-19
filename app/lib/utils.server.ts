@@ -119,7 +119,6 @@ export async function requireUserOwnsChannel(props: { userId: string; channelId:
       userId: props.userId,
     },
     include: {
-      ruleSets: true,
       moderationLogs: {
         take: 25,
         orderBy: {
@@ -196,7 +195,6 @@ export async function canUserModerateChannel(props: { userId: string; channelId:
       ],
     },
     include: {
-      ruleSets: true,
       user: true,
       roles: {
         include: {

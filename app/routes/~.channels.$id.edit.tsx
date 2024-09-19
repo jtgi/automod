@@ -22,11 +22,11 @@ import { db } from "~/lib/db.server";
 import invariant from "tiny-invariant";
 import { v4 as uuid } from "uuid";
 import { CurationForm } from "~/components/curation-form";
-import { RuleSet } from "@prisma/client";
 import { addToBypassAction } from "~/lib/cast-actions.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { toggleWebhook } from "./api.channels.$id.toggleEnable";
 import { recoverQueue, sweepQueue } from "~/lib/bullish.server";
+import { RuleSet } from "~/lib/types";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   invariant(params.id, "id is required");
@@ -69,11 +69,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       include: {
         user: true,
-        ruleSets: {
-          where: {
-            active: true,
-          },
-        },
       },
       data: {
         banThreshold: ch.data.banThreshold,
@@ -88,16 +83,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
           rule: ch.data.exclusionRuleSet?.ruleParsed,
           actions: ch.data.exclusionRuleSet?.actionsParsed,
         }),
-        ruleSets: {
-          // deleteMany: {}, : remove incase we need to rollback
-          create: ch.data.ruleSets.map((ruleSet) => {
-            return {
-              target: ruleSet.target,
-              rule: JSON.stringify(ruleSet.ruleParsed),
-              actions: JSON.stringify(ruleSet.actionsParsed),
-            };
-          }),
-        },
       },
     }),
     getSession(request.headers.get("Cookie")),

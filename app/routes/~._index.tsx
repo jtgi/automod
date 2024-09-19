@@ -41,7 +41,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ],
     },
     include: {
-      ruleSets: true,
       comods: true,
     },
   });

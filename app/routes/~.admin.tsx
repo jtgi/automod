@@ -208,7 +208,6 @@ export async function action({ request }: ActionFunctionArgs) {
           active: true,
         },
         include: {
-          ruleSets: true,
           user: true,
           roles: {
             include: {
@@ -268,7 +267,6 @@ export async function action({ request }: ActionFunctionArgs) {
           active: true,
         },
         include: {
-          ruleSets: true,
           user: true,
           roles: {
             include: {

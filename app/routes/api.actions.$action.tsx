@@ -101,7 +101,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         url: message.action.cast.root_parent_url,
       },
       include: {
-        ruleSets: true,
         user: true,
         roles: {
           include: {

@@ -235,11 +235,6 @@ export async function validateCast({
     },
     include: {
       user: true,
-      ruleSets: {
-        where: {
-          active: true,
-        },
-      },
     },
   });
 
