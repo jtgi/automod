@@ -121,7 +121,7 @@ Sentry is used for client and server errors. All other logs are emitted to stdou
 
 A home made paging service (webhook-relay.fly.dev) is used to trigger critical alerts with sync propagation or dropped webhooks. You can point this wherever you like.
 
-## Estimated Costs
+## Costs
 
 At time of writing automod:
 
@@ -141,3 +141,9 @@ All Data APIs are usage based and highly variable. Here's a snapshot of August.
 | Airstack Data | Airstack | Buy 1 Fan Token, free forever | Channel Following, FarRank, FarScore |
 | Moxie Data | The Graph | < $5/mo | |
 | Cast Storage | Farcaster | ~$40/mo amortized | 200 storage units for @automod reactions. Renews yearly. Deprecated |
+
+## Billing
+
+Automod uses [Hypersub](https://hypersub.withfabric.xyz/) for all billing and membership tracking. In short, its an NFT with some additional metadata indicating how much time in the subscription remains. Billing sync are triggered at midnight each night or manually by users.
+
+For relevant code see [subscription.server.ts](/app/lib/subscription.server.ts)
