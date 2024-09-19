@@ -4,10 +4,6 @@ primary_region = 'lax'
 
 [build]
 
-[[mounts]]
-  source = 'data'
-  destination = '/data'
-
 [http_service]
   internal_port = 3000
   force_https = true

@@ -79,7 +79,6 @@ model ModeratedChannel {
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   moderationLogs    ModerationLog[]
   roles             Role[]
-  ruleSets          RuleSet[]
   signerAllocations SignerAllocation[]
   usage             Usage[]
 }
@@ -138,19 +137,6 @@ model Comods {
   channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   @@unique([fid, channelId])
-}
-
-model RuleSet {
-  id        String           @id @default(cuid())
-  createdAt DateTime         @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime?        @updatedAt @db.Timestamptz(6)
-  active    Boolean          @default(true)
-  target    String           @default("all")
-  rule      String
-  actions   String
-  channelId String
-  type      String?
-  channel   ModeratedChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 }
 
 model ModerationLog {
