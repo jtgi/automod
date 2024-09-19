@@ -56,13 +56,15 @@ git clone https://github.com/yourusername/automod.git
 cd automod
 pnpm install
 cp .env.example .env
-# Update .env with your configuration, see .env.example for instructions
+# Update .env with your configuration, see [.env.example](/.env.example) for instructions
 pnpm run dev
 ```
 
 ## Deployment
 
-Automod is just a standard remix app. You can deploy it anywhere that supports Docker, Remix, or Node.
+- Automod is a standard remix app. You can deploy it anywhere that supports Docker, Remix, or Node.
+- A separate Redis and Postgres instance is required as well as other 3rd party api keys, make sure to review the [environment variables](/.env.example) required.
+
 
 ### With Docker
 
@@ -102,21 +104,38 @@ This will allow you to:
 
 ### Dealing with downtime and misconfigurations
 
-Login to [/admin](https://automod.sh/~/admin) console.
+When Automod or other Farcaster infra goes down it means casts may not be moderated.
 
-Run a sweep or recovery
+Login to [/admin](https://automod.sh/~/admin) console and run a sweep or recovery
 
-- **Recovery:** Moderate historical casts not yet seen.
-- **Sweep:** Moderate historical casts, even if they've already been seen.
-
-Recover is useful when you have downtime and missed things, sweep is useful if you or a customer ships bad logic and everything must be reprocessed.
+- **Recovery:** Moderate historical casts not yet seen, useful when there was downtime and things were missed.
+- **Sweep:** Moderate historical casts, even if they've already been seen. Useful if you or a customer ships bad moderation logic and everything must be reprocessed.
 
 ### Managing Queues
 
-If you want to stop, start, delete or manage queues, point your env files at production Redis and run `pnpm bullboard` and open `https://localhost:8888/ui`. This should be exposed and hosted remotely but I'm lazy.
+If you want to stop, start, delete or manage queues, point your env files at production Redis and run `pnpm bullboard` and open `https://localhost:8888/ui`. This should be exposed and hosted remotely but never needed to.
 
 ### Logs & Alerting
 
 Sentry is used for client and server errors. All other logs are emitted to stdout via console.
 
 A home made paging service (webhook-relay.fly.dev) is used to trigger critical alerts with sync propagation or dropped webhooks. You can point this wherever you like.
+
+## Estimated Costs
+At time of writing automod:
+- Powers 550 channels
+- ~1 request per second.
+- Processes 500k+ casts per month.
+
+All Data APIs are usage based and highly variable. Here's a snapshot of August.
+| Service              | Provider                | Cost                                   | Notes                                                                |
+|----------------------|-------------------------|----------------------------------------|----------------------------------------------------------------------|
+| API                  | fly.io                  | $13/mo                                 | 2 X shared-cpu-2x with 1024 MB memory                                |
+| PostgreSQL           | fly.io                  | $35/mo                                 | 2 X shared-cpu-2x with 4096 MB memory (over provisioned)             |
+| Redis                | railway.app             | < $1/mo                                |                                                                      |
+| Farcaster Data       | Neynar                  | > $100/mo (Contact Neynar)             | Used for cast metadata, webhooks, feeds, frames, etc.                |
+| NFT Data             | SimpleHash              | > $100/mo (Contact SimpleHash)         | Needed for 1155 token lookups and Zora Network at high concurrency.  |
+| Ethereum JSON Data   | Alchemy/Infura/Coinbase | ~$30/mo                                | Most ERC20/721/1155 token lookups and Sign in With Farcaster.        |
+| Airstack Data        | Airstack                | Buy 1 Fan Token, free forever          | FarRank, FarScore                                                    |
+| Moxie Data           | The Graph               | < $5/mo                                |                                                                      |
+
