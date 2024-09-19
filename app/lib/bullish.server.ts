@@ -5,7 +5,7 @@ import IORedis from "ioredis";
 import { SimulateArgs, SweepArgs, recover, simulate, sweep } from "~/routes/~.channels.$id.tools";
 import { db } from "./db.server";
 import { neynar, pageChannelCasts } from "./neynar.server";
-import { ValidateCastArgsV2 } from "./types";
+import { ValidateCastArgsV2, WebhookCast } from "./types";
 import { toggleWebhook } from "~/routes/api.channels.$id.toggleEnable";
 import {
   getCast,

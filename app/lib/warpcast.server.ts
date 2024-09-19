@@ -103,3 +103,8 @@ export async function removeUserFromChannel(props: { channelId: string; fid: num
   console.log(`Removing user ${props.fid} from channel ${props.channelId}`);
   return;
 }
+
+export async function hideCast(props: { hash: string }) {
+  console.log(`Hiding cast ${props.hash}`);
+  return;
+}

@@ -1486,27 +1486,12 @@ export const actionFunctions: Record<ActionType, ActionFunction> = {
   unmuted: () => Promise.resolve(),
   unhide: () => Promise.resolve(),
   ban: ban,
-  like: like,
+  like: () => Promise.resolve(),
   unlike: unlike,
   warnAndHide: () => Promise.resolve(),
   cooldown: cooldown,
   grantRole: grantRole,
 } as const;
-
-export async function like(props: { cast: Cast; channel: string }) {
-  const signerAlloc = await db.signerAllocation.findFirst({
-    where: {
-      channelId: props.channel,
-    },
-    include: {
-      signer: true,
-    },
-  });
-
-  const uuid = signerAlloc?.signer.signerUuid || process.env.NEYNAR_SIGNER_UUID!;
-  console.log(`Liking with @${signerAlloc ? signerAlloc.signer.username : "automod"}, ${uuid}`);
-  await neynar.publishReactionToCast(uuid, "like", props.cast.hash);
-}
 
 // Rule: contains text, option to ignore case
 export function containsText(props: CheckFunctionArgs) {

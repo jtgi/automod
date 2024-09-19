@@ -8,7 +8,7 @@ import { getModerators } from "~/lib/utils.server";
 
 import { Action, Rule, actionFunctions, isCohost, ruleFunctions } from "~/lib/validations.server";
 import { FullModeratedChannel, WebhookCast } from "~/lib/types";
-import { getWarpcastChannelOwner } from "~/lib/warpcast.server";
+import { getWarpcastChannelOwner, hideCast } from "~/lib/warpcast.server";
 import { PlanType, userPlans } from "~/lib/utils";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -55,9 +55,7 @@ export async function mute({ channel, cast }: { channel: string; cast: Cast; act
 }
 
 export async function hideQuietly({
-  channel,
   cast,
-  options,
 }: {
   channel: string;
   cast: Cast;
@@ -66,11 +64,7 @@ export async function hideQuietly({
     executeOnProtocol?: boolean;
   };
 }) {
-  if (options?.executeOnProtocol) {
-    await unlike({ channel, cast });
-  } else {
-    return Promise.resolve();
-  }
+  await hideCast({ hash: cast.hash });
 }
 
 export async function addToBypass({ channel, cast }: { channel: string; cast: Cast; action: Action }) {
