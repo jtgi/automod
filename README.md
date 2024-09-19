@@ -34,6 +34,7 @@ Automod favors less directories, less files and generally avoids DRYing things u
 See the [Prisma Schema](./prisma/schema.prisma) for an overview.
 
 Point of note:
+
 - **ModeratedChannel inclusionRuleSet and exclusionRuleSet:** These are json strings that define the moderation rules. See the zod schema in [validation.server.ts](/app/lib/validation.server.ts) for its shape. You may wonder why the shape isn't simpler. Automod supports recursive logical expressions of rules as well as multiple actions to execute but the UI at time of writing only exposes a single AND/OR and no preset actions. Even this customers get stuck on quite often.
 - **RuleSets:** deprecated in favor of `inclusionRuleSet` and `exclusionRuleSet`.
 
@@ -64,7 +65,6 @@ pnpm run dev
 
 - Automod is a standard remix app. You can deploy it anywhere that supports Docker, Remix, or Node.
 - A separate Redis and Postgres instance is required as well as other 3rd party api keys, make sure to review the [environment variables](/.env.example) required.
-
 
 ### With Docker
 
@@ -122,20 +122,22 @@ Sentry is used for client and server errors. All other logs are emitted to stdou
 A home made paging service (webhook-relay.fly.dev) is used to trigger critical alerts with sync propagation or dropped webhooks. You can point this wherever you like.
 
 ## Estimated Costs
+
 At time of writing automod:
+
 - Powers 550 channels
 - ~1 request per second.
 - Processes 500k+ casts per month.
 
 All Data APIs are usage based and highly variable. Here's a snapshot of August.
-| Service              | Provider                | Cost                                   | Notes                                                                |
+| Service | Provider | Cost | Notes |
 |----------------------|-------------------------|----------------------------------------|----------------------------------------------------------------------|
-| API                  | fly.io                  | $13/mo                                 | 2 X shared-cpu-2x with 1024 MB memory                                |
-| PostgreSQL           | fly.io                  | $35/mo                                 | 2 X shared-cpu-2x with 4096 MB memory (over provisioned)             |
-| Redis                | railway.app             | < $1/mo                                |                                                                      |
-| Farcaster Data       | Neynar                  | > $100/mo (Contact Neynar)             | Used for cast metadata, webhooks, feeds, frames, etc.                |
-| NFT Data             | SimpleHash              | > $100/mo (Contact SimpleHash)         | Needed for 1155 token lookups and Zora Network at high concurrency.  |
-| Ethereum JSON Data   | Alchemy/Infura/Coinbase | ~$30/mo                                | Most ERC20/721/1155 token lookups and Sign in With Farcaster.        |
-| Airstack Data        | Airstack                | Buy 1 Fan Token, free forever          | FarRank, FarScore                                                    |
-| Moxie Data           | The Graph               | < $5/mo                                |                                                                      |
-
+| API | fly.io | $13/mo | 2 X shared-cpu-2x with 1024 MB memory |
+| PostgreSQL | fly.io | $35/mo | 2 X shared-cpu-2x with 4096 MB memory (over provisioned) |
+| Redis | railway.app | < $1/mo | |
+| Farcaster Data | Neynar | > $100/mo (Contact Neynar) | Used for cast metadata, webhooks, feeds, frames, etc. |
+| NFT Data | SimpleHash | > $100/mo (Contact SimpleHash) | Needed for 1155 token lookups and Zora Network at high concurrency. |
+| Ethereum JSON Data | Alchemy/Infura/Coinbase | ~$30/mo | Most ERC20/721/1155 token lookups and Sign in With Farcaster. |
+| Airstack Data | Airstack | Buy 1 Fan Token, free forever | Channel Following, FarRank, FarScore |
+| Moxie Data | The Graph | < $5/mo | |
+| Cast Storage | Farcaster | ~$40/mo amortized | 200 storage units for @automod reactions. Renews yearly. Deprecated |
