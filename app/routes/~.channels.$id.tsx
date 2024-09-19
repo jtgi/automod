@@ -113,7 +113,6 @@ export default function ChannelRoot() {
               [
                 { to: `/~/channels/${channel.id}`, title: "Overview", end: true },
                 { to: `/~/channels/${channel.id}/activity`, title: "Activity" },
-                { to: `/~/channels/${channel.id}/membership`, title: "Membership" },
                 { to: `/~/channels/${channel.id}/edit`, title: "Moderation" },
                 {
                   to: `/~/channels/${channel.id}/roles`,
