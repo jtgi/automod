@@ -698,6 +698,11 @@ export const checkMembershipQueue = new Queue("checkMembershipQueue", {
 export const checkMembershipWorker = new Worker(
   "checkMembershipQueue",
   async (job: Job) => {
+    /**
+     * NOTE: this code has never run before, i wrote
+     * it stream of consciousness and never got
+     * around to testing it.
+     */
     const { channelId } = job.data;
     const moderatedChannel = await db.moderatedChannel.findUnique({
       where: {
@@ -712,15 +717,16 @@ export const checkMembershipWorker = new Worker(
     const { rules, logicType } = moderatedChannel.memberRequirementsParsed;
 
     // this probably needs to be asyncly deeply paged
+    // considering /base etc has 100k+ members
     const members = await getMembersForChannel({ channelId: moderatedChannel.id });
 
-    // process 100 members at a time
+    // neynar only supports bulk fetches in 100s at a time
     for (let i = 0; i < members.length; i += 100) {
       const membersChunk = members.slice(i, i + 100);
       const users = await neynar.fetchBulkUsers(membersChunk.map((m) => m.fid)).then((rsp) => rsp.users);
 
       for (const user of users) {
-        // TODO: batch these
+        // TODO: batch these?
 
         let removeUser = false;
         for (const rule of rules) {
@@ -732,6 +738,8 @@ export const checkMembershipWorker = new Worker(
 
           const result = await ruleFn({
             // tmp hack: update rules to accept users
+            // rules should prob be split up in some way
+            // between user and cast scope, or accept either/or idk
             cast: {
               author: user,
             } as unknown as WebhookCast,
@@ -755,7 +763,8 @@ export const checkMembershipWorker = new Worker(
             );
           });
 
-          // consider user facing log somewhere.
+          // consider user facing log somewhere, moderation and this
+          // should probably unified?
         }
       }
     }
