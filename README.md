@@ -48,6 +48,15 @@ Point of note:
 - A worker picks up the cast, looks up the channel moderation rules and validates the cast
 - If it is accepted, a like on protocol is issued and the cast will appear in the moderated feed.
 
+**Adding a new Rule**
+Rules are mostly config driven and so far the abstraction has not been too leaky.
+
+- Add a `RuleName` and `RuleDefinition` to [validations.server.ts](/app/lib/validations.server.ts). There are many examples to reference.
+- The `RuleDefinition` args will automatically render a form, store and serialize all the inputs.
+- Implement the check and add it to `ruleFunctions`.
+
+The rule will be available to all.
+
 ## Getting Started
 
 ### Local Development
