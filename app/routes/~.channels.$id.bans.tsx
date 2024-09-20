@@ -66,7 +66,7 @@ export default function Screen() {
   const { cooldowns, cooldownInstallLink, banInstallLink } = useTypedLoaderData<typeof loader>();
 
   const banned = cooldowns.filter((c) => !c.expiresAt);
-  const cooldown = cooldowns.filter((c) => !!c.expiresAt);
+  const cooldown = cooldowns.filter((c) => !!c.expiresAt && Date.now() < c.expiresAt.getTime());
 
   return (
     <div className="space-y-8">
