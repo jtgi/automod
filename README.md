@@ -34,7 +34,7 @@ Automod favors less directories, less files and generally avoids DRYing things u
 - **/api/\*:** generally, private APIs used by automod ui
 - **/api/actions/\*:** cast action APIs
 - **/api/partners/\*:** partner APIs secured by partner api keys.
-  - To grant access, login to the (/admin)[https://automod.sh/~/admin] console and provision a token, include in header: `api-key: $TOKEN`
+  - To grant access, login to the [/admin](https://automod.sh/~/admin) console and provision a token, include in header: `api-key: $TOKEN`
 
 ### Data Model
 
