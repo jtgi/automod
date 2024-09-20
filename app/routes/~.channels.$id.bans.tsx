@@ -1,3 +1,4 @@
+import { User } from "@neynar/nodejs-sdk/build/neynar-api/v2";
 import { Cooldown } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useFetcher } from "@remix-run/react";
@@ -7,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
 import { banAction, cooldown24Action } from "~/lib/cast-actions.server";
 import { db } from "~/lib/db.server";
+import { neynar } from "~/lib/neynar.server";
 import { actionToInstallLink } from "~/lib/utils";
 import { requireUser, requireUserCanModerateChannel, successResponse } from "~/lib/utils.server";
 
@@ -18,16 +20,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     where: {
       channelId: moderatedChannel.id,
       active: true,
+      OR: [{ expiresAt: { gt: new Date() } }, { expiresAt: null }],
     },
   });
 
+  const decoratedCooldowns = await decorateCooldowns(cooldowns);
   const banInstallLink = actionToInstallLink(banAction);
   const cooldownInstallLink = actionToInstallLink(cooldown24Action);
 
   return typedjson({
     user,
     moderatedChannel,
-    cooldowns,
+    cooldowns: decoratedCooldowns,
     banInstallLink,
     cooldownInstallLink,
   });
@@ -66,7 +70,7 @@ export default function Screen() {
   const { cooldowns, cooldownInstallLink, banInstallLink } = useTypedLoaderData<typeof loader>();
 
   const banned = cooldowns.filter((c) => !c.expiresAt);
-  const cooldown = cooldowns.filter((c) => !!c.expiresAt && Date.now() < c.expiresAt.getTime());
+  const cooldown = cooldowns.filter((c) => !!c.expiresAt);
 
   return (
     <div className="space-y-8">
@@ -91,7 +95,7 @@ export default function Screen() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">FID</TableHead>
+                  <TableHead className="w-[100px]">User</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -99,7 +103,9 @@ export default function Screen() {
               <TableBody>
                 {banned.map((c) => (
                   <TableRow key={c.affectedUserId}>
-                    <TableCell>{c.affectedUserId}</TableCell>
+                    <TableCell>
+                      <Link to={`https://warpcast.com/${c.user.username}`}>@{c.user.username}</Link>
+                    </TableCell>
                     <TableCell title={c.createdAt.toISOString()}>
                       {c.createdAt.toLocaleDateString()}
                     </TableCell>
@@ -134,7 +140,7 @@ export default function Screen() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">FID</TableHead>
+                  <TableHead className="w-[100px]">User</TableHead>
                   <TableHead className="hidden sm:table-cell">Created</TableHead>
                   <TableHead>Expires</TableHead>
                 </TableRow>
@@ -142,7 +148,9 @@ export default function Screen() {
               <TableBody>
                 {cooldown.map((c) => (
                   <TableRow key={c.affectedUserId}>
-                    <TableCell>{c.affectedUserId}</TableCell>
+                    <TableCell>
+                      <Link to={`https://warpcast.com/${c.user.username}`}>@{c.user.username}</Link>
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell" title={c.createdAt.toISOString()}>
                       {c.createdAt.toLocaleDateString()}
                     </TableCell>
@@ -175,4 +183,30 @@ function RemoveButton(props: { data: Cooldown }) {
       </Button>
     </fetcher.Form>
   );
+}
+
+/**
+ * This won't scale but should be fine for order of
+ * magnitude based on current usage and the alternative
+ * is a data change / backfill.
+ */
+async function decorateCooldowns(cooldowns: Cooldown[]) {
+  const users: User[] = [];
+
+  // batch 100 fids at a time
+  for (let i = 0; i < cooldowns.length; i += 100) {
+    const batch = cooldowns.slice(i, i + 100);
+    const _users = await neynar
+      .fetchBulkUsers(batch.map((c) => Number(c.affectedUserId)))
+      .then((r) => r.users);
+    users.push(..._users);
+  }
+
+  return cooldowns.map((c) => {
+    const user = users.find((u) => u.fid === Number(c.affectedUserId))!;
+    return {
+      ...c,
+      user,
+    };
+  });
 }
