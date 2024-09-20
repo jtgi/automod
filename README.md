@@ -29,6 +29,13 @@ Automod favors less directories, less files and generally avoids DRYing things u
 - **/prisma:** Standard prisma migrations
 - **/bullboard:** A local server to monitor queues and tasks. See package.json to run.
 
+### APIs
+
+- **/api/\*:** generally, private APIs used by automod ui
+- **/api/actions/\*:** cast action APIs
+- **/api/partners/\*:** partner APIs secured by partner api keys.
+  - To grant access, login to the (/admin)[https://automod.sh/~/admin] console and provision a token, include in header: `api-key: $TOKEN`
+
 ### Data Model
 
 See the [Prisma Schema](./prisma/schema.prisma) for an overview.
