@@ -2,9 +2,11 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "remix-typedjson";
 import { db } from "~/lib/db.server";
 import { getUser } from "~/lib/neynar.server";
-import { getSharedEnv } from "~/lib/utils.server";
+import { getSharedEnv, requireSuperAdmin } from "~/lib/utils.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  await requireSuperAdmin({ request });
+
   const url = new URL(request.url);
   const signerUuid = url.searchParams.get("signerUuid") ?? undefined;
   const fid = url.searchParams.get("fid") ?? undefined;

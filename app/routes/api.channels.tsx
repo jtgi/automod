@@ -1,12 +1,8 @@
 import { json, LoaderFunctionArgs } from "@remix-run/node";
-import invariant from "tiny-invariant";
-import { requirePartnerApiKey } from "~/lib/utils.server";
 import { db } from "~/lib/db.server";
 import { Rule, ruleDefinitions } from "~/lib/validations.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePartnerApiKey({ request });
-
   const channel = await db.moderatedChannel.findMany({});
 
   const channels = channel.map((channel) => {
