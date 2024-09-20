@@ -1,4 +1,4 @@
-![CleanShot 2024-09-17 at 13 25 56@2x](https://github.com/user-attachments/assets/449a14a6-69c1-4d82-9678-21bb2585d3bb)
+![CleanShot 2024-09-21 at 05 32 25@2x](https://github.com/user-attachments/assets/baf0c786-280b-4958-a04d-89882e234619)
 
 ## Overview
 
