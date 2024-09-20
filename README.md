@@ -45,6 +45,10 @@ Point of note:
 - **ModeratedChannel inclusionRuleSet and exclusionRuleSet:** These are json strings that define the moderation rules. See the zod schema in [validation.server.ts](/app/lib/validation.server.ts) for its shape. You may wonder why the shape isn't simpler. Automod supports recursive logical expressions of rules as well as multiple actions to execute but the UI at time of writing only exposes a single AND/OR and no preset actions. Even this customers get stuck on quite often.
 - **RuleSets:** deprecated in favor of `inclusionRuleSet` and `exclusionRuleSet`.
 
+### Cache
+
+Automod does some caching but its all in process and in memory on each host. When you deploy its flushed, etc.
+
 ### Key Flows
 
 **How a cast is moderated**
