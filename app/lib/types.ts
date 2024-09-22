@@ -63,6 +63,11 @@ export interface FrameAction {
   url: string;
 }
 
+export type MemberRequirements = {
+  logicType: "OR" | "AND";
+  rules: Rule[];
+};
+
 export interface Cast {
   object: string;
   hash: string;

@@ -93,3 +93,18 @@ export async function publishCast(props: { text: string; token: string }) {
     )
     .then((rsp) => rsp.data);
 }
+
+export async function getMembersForChannel(props: { channelId: string }): Promise<Array<{ fid: number }>> {
+  console.log(`Fetching members for channel ${props.channelId}`);
+  return [{ fid: 5179 }];
+}
+
+export async function removeUserFromChannel(props: { channelId: string; fid: number }) {
+  console.log(`Removing user ${props.fid} from channel ${props.channelId}`);
+  return;
+}
+
+export async function hideCast(props: { hash: string }) {
+  console.log(`Hiding cast ${props.hash}`);
+  return;
+}
