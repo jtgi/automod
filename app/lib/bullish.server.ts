@@ -658,8 +658,9 @@ export function defaultProcessCastJobArgs(hash: string): JobsOptions {
 
 function init() {
   if (process.env.NODE_ENV === "production") {
-    subscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
-    propagationDelayQueue.add("propagationDelayCheck", {}, { repeat: { pattern: "*/10 * * * *" } });
+    // disable, service is shut down
+    // subscriptionQueue.add("subscriptionSync", {}, { repeat: { pattern: "0 0 * * *" } });
+    // propagationDelayQueue.add("propagationDelayCheck", {}, { repeat: { pattern: "*/10 * * * *" } });
   }
 }
 

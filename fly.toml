@@ -9,8 +9,8 @@ primary_region = 'lax'
   force_https = true
   auto_stop_machines = false
   auto_start_machines = false
-  max_machines_running = 2
-  min_machines_running = 2
+  max_machines_running = 1
+  min_machines_running = 1
   [http_service.concurrency]
       type = "requests"
       soft_limit = 500
